@@ -1,0 +1,3854 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>المنير - نظام الحسابات</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#22d3ee">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="المنير">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ============================================================
+   OCEAN THEME — نظام الصيرفة المنير
+   أزرق داكن عميق + فيروزي + ذهبي
+============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
+:root {
+  /* ── الخلفيات — بحر عميق ── */
+  --bg:          #040d1a;        /* أعمق نقطة في البحر */
+  --bg2:         #071428;        /* قاع البحر */
+  --bg3:         #0d1f3c;        /* طبقة وسطى */
+  --bg4:         #122a50;        /* hover — أفتح */
+
+  /* ── لون accent — فيروزي لامع ── */
+  --accent:      #22d3ee;        /* سماوي فيروزي */
+  --accent2:     #0891b2;        /* فيروزي داكن */
+
+  /* ── ذهبي للأرقام المهمة ── */
+  --gold:        #fbbf24;
+  --gold2:       #f59e0b;
+
+  /* ── النصوص ── */
+  --text:        #e0f2fe;        /* أبيض مائل للسماوي */
+  --text2:       #7dd3fc;        /* أزرق فاتح */
+  --text3:       #38bdf8;
+  --text-dim:    rgba(186,230,253,.4);
+
+  /* ── الحدود ── */
+  --border:      rgba(34,211,238,.15);
+  --border2:     rgba(34,211,238,.32);
+
+  /* ── حالات خاصة ── */
+  --red:         #fb7185;
+  --row-odd:     #071428;
+  --row-even:    #040d1a;
+  --row-hover:   #122a50;
+
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --shadow:      0 4px 24px rgba(0,0,0,.6);
+  --shadow-sm:   0 2px 10px rgba(0,0,0,.4);
+}
+
+/* ── Reset ── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-tap-highlight-color:transparent;}
+body{
+  font-family:'Cairo',sans-serif;
+  background:var(--bg);
+  min-height:100vh;
+  overflow:hidden;
+  color:var(--text);
+  font-size:14px;
+}
+
+/* ── Pages ── */
+.page{display:none;position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;}
+.page.active{display:block;}
+
+/* ── Global inputs ── */
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;
+  background:#071e38;
+  border:1.5px solid var(--border2);
+  border-radius:var(--radius-sm);
+  padding:9px 12px;
+  font-family:'Cairo',sans-serif;
+  font-size:13px;
+  color:var(--text);
+  outline:none;
+  transition:border-color .2s, box-shadow .2s;
+  direction:rtl;
+}
+input[type=number]{text-align:left;direction:ltr;}
+select{
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234ade80' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 10px center;
+  padding-left:28px;
+  background-color:#071e38;
+}
+textarea{resize:none;height:62px;}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(74,222,128,.15);
+}
+input::placeholder,textarea::placeholder{color:var(--text-dim);}
+
+/* ── Divider ── */
+.divider{border:none;border-top:1px solid var(--border);margin:8px 0;}
+
+/* ============================================================
+   PAGE 0 — LOGIN
+============================================================ */
+#pageLogin{
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(8,145,178,.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(34,211,238,.10) 0%, transparent 55%),
+    var(--bg);
+}
+/* لازم نفس تخصيص .page.active (id + class) حتى ما تطغى على display:none
+   لما الصفحة مو نشطة — display:flex هنا بس تنطبق وهي فعلاً الصفحة الظاهرة */
+#pageLogin.active{display:flex;align-items:center;justify-content:center;}
+.login-card{
+  width:100%;max-width:360px;padding:28px 22px;margin:0 16px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow);
+}
+.login-logo{
+  text-align:center;font-size:26px;font-weight:900;color:var(--accent);
+  margin-bottom:4px;text-shadow:0 0 20px rgba(34,211,238,.3);
+}
+.login-sub{text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:22px;}
+.login-lbl{color:var(--text2);font-size:12px;font-weight:700;margin-bottom:5px;text-align:right;}
+.login-input{
+  width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:var(--radius-sm);
+  padding:11px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);
+  direction:ltr;text-align:left;margin-bottom:14px;
+}
+.login-input:focus{outline:none;border-color:var(--accent);}
+.login-btn{
+  width:100%;padding:12px;border-radius:var(--radius-sm);border:none;
+  background:var(--accent2);color:#fff;font-family:'Cairo',sans-serif;
+  font-size:15px;font-weight:900;cursor:pointer;
+}
+.login-btn:disabled{opacity:.6;cursor:default;}
+.login-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:16px;}
+
+/* ============================================================
+   PAGE 1 — MAIN MENU
+============================================================ */
+#pageMain{
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(8,145,178,.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(34,211,238,.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(56,189,248,.08) 0%, transparent 40%),
+    var(--bg);
+}
+.main-header{
+  text-align:center;
+  padding:22px 16px 10px;
+  border-bottom:1px solid var(--border);
+  position:relative;
+}
+.main-logo{
+  font-size:28px;font-weight:900;
+  color:var(--accent);
+  letter-spacing:1px;
+  text-shadow:0 0 20px rgba(74,222,128,.4);
+}
+.main-date{
+  position:absolute;left:12px;top:18px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:5px 10px;
+  font-size:10px;font-weight:700;
+  color:var(--text2);
+  line-height:1.6;
+}
+.main-subtitle{
+  display:inline-block;
+  padding:5px 24px;
+  font-size:13px;font-weight:700;
+  color:var(--text-dim);
+  margin:10px auto 14px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.menu-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:10px;padding:8px 14px 90px;
+  max-width:480px;margin:0 auto;
+}
+.menu-btn{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:16px 6px;
+  font-family:'Cairo',sans-serif;
+  font-size:12px;font-weight:700;
+  color:var(--text2);
+  cursor:pointer;
+  text-align:center;
+  transition:all .2s;
+  line-height:1.5;
+  position:relative;
+  overflow:hidden;
+}
+.menu-btn::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(74,222,128,.06),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.menu-btn:active{background:var(--bg4);transform:scale(.97);}
+.menu-btn:active::before{opacity:1;}
+.menu-btn .icon{font-size:22px;display:block;margin-bottom:5px;}
+.menu-btn.highlight{
+  background:var(--bg3);
+  border-color:var(--border2);
+  color:var(--text);
+}
+.menu-btn.highlight .icon{filter:drop-shadow(0 0 4px rgba(74,222,128,.5));}
+
+/* ============================================================
+   PAGE 2 — SANDOOQ
+============================================================ */
+#pageSandooq{background:var(--bg);}
+.s-header{
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow-sm);
+}
+.s-header-title{font-size:18px;font-weight:900;color:var(--accent);}
+.s-rec{
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  padding:4px 12px;
+  font-size:12px;font-weight:700;
+  color:var(--gold);
+}
+.s-page{padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;}
+.s-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:14px;
+  margin-bottom:10px;
+}
+.frow{display:flex;align-items:center;margin-bottom:10px;gap:8px;}
+.frow label{color:var(--text2);font-weight:700;font-size:12px;min-width:90px;text-align:right;flex-shrink:0;}
+.frow .iw{flex:1;display:flex;align-items:center;gap:6px;}
+.haraka-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;justify-content:flex-end;}
+.haraka-row label{color:var(--text2);font-weight:700;font-size:13px;}
+.bal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.bal-item label{color:var(--text-dim);font-size:11px;font-weight:600;text-align:right;display:block;margin-bottom:3px;}
+.bal-box{
+  background:rgba(34,211,238,.08);
+  border:1.5px solid rgba(34,211,238,.25);
+  border-radius:var(--radius-sm);
+  padding:8px 10px;font-weight:700;font-size:14px;
+  color:var(--accent);text-align:center;direction:ltr;
+}
+.qbtns{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.qbtn{
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  padding:10px 14px;
+  font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text2);cursor:pointer;text-align:center;transition:all .15s;
+}
+.qbtn:active{background:var(--bg4);}
+.amt-sec{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:14px;margin-bottom:10px;
+}
+.amt-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.amt-row:last-child{margin-bottom:0;}
+.amt-label{color:var(--text2);font-weight:700;font-size:13px;min-width:100px;text-align:right;flex-shrink:0;}
+.cur-badge{
+  background:var(--bg4);
+  border:1px solid var(--border2);
+  color:var(--accent);
+  border-radius:var(--radius-sm);
+  padding:4px 8px;font-size:11px;font-weight:900;flex-shrink:0;
+}
+.jiha-box{
+  background:rgba(34,211,238,.08);border:1.5px solid rgba(34,211,238,.35);
+  color:var(--accent);
+}
+.jiha-box.customer{
+  background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4);
+  color:var(--gold);
+}
+
+/* Toolbar Sandooq */
+.s-toolbar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);
+  border-top:1px solid var(--border);
+  padding:8px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  z-index:200;max-width:480px;margin:0 auto;
+  height:64px;
+}
+.s-tbinfo{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:4px 10px;font-size:10px;font-weight:700;
+  color:var(--text2);text-align:center;line-height:1.5;
+}
+.s-tbcnt{
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);padding:4px 8px;
+  font-size:12px;font-weight:900;color:var(--gold);
+  text-align:center;min-width:42px;
+}
+.s-tbcnt span{display:block;font-size:9px;font-weight:600;color:var(--text-dim);}
+.tbtn{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text2);
+  font-size:14px;width:36px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+.tbtn:active{background:var(--bg4);color:var(--accent);}
+.tbtn-lbl{width:auto;flex:1;height:48px;flex-direction:column;gap:2px;font-size:18px;padding:4px 6px;border-radius:var(--radius-sm);}
+.tbtn-lbl span{font-size:10px;font-weight:700;font-family:'Cairo',sans-serif;color:var(--text2);}
+.search-btn{background:var(--bg3);}
+.save-btn{background:var(--accent2);border-color:var(--accent);color:#fff;}
+.save-btn span{color:#fff;}
+.del-btn{background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.4);color:var(--red);}
+.del-btn span{color:var(--red);}
+.home-btn{background:var(--bg3);}
+.save-btn:active{background:#16a34a;}
+.del-btn:active{background:rgba(248,113,113,.3);}
+
+/* ============================================================
+   PAGE 3 — KASHF RASEED
+============================================================ */
+#pageKashf{background:var(--bg);}
+.kr-filter{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:10px 12px;position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow-sm);
+}
+.kr-title-box{
+  display:inline-block;background:var(--bg3);
+  border:1px solid var(--border2);border-radius:var(--radius-sm);
+  padding:6px 20px;font-size:14px;font-weight:900;color:var(--accent);
+}
+.kr-date-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0;}
+.kr-date-lbl{color:var(--text2);font-weight:700;font-size:12px;}
+.kr-date-in{
+  background:#071e38;border:1.5px solid var(--border2);border-radius:var(--radius-sm);
+  padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;
+  color:var(--text);direction:ltr;width:130px;text-align:center;
+}
+.kr-btn-row{display:flex;gap:8px;justify-content:center;}
+.kr-fbtn{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  color:var(--text2);font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
+  padding:8px 18px;cursor:pointer;flex:1;max-width:140px;transition:all .15s;
+}
+.kr-fbtn.dolar{border-color:rgba(251,191,36,.5);color:var(--gold);}
+.kr-fbtn.dinar{border-color:rgba(74,222,128,.5);color:var(--accent);}
+.kr-fbtn.dolar.act{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+.kr-fbtn.dinar.act{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.kr-tbody{overflow-y:auto;overflow-x:hidden;padding:10px 12px 100px;}
+.kr-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:10px 11px;margin-bottom:8px;cursor:pointer;transition:background .1s;
+}
+.kr-card:active{background:var(--row-hover);}
+.kr-card.sabiq{background:var(--bg3);border-color:var(--border2);}
+.kr-card.sayarfa{background:#0d2a48;border-color:rgba(251,191,36,.25);}
+.kr-card-top{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.kr-card-icon{font-size:14px;flex-shrink:0;}
+.kr-card-noa{font-size:11px;font-weight:900;padding:3px 9px;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+.kr-card-noa.qabdh{background:rgba(34,211,238,.14);color:var(--accent);}
+.kr-card-noa.sarf{background:rgba(251,113,133,.14);color:var(--red);}
+.kr-card-name{flex:1;font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;}
+.kr-card-raqm{font-size:11px;font-weight:700;color:var(--text-dim);flex-shrink:0;direction:ltr;}
+.kr-card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.kr-card-amt{background:var(--bg3);border-radius:var(--radius-sm);padding:6px 4px;text-align:center;}
+.kr-card-amt .l{display:block;font-size:9.5px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
+.kr-card-amt .v{display:block;font-size:13px;font-weight:900;direction:ltr;color:var(--text2);}
+.kr-card-amt.wared .v{color:var(--accent);}
+.kr-card-amt.sader .v{color:var(--red);}
+.kr-card-amt.raseed .v{color:var(--gold);font-size:14px;}
+.kr-card-amt.raseed .v.neg{color:var(--red);}
+.kr-totals{
+  position:fixed;bottom:54px;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  padding:6px 10px;z-index:150;max-width:480px;margin:0 auto;
+}
+.kr-tot-row{display:flex;gap:6px;margin-bottom:4px;}
+.kr-tot-row:last-child{margin-bottom:0;}
+.kr-tbox{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:5px 8px;text-align:center;flex:1;
+}
+.kr-tbox .tl{font-size:9px;color:var(--text2);font-weight:700;display:block;}
+.kr-tbox .tv{font-size:12px;color:var(--gold);font-weight:900;direction:ltr;display:block;}
+.kr-toolbar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:8px 10px;gap:8px;
+  z-index:200;max-width:480px;margin:0 auto;height:54px;
+}
+.kr-tbtn{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text2);
+  font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
+  padding:8px 0;cursor:pointer;flex:1;height:38px;transition:all .15s;
+}
+.kr-tbtn:active{background:var(--bg4);color:var(--accent);}
+
+/* ============================================================
+   PAGE 4 — ARSADA OMALAA
+============================================================ */
+#pageArsada{background:var(--bg);}
+.ar-header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:10px 12px;position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow-sm);
+}
+.ar-title{font-size:16px;font-weight:900;color:var(--accent);}
+.ar-search{
+  background:var(--bg3);border:1.5px solid var(--border2);
+  border-radius:var(--radius-sm);padding:7px 10px;
+  font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);
+  width:140px;direction:rtl;
+}
+.ar-search:focus{outline:none;border-color:var(--accent);}
+.ar-legend{
+  display:flex;justify-content:center;gap:24px;
+  background:var(--bg3);padding:8px 4px;
+  position:sticky;top:42px;z-index:89;border-bottom:1px solid var(--border2);
+}
+.ar-legend span{font-size:11px;font-weight:900;}
+.ar-legend .din{color:var(--accent);}
+.ar-legend .dol{color:var(--gold);}
+.ar-tbody{padding:10px 12px 160px;}
+.ar-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:10px 11px;margin-bottom:8px;cursor:pointer;transition:background .1s;
+}
+.ar-card:active{background:var(--row-hover);}
+.ar-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;}
+.ar-card-name{font-size:14px;font-weight:900;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ar-card-star{color:var(--gold);font-weight:900;font-size:13px;flex-shrink:0;}
+.ar-card-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;}
+.ar-card-amt{background:var(--bg3);border-radius:var(--radius-sm);padding:6px 3px;text-align:center;}
+.ar-card-amt .l{display:block;font-size:9px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
+.ar-card-amt .v{display:block;font-size:12px;font-weight:900;direction:ltr;color:var(--text2);}
+.ar-card-amt .v.hv{color:var(--accent);}
+.ar-card-amt .v.zero{color:var(--text-dim);font-weight:600;}
+.ar-totals{
+  position:fixed;bottom:54px;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  padding:6px 10px;z-index:150;max-width:480px;margin:0 auto;
+}
+.ar-tgrid{display:flex;gap:5px;align-items:center;margin-bottom:4px;}
+.ar-tgrid:last-child{margin-bottom:0;}
+.ar-tlabel{font-size:11px;font-weight:900;color:var(--text2);min-width:80px;text-align:right;flex-shrink:0;}
+.ar-tbox{
+  background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);
+  border-radius:var(--radius-sm);padding:5px 8px;text-align:center;
+  font-size:11px;font-weight:900;color:var(--accent);direction:ltr;flex:1;
+}
+.ar-nbox{
+  background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);
+  border-radius:var(--radius-sm);padding:5px 8px;text-align:center;
+  font-size:11px;font-weight:900;color:var(--gold);direction:ltr;flex:1;
+}
+.ar-toolbar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:8px 10px;gap:8px;
+  z-index:200;max-width:480px;margin:0 auto;height:54px;
+}
+.ar-tbtn{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;
+  font-size:13px;font-weight:700;color:var(--text2);
+  padding:8px 0;flex:1;cursor:pointer;height:38px;transition:all .15s;
+}
+.ar-tbtn:active{background:var(--bg4);color:var(--accent);}
+
+/* ============================================================
+   SHARED — MODALS / TOAST
+============================================================ */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-end;justify-content:center;}
+.modal-ov.show{display:flex;}
+.modal-box{width:100%;max-width:480px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:20px 16px;}
+.modal-box.green{background:var(--bg2);border:1px solid var(--border2);}
+.modal-box.dark{background:var(--bg2);border:1px solid var(--border2);}
+.modal-box.grey{background:var(--bg2);border:1px solid var(--border);}
+.modal-h3{font-size:15px;font-weight:900;margin-bottom:14px;text-align:center;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.modal-h3.light{color:var(--accent);}
+.modal-h3.dark{color:var(--accent);}
+.modal-opt{
+  display:block;width:100%;padding:12px 14px;margin-bottom:8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;
+  font-size:14px;font-weight:700;color:var(--text);text-align:right;cursor:pointer;
+  transition:all .15s;
+}
+.modal-opt:active,.modal-opt.sel{background:var(--accent2);color:var(--bg);border-color:var(--accent);}
+.modal-close-btn{
+  display:block;width:100%;padding:12px;background:var(--bg3);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;
+  color:var(--text-dim);cursor:pointer;margin-top:4px;
+}
+.mrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.mrow .ml{color:var(--gold);font-weight:700;}
+.mrow .mv{color:var(--text);font-weight:600;direction:ltr;}
+.mrow .mvd{color:var(--text2);font-weight:700;direction:ltr;}
+.mname{background:var(--bg3);color:var(--accent);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;text-align:center;font-size:14px;font-weight:900;margin-bottom:12px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.mitem{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;text-align:center;}
+.mitem .mil{font-size:10px;color:var(--text-dim);font-weight:600;margin-bottom:3px;}
+.mitem .miv{font-size:13px;font-weight:900;color:var(--text);direction:ltr;}
+.mitem.cyan{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);}
+.mitem.cyan .miv{color:var(--accent);}
+.mbrow{display:flex;gap:8px;}
+.mabtn{flex:1;padding:11px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;}
+.mabtn.dark{background:var(--accent2);color:var(--bg);}
+.mabtn.lg{background:var(--bg3);color:var(--text-dim);border:1px solid var(--border);}
+
+/* ============================================================
+   PAGE 5 — KASHF HESAB AMIL
+============================================================ */
+#pageKashfAmil{background:var(--bg);}
+.ka-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
+.ka-name{font-size:16px;font-weight:900;color:var(--accent);text-align:center;margin-bottom:8px;}
+.ka-bal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.ka-bal-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;}
+.ka-bal-box .kbl{font-size:10px;color:var(--text2);font-weight:600;}
+.ka-bal-box .kbv{font-size:13px;font-weight:900;color:var(--gold);direction:ltr;}
+.ka-bal-box.net .kbv{color:var(--accent);}
+.ka-date-row{display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;}
+.ka-date-lbl{color:var(--text2);font-size:11px;font-weight:700;}
+.ka-date-in{background:#071e38;border:1.5px solid var(--border2);border-radius:var(--radius-sm);padding:5px 8px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text);direction:ltr;width:125px;text-align:center;}
+.ka-filter-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--accent);font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;}
+.ka-cur-row{display:flex;gap:6px;padding:8px 14px 0;}
+.ka-cur-btn{flex:1;padding:7px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;}
+.ka-cur-btn.act-d{background:var(--gold);border-color:var(--gold);color:var(--bg);}
+.ka-cur-btn.act-din{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+.ka-thead{display:grid;grid-template-columns:30px 80px 65px 65px 80px 35px;background:var(--bg3);padding:7px 4px;position:sticky;top:0;z-index:50;gap:2px;border-bottom:1px solid var(--border2);}
+.ka-th{color:var(--gold);font-weight:900;font-size:11px;text-align:center;padding:2px 3px;}
+.ka-tbody{padding-bottom:70px;}
+.ka-row{display:grid;grid-template-columns:30px 80px 65px 65px 80px 35px;border-bottom:1px solid var(--border);padding:8px 4px;gap:2px;cursor:pointer;align-items:center;transition:background .1s;}
+.ka-row:nth-child(odd){background:var(--row-odd);}
+.ka-row:nth-child(even){background:var(--row-even);}
+.ka-row:active{background:var(--row-hover);}
+.ka-row.sabiq-row{background:var(--bg3);border-bottom:1px solid var(--border2);}
+.katd{font-size:11px;text-align:center;padding:2px 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.katd.raseed{color:var(--gold);font-weight:700;}
+.katd.wared{color:var(--accent);}
+.katd.sader{color:var(--red);}
+.katd.noa{color:var(--text2);font-size:10px;}
+.katd.sand{color:var(--text-dim);font-size:10px;}
+.ka-bot{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;gap:8px;padding:8px 12px;z-index:200;max-width:480px;margin:0 auto;}
+.ka-bot-btn{flex:1;padding:10px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;}
+.ka-bot-btn.print{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.ka-bot-btn.back{background:var(--accent2);color:var(--bg);}
+
+/* ============================================================
+   PAGE 7 — KHULASA (الخلاصة)
+============================================================ */
+#pageKhulasa{background:var(--bg);}
+.kh-header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);
+}
+.kh-date{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:5px 10px;font-size:11px;font-weight:700;color:var(--text2);
+}
+.kh-title{font-size:19px;font-weight:900;color:var(--gold);}
+.kh-rate-wrap{display:flex;align-items:center;gap:6px;}
+.kh-rate-lbl{color:var(--text-dim);font-size:11px;font-weight:700;}
+.kh-rate-input{
+  width:80px;background:#071e38;border:1.5px solid var(--border2);border-radius:var(--radius-sm);
+  padding:5px 6px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;
+  color:var(--gold);text-align:center;direction:ltr;
+}
+.kh-rate-input:focus{outline:none;border-color:var(--gold);}
+.kh-page{padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:85px;}
+.kh-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;padding:6px 4px;}
+.kh-col-lbl{color:var(--gold);font-size:12px;font-weight:900;text-align:center;}
+.kh-hr{border:none;border-top:2px solid var(--border2);margin:2px 0 8px;}
+.kh-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:center;
+  padding:9px 6px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-md);margin-bottom:6px;
+}
+.kh-val{
+  background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);
+  border-radius:var(--radius-sm);padding:8px 6px;text-align:center;
+  font-size:13px;font-weight:900;color:var(--accent);direction:ltr;
+}
+.kh-val.dolar{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);color:var(--gold);}
+.kh-val.neg{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.4);color:var(--red);}
+.kh-lbl{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  padding:8px 6px;text-align:center;font-size:12px;font-weight:900;color:var(--text2);
+}
+.kh-row.total{background:var(--bg3);border-color:var(--border2);}
+.kh-row.total .kh-val{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.35);color:var(--gold);}
+.kh-row.total .kh-val.neg{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.4);color:var(--red);}
+.kh-row.total .kh-lbl{background:var(--accent2);border-color:var(--accent);color:#fff;}
+.kh-net-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.kh-net-card{
+  border-radius:var(--radius-lg);padding:12px;text-align:center;
+  font-size:16px;font-weight:900;direction:ltr;
+  background:rgba(34,211,238,.1);border:1.5px solid var(--accent);color:var(--accent);
+}
+.kh-net-card.dolar{background:rgba(251,191,36,.1);border-color:var(--gold);color:var(--gold);}
+.kh-net-card.neg{background:rgba(251,113,133,.12);border-color:var(--red);color:var(--red);}
+.kh-net-lbl{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:12px;text-align:center;font-size:13px;font-weight:900;color:var(--text2);
+}
+.kh-note{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:10px 12px;font-size:11px;color:var(--text-dim);line-height:1.8;text-align:right;
+}
+.kh-note b{color:var(--text2);}
+.kh-toolbar{
+  position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;gap:8px;padding:8px 12px;z-index:200;max-width:480px;margin:0 auto;
+}
+.kh-tbtn{
+  padding:11px;border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;
+  font-size:13px;font-weight:900;border:none;cursor:pointer;
+}
+.kh-tbtn.primary{flex:2;background:var(--gold);color:var(--bg);}
+.kh-tbtn.ghost{flex:1;background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+
+/* ============================================================
+   SEARCH LIST
+============================================================ */
+.search-list{max-height:55vh;overflow-y:auto;}
+.search-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;gap:8px;}
+.search-item:active{background:var(--bg4);}
+.search-item .si-raqm{background:var(--accent2);color:var(--bg);border-radius:4px;padding:3px 8px;font-size:11px;font-weight:700;flex-shrink:0;}
+.search-item .si-info{flex:1;text-align:right;}
+.search-item .si-name{font-size:13px;font-weight:700;color:var(--text);}
+.search-item .si-meta{font-size:11px;color:var(--text-dim);}
+.search-input{
+  width:100%;background:#1a3020;
+  border:1.5px solid var(--border2);border-radius:var(--radius-sm);
+  padding:10px 12px;font-family:'Cairo',sans-serif;font-size:14px;
+  color:var(--text);direction:rtl;margin-bottom:12px;
+}
+.search-input:focus{outline:none;border-color:var(--accent);}
+
+/* ============================================================
+   PIN MODAL
+============================================================ */
+.pin-btn{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-md);color:var(--text);
+  font-family:'Cairo',sans-serif;font-size:22px;font-weight:700;
+  padding:16px;cursor:pointer;transition:all .15s;
+}
+.pin-btn:active{background:var(--bg4);color:var(--accent);transform:scale(.95);}
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text);padding:10px 20px;border-radius:20px;
+  font-size:13px;font-weight:700;z-index:999;
+  opacity:0;transition:opacity .3s;
+  white-space:nowrap;box-shadow:var(--shadow);
+}
+.toast.show{opacity:1;}
+
+@media(min-width:480px){
+  .s-toolbar,.kr-totals,.kr-toolbar,.ar-totals,.ar-toolbar{max-width:480px;left:50%;right:auto;transform:translateX(-50%);}
+}
+
+/* ── Print Styles ── */
+@media print{
+  body{background:white!important;color:#000!important;}
+  .page{display:none!important;}
+  .page.active{display:block!important;position:static!important;overflow:visible!important;}
+  .s-toolbar,.kr-toolbar,.ar-toolbar,.ka-bot,.kr-totals,.ar-totals,.kh-toolbar{display:none!important;}
+  * {color:#000!important;background:transparent!important;border-color:#ccc!important;}
+  .kr-card,.ar-card,.ka-row{border-bottom:1px solid #ddd!important;}
+  .katd{color:#000!important;}
+  .kr-card-amt .v,.ar-card-amt .v.hv{color:#333!important;font-weight:700!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================================================
+     TOAST
+====================================================== -->
+<div class="toast" id="toast"></div>
+
+<!-- ======================================================
+     MODAL — تأكيد الحفظ
+====================================================== -->
+<div class="modal-ov" id="modalConfirmSave">
+  <div class="modal-box dark" style="background:var(--bg2);border:1.5px solid var(--border2);">
+    <h3 class="modal-h3 dark" style="color:var(--accent);">📋 تأكيد الحركة</h3>
+
+    <!-- نوع الحركة — بارز -->
+    <div id="cfNoa" style="text-align:center;font-size:20px;font-weight:900;padding:10px;border-radius:10px;margin-bottom:12px;"></div>
+
+    <!-- تفاصيل -->
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);font-size:12px;">رقم السند</span>
+        <span id="cfRaqm" style="color:var(--text);font-weight:700;"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);font-size:12px;">التاريخ</span>
+        <span id="cfTarikh" style="color:var(--text);font-weight:700;"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);font-size:12px;">الحساب</span>
+        <span id="cfHesab" style="color:var(--text);font-weight:700;"></span>
+      </div>
+      <div id="cfAmilRow" style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);font-size:12px;">العميل</span>
+        <span id="cfAmil" style="color:var(--accent);font-weight:700;"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);font-size:12px;">جهة الصرف</span>
+        <span id="cfJiha" style="color:var(--text);font-weight:700;"></span>
+      </div>
+    </div>
+
+    <!-- المبالغ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:10px;text-align:center;">
+        <div style="color:var(--text-dim);font-size:10px;margin-bottom:4px;">دولار $</div>
+        <div id="cfMabD" style="color:var(--gold);font-size:18px;font-weight:900;direction:ltr;">0</div>
+      </div>
+      <div style="background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:8px;padding:10px;text-align:center;">
+        <div style="color:var(--text-dim);font-size:10px;margin-bottom:4px;">دينار IQD</div>
+        <div id="cfMabDin" style="color:var(--accent);font-size:16px;font-weight:900;direction:ltr;">0</div>
+      </div>
+    </div>
+
+    <!-- أزرار -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button id="btnConfirmSave" onclick="confirmAndSave()"
+        style="padding:14px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;background:var(--accent2);border:none;color:white;cursor:pointer;">
+        ✅ تأكيد وحفظ
+      </button>
+      <button onclick="closeModal('modalConfirmSave')"
+        style="padding:14px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;">
+        ✏️ تعديل
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     MODAL — حساب رئيسي
+====================================================== -->
+<div class="modal-ov" id="modalHesab">
+  <div class="modal-box green">
+    <h3 class="modal-h3 light">الحساب الرئيسي</h3>
+    <button class="modal-opt" onclick="selHesab('ذمم العملاء')">ذمم العملاء</button>
+    <button class="modal-opt" onclick="selHesab('إيرادات عامة')">إيرادات عامة</button>
+    <button class="modal-opt" onclick="selHesab('مصاريف عامة')">مصاريف عامة</button>
+    <button class="modal-close-btn" onclick="closeModal('modalHesab')">إلغاء</button>
+  </div>
+</div>
+
+<!-- MODAL — جهة الصرف -->
+<div class="modal-ov" id="modalJiha">
+  <div class="modal-box green">
+    <h3 class="modal-h3 light">جهة الصرف</h3>
+    <!-- الصندوق دائماً أول خيار -->
+    <button class="modal-opt" style="background:var(--bg4);color:var(--accent);border-color:var(--border2);font-size:15px;font-weight:900;" onclick="selJiha('الصندوق')">🏦 الصندوق (القاصة)</button>
+    <div style="text-align:center;color:var(--text-dim);font-size:11px;font-weight:600;margin:6px 0 8px;border-top:1px solid var(--border);padding-top:8px;">── أو اختر زبون ──</div>
+    <input class="search-input" id="jihaSearch" type="text" placeholder="🔍 بحث عن زبون..." oninput="filterJihaList()">
+    <div id="jihaList" style="max-height:42vh;overflow-y:auto;"></div>
+    <button class="modal-close-btn" onclick="closeModal('modalJiha')">إلغاء</button>
+  </div>
+</div>
+
+<!-- MODAL — اختيار عميل -->
+<div class="modal-ov" id="modalAmil">
+  <div class="modal-box green">
+    <h3 class="modal-h3 light">اختر العميل</h3>
+    <div id="amilList"></div>
+    <button class="modal-close-btn" onclick="closeModal('modalAmil')">إلغاء</button>
+  </div>
+</div>
+
+<!-- MODAL — تفاصيل حركة كشف -->
+<div class="modal-ov" id="modalKashfDetail">
+  <div class="modal-box dark">
+    <h3 class="modal-h3 dark">تفاصيل الحركة</h3>
+    <div class="mrow"><span class="ml">رقم السند</span><span class="mv" id="kd-sand"></span></div>
+    <div class="mrow"><span class="ml">التاريخ</span><span class="mv" id="kd-date"></span></div>
+    <div class="mrow"><span class="ml">الاسم</span><span class="mv" id="kd-name"></span></div>
+    <div class="mrow"><span class="ml">النوع</span><span class="mv" id="kd-noa"></span></div>
+    <div class="mrow"><span class="ml">الوارد</span><span class="mv" id="kd-wared"></span></div>
+    <div class="mrow"><span class="ml">الصادر</span><span class="mv" id="kd-sader"></span></div>
+    <div class="mrow"><span class="ml">الرصيد</span><span class="mv" id="kd-raseed"></span></div>
+    <div class="mrow" style="border:none;"><span class="ml">الملاحظات</span><span class="mv" id="kd-notes"></span></div>
+    <button class="modal-close-btn" style="background:#1a3060;color:#80e8ff;margin-top:8px;" onclick="closeModal('modalKashfDetail')">إغلاق</button>
+  </div>
+</div>
+
+<!-- MODAL — تفاصيل عميل -->
+<div class="modal-ov" id="modalAmilDetail">
+  <div class="modal-box grey">
+    <h3 class="modal-h3 light">أرصدة العميل</h3>
+    <div class="mname" id="am-name"></div>
+    <div class="mgrid">
+      <div class="mitem"><div class="mil">الرصيد $ عليه</div><div class="miv" id="am-d-al"></div></div>
+      <div class="mitem"><div class="mil">الرصيد $ له</div><div class="miv" id="am-d-lh"></div></div>
+      <div class="mitem"><div class="mil">دينار عليه</div><div class="miv" id="am-din-al"></div></div>
+      <div class="mitem"><div class="mil">دينار له</div><div class="miv" id="am-din-lh"></div></div>
+      <div class="mitem cyan"><div class="mil">صافي $</div><div class="miv" id="am-net-d"></div></div>
+      <div class="mitem cyan"><div class="mil">صافي دينار</div><div class="miv" id="am-net-din"></div></div>
+    </div>
+    <div class="mbrow">
+      <button class="mabtn lg" onclick="closeModal('modalAmilDetail')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL — بحث عن تسجيل -->
+<div class="modal-ov" id="modalSearch">
+  <div class="modal-box green">
+    <h3 class="modal-h3 light">🔍 بحث عن تسجيل</h3>
+    <input class="search-input" id="searchRecInput" type="text" placeholder="رقم السند أو اسم العميل..." oninput="filterSearch()">
+    <div class="search-list" id="searchList"></div>
+    <button class="modal-close-btn" onclick="closeModal('modalSearch')">إلغاء</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 0 — LOGIN
+====================================================== -->
+<div id="pageLogin" class="page active">
+  <div class="login-card">
+    <div class="login-logo">المنير</div>
+    <div class="login-sub">تسجيل الدخول</div>
+    <div class="login-lbl">البريد الإلكتروني</div>
+    <input type="email" id="loginEmail" class="login-input" autocomplete="username" placeholder="you@example.com">
+    <div class="login-lbl">كلمة المرور</div>
+    <input type="password" id="loginPassword" class="login-input" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();">
+    <button id="btnLogin" class="login-btn" onclick="doLogin()">دخول</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 1 — MAIN MENU
+====================================================== -->
+<div id="pageMain" class="page">
+  <div class="main-header">
+    <div class="main-date" id="mainDate">الثلاثاء<br>31/03/2026</div>
+    <div class="main-logo">المنير</div>
+  </div>
+  <div style="text-align:center;">
+    <div class="main-subtitle">نظام الحسابات</div>
+  </div>
+  <div class="menu-grid">
+    <!-- شريط حالة الاتصال -->
+    <div style="grid-column:1/-1;background:rgba(0,0,0,0.3);border-radius:8px;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+      <button onclick="dbLoad()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:5px;color:white;font-family:'Cairo',sans-serif;font-size:11px;padding:3px 10px;cursor:pointer;">🔄 تحديث</button>
+      <div id="dbStatus" style="font-size:11px;font-weight:700;color:#f0c040;">جاري الاتصال...</div>
+      <div style="font-size:13px;">☁️</div>
+    </div>
+    <button class="menu-btn highlight" onclick="goPage('pageSandooq')"><span class="icon">🏦</span>الصندوق</button>
+    <button class="menu-btn highlight" onclick="goPage('pageKashf')"><span class="icon">📊</span>كشف رصيد الصندوق</button>
+    <button class="menu-btn highlight" onclick="goPage('pageArsada')"><span class="icon">👥</span>أرصدة العملاء</button>
+    <button class="menu-btn highlight" onclick="goPage('pageSayarfa')"><span class="icon">💱</span>الصيرفة</button>
+    <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">📨</span>ارسال الامانات</button>
+    <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">📥</span>الامانات الواردة</button>
+    <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">📤</span>الامانات الصادرة</button>
+    <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">🏢</span>ارصدة الشركات</button>
+    <button class="menu-btn highlight" onclick="goPage('pageKhulasa')"><span class="icon">📊</span>الخلاصة</button>
+    <button class="menu-btn highlight" onclick="goPage('pageSettings')" style="grid-column:1/-1;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);"><span class="icon">⚙️</span>الإعدادات</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 2 — SANDOOQ
+====================================================== -->
+<div id="pageSandooq" class="page">
+
+  <!-- HEADER -->
+  <div style="background:linear-gradient(135deg,#1e5a28,#2d8a3e);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+    <div style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 12px;font-size:13px;font-weight:900;color:white;" id="sRecNum">—</div>
+    <div style="font-size:20px;font-weight:900;color:white;text-decoration:underline;text-underline-offset:3px;">الصندوق</div>
+    <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:4px 10px;text-align:center;">
+      <div id="sTbDate" style="font-size:10px;color:rgba(255,255,255,0.8);font-weight:600;"></div>
+      <div id="sTbTime" style="font-size:11px;color:white;font-weight:700;"></div>
+    </div>
+  </div>
+
+  <div style="padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;">
+
+    <!-- ── قسم 1: نوع الحركة + السند ── -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+
+      <!-- نوع الحركة — أزرار بارزة -->
+      <div style="margin-bottom:12px;">
+        <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:6px;text-align:right;">نوع الحركة</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="btnQabdh" onclick="setNoa('قبض')"
+            style="padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;transition:all .15s;">
+            ⬇️ قبض
+          </button>
+          <button id="btnSarf" onclick="setNoa('صرف')"
+            style="padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;transition:all .15s;">
+            ⬆️ صرف
+          </button>
+        </div>
+        <select id="sNoa" onchange="onNoa()" style="display:none;">
+          <option value="">-- اختر --</option>
+          <option value="قبض">قبض</option>
+          <option value="صرف">صرف</option>
+        </select>
+      </div>
+
+      <!-- تاريخ + رقم السند في صف واحد -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:4px;text-align:right;">تاريخ السند</div>
+          <input type="date" id="sTarikh" style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:8px 10px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);direction:ltr;text-align:center;">
+        </div>
+        <div>
+          <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:4px;text-align:right;">رقم السند</div>
+          <input type="text" id="sRaqm" style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:8px 10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;color:var(--text);direction:ltr;text-align:center;">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── قسم 2: الحساب الرئيسي + العميل ── -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+      <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:6px;text-align:right;">الحساب الرئيسي</div>
+      <input type="text" id="sHesab" placeholder="اضغط لاختيار الحساب ▾" readonly onclick="openModal('modalHesab')"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;direction:rtl;margin-bottom:10px;">
+
+      <!-- العميل — يظهر عند اختيار نوع الحركة -->
+      <div id="sAmilCard" style="display:none;">
+        <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:6px;text-align:right;">العميل</div>
+        <div style="display:grid;grid-template-columns:70px 1fr;gap:8px;">
+          <input type="text" id="sAmilRaqm" readonly placeholder="رقم"
+            style="background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:8px 6px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text);text-align:center;direction:ltr;">
+          <input type="text" id="sAmilNm" placeholder="اضغط لاختيار العميل ▾" readonly onclick="openAmilModal()"
+            style="background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:8px 12px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;direction:rtl;">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── قسم 3: الأرصدة السابقة ── -->
+    <div id="sBalCard" style="display:none;margin-bottom:10px;">
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:6px;text-align:right;padding-right:4px;">أرصدة العميل</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="background:rgba(200,160,232,0.15);border:1px solid #a070cc;border-radius:8px;padding:8px;text-align:center;">
+          <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600;">الرصيد الحالي $</div>
+          <div id="sPrevD" style="color:#e8c0ff;font-size:14px;font-weight:900;direction:ltr;">0</div>
+        </div>
+        <div style="background:rgba(200,160,232,0.15);border:1px solid #a070cc;border-radius:8px;padding:8px;text-align:center;">
+          <div id="sAfterDLabel" style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600;">بعد الحركة $</div>
+          <div id="sAfterD" style="color:#c0ff90;font-size:14px;font-weight:900;direction:ltr;">0</div>
+        </div>
+        <div style="background:rgba(200,160,232,0.15);border:1px solid #a070cc;border-radius:8px;padding:8px;text-align:center;">
+          <div style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600;">الرصيد الحالي دينار</div>
+          <div id="sPrevDin" style="color:#e8c0ff;font-size:13px;font-weight:900;direction:ltr;">0</div>
+        </div>
+        <div style="background:rgba(200,160,232,0.15);border:1px solid #a070cc;border-radius:8px;padding:8px;text-align:center;">
+          <div id="sAfterDinLabel" style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600;">بعد الحركة دينار</div>
+          <div id="sAfterDin" style="color:#c0ff90;font-size:13px;font-weight:900;direction:ltr;">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── قسم 4: المبالغ ── -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+      <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:8px;text-align:right;">المبالغ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+          <div style="color:#f0d060;font-size:11px;font-weight:700;margin-bottom:5px;">دولار $</div>
+          <input type="text" inputmode="decimal" id="sMabD" value="0" oninput="fmtInput(this);calcAfter()"
+            style="width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:900;color:var(--gold);text-align:center;direction:ltr;">
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+          <div style="color:var(--accent);font-size:11px;font-weight:700;margin-bottom:5px;">دينار IQD</div>
+          <input type="text" inputmode="numeric" id="sMabDin" value="0" oninput="fmtInput(this);calcAfter()"
+            style="width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:900;color:var(--accent);text-align:center;direction:ltr;">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── قسم 5: جهة الصرف + الصك + الملاحظات ── -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:4px;text-align:right;">جهة الصرف</div>
+          <input type="text" id="sJiha" class="jiha-box" value="الصندوق" readonly onclick="openJihaModal()"
+            style="width:100%;border-radius:7px;padding:8px 10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;direction:rtl;">
+        </div>
+        <div>
+          <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:4px;text-align:right;">رقم الصك/الفيشة</div>
+          <input type="text" id="sSak" placeholder="اختياري"
+            style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:8px 10px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;">
+        </div>
+      </div>
+      <div>
+        <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:4px;text-align:right;">الملاحظات</div>
+        <textarea id="sNotes" placeholder="أدخل أي ملاحظات..."
+          style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;resize:none;height:60px;"></textarea>
+      </div>
+    </div>
+
+    <!-- ── روابط سريعة ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <button onclick="goPage('pageArsada')"
+        style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;">
+        👥 أرصدة العملاء
+      </button>
+      <button onclick="goPage('pageKashf')"
+        style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;">
+        📊 كشف الصندوق
+      </button>
+    </div>
+
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="s-toolbar">
+    <button class="tbtn tbtn-lbl search-btn" onclick="openSearchModal()">🔍<span>بحث</span></button>
+    <button class="tbtn tbtn-lbl save-btn"   onclick="sSave()">💾<span>حفظ</span></button>
+    <button class="tbtn tbtn-lbl del-btn"    onclick="sDel()">🗑<span>حذف</span></button>
+    <button class="tbtn tbtn-lbl home-btn"   onclick="goPage('pageMain')">🏠<span>رئيسية</span></button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 3 — KASHF RASEED
+====================================================== -->
+<div id="pageKashf" class="page">
+  <div class="kr-filter">
+    <div style="text-align:center;margin-bottom:8px;">
+      <span class="kr-title-box" id="krTitle">كشف رصيد الصندوق (دولار)</span>
+    </div>
+    <div class="kr-date-row">
+      <span class="kr-date-lbl">من</span>
+      <input class="kr-date-in" type="date" id="krFrom" value="2026-03-01">
+      <span class="kr-date-lbl">الى</span>
+      <input class="kr-date-in" type="date" id="krTo" value="2026-03-31">
+    </div>
+    <div class="kr-btn-row">
+      <button class="kr-fbtn dolar act" id="krBtnD" onclick="krCur('dolar')">دولار $</button>
+      <button class="kr-fbtn dinar" id="krBtnDin" onclick="krCur('dinar')">دينار IQD</button>
+    </div>
+  </div>
+
+  <div class="kr-tbody" id="krBody"></div>
+
+  <div class="kr-totals">
+    <div class="kr-tot-row">
+      <div class="kr-tbox"><span class="tl">إجمالي الصادر</span><span class="tv" id="krTotS">0</span></div>
+      <div class="kr-tbox"><span class="tl">إجمالي الوارد</span><span class="tv" id="krTotW">0</span></div>
+      <div class="kr-tbox"><span class="tl">الرصيد النهائي</span><span class="tv" id="krTotR">0</span></div>
+    </div>
+  </div>
+  <div class="kr-toolbar">
+    <button class="kr-tbtn" onclick="smartPrint('كشف رصيد الصندوق')">🖨️ طباعة</button>
+    <button class="kr-tbtn" onclick="goPage('pageMain')">🏠 الرئيسية</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 4 — ARSADA OMALAA
+====================================================== -->
+<div id="pageArsada" class="page">
+  <div class="ar-header">
+    <div class="ar-title">أرصدة العملاء</div>
+    <input class="ar-search" id="arSearch" type="text" placeholder="🔍 بحث..." oninput="arFilter()">
+  </div>
+
+  <div class="ar-legend">
+    <span class="din">دينار: له / عليه</span>
+    <span class="dol">دولار: له / عليه</span>
+  </div>
+
+  <div id="arBody" class="ar-tbody"></div>
+
+  <div class="ar-totals">
+    <div class="ar-tgrid">
+      <div class="ar-tlabel">المجموع</div>
+      <div class="ar-tbox" id="arTDinL">0</div>
+      <div class="ar-tbox" id="arTDinA">0</div>
+      <div class="ar-tbox" id="arTDL">0</div>
+      <div class="ar-tbox" id="arTDA">0</div>
+    </div>
+    <div class="ar-tgrid">
+      <div class="ar-tlabel">الصافي</div>
+      <div class="ar-nbox" id="arNetDin" style="flex:2;">0</div>
+      <div class="ar-nbox" id="arNetD" style="flex:2;">0</div>
+    </div>
+  </div>
+  <div class="ar-toolbar">
+    <button class="ar-tbtn" onclick="smartPrint('أرصدة العملاء')">🖨️ طباعة</button>
+    <button class="ar-tbtn" onclick="goPage('pageMain')">🏠 الرئيسية</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 5 — KASHF HESAB AMIL
+====================================================== -->
+<div id="pageKashfAmil" class="page">
+  <div class="ka-header">
+    <div class="ka-name" id="kaName">كشف حساب العميل</div>
+    <div class="ka-bal-grid">
+      <div class="ka-bal-box"><div class="kbl">الرصيد $ (له)</div><div class="kbv" id="kaBD">0</div></div>
+      <div class="ka-bal-box"><div class="kbl">الرصيد دينار (له)</div><div class="kbv" id="kaBDin">0</div></div>
+      <div class="ka-bal-box net"><div class="kbl">صافي $</div><div class="kbv" id="kaNetD">0</div></div>
+      <div class="ka-bal-box net"><div class="kbl">صافي دينار</div><div class="kbv" id="kaNetDin">0</div></div>
+    </div>
+    <div class="ka-date-row">
+      <span class="ka-date-lbl">من</span>
+      <input class="ka-date-in" type="date" id="kaFrom">
+      <span class="ka-date-lbl">الى</span>
+      <input class="ka-date-in" type="date" id="kaTo">
+      <button class="ka-filter-btn" onclick="kaRender()">عرض</button>
+    </div>
+  </div>
+
+  <div class="ka-cur-row">
+    <button class="ka-cur-btn act-d"   id="kaBtnD"   onclick="kaCur('dolar')">دولار $</button>
+    <button class="ka-cur-btn"         id="kaBtnDin" onclick="kaCur('dinar')">دينار IQD</button>
+    <button class="ka-cur-btn"         id="kaBtnAll" onclick="kaCur('all')">الكل</button>
+  </div>
+
+  <div class="ka-thead">
+    <div class="ka-th">📄</div>
+    <div class="ka-th">الرصيد</div>
+    <div class="ka-th">وارد</div>
+    <div class="ka-th">صادر</div>
+    <div class="ka-th">النوع/جهة</div>
+    <div class="ka-th">سند</div>
+  </div>
+  <div class="ka-tbody" id="kaBody"></div>
+
+  <div class="ka-bot">
+    <button class="ka-bot-btn print" onclick="printKashfAmil()">🖨️ طباعة الكشف</button>
+    <button class="ka-bot-btn back"  onclick="goPage('pageArsada')">← رجوع</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 6 — SAYARFA (الصيرفة)
+====================================================== -->
+<div id="pageSayarfa" class="page">
+
+  <!-- HEADER -->
+  <div style="background:linear-gradient(135deg,#071428,#0d2348);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+    <div style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 12px;font-size:12px;font-weight:900;color:white;">💱</div>
+    <div style="font-size:20px;font-weight:900;color:white;text-decoration:underline;text-underline-offset:3px;">الصيرفة</div>
+    <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:5px 10px;text-align:center;font-size:11px;color:rgba(255,255,255,0.85);font-weight:700;" id="sfDate">—</div>
+  </div>
+
+  <div style="padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;">
+
+    <!-- رصيد القاصة الحالي -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;">
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">رصيد القاصة الحالي</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:rgba(240,192,64,0.15);border:1.5px solid rgba(240,192,64,0.4);border-radius:8px;padding:10px;text-align:center;">
+          <div style="color:#f0c040;font-size:10px;font-weight:700;margin-bottom:3px;">دولار $</div>
+          <div id="sfBalD" style="color:#f0e060;font-size:16px;font-weight:900;direction:ltr;">0</div>
+        </div>
+        <div style="background:rgba(96,216,160,0.15);border:1.5px solid rgba(96,216,160,0.4);border-radius:8px;padding:10px;text-align:center;">
+          <div style="color:#60d8a0;font-size:10px;font-weight:700;margin-bottom:3px;">دينار IQD</div>
+          <div id="sfBalDin" style="color:#80ffb8;font-size:14px;font-weight:900;direction:ltr;">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- نوع العملية -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:12px;">
+      <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:8px;text-align:right;">نوع العملية</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button id="sfBtnBuy" onclick="sfSetType('شراء')"
+          style="padding:12px 6px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;">
+          🟢 شراء دولار
+        </button>
+        <button id="sfBtnSell" onclick="sfSetType('بيع')"
+          style="padding:12px 6px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;">
+          🔴 بيع دولار
+        </button>
+      </div>
+      <input type="hidden" id="sfType" value="">
+    </div>
+
+    <!-- المبالغ وسعر الصرف -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:12px;">
+
+      <!-- سعر الصرف -->
+      <div style="margin-bottom:12px;">
+        <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">سعر الصرف (دينار لكل دولار)</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="text" inputmode="numeric" id="sfRate" value="1,480" oninput="fmtInput(this);sfCalc()"
+            style="flex:1;background:var(--bg3);border:2px solid var(--border2);border-radius:8px;padding:10px;font-family:'Cairo',sans-serif;font-size:18px;font-weight:900;color:var(--gold);text-align:center;direction:ltr;">
+          <div style="color:var(--text2);font-size:12px;font-weight:700;text-align:center;line-height:1.4;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;">IQD<br>/$</div>
+        </div>
+      </div>
+
+      <!-- مبلغ الدولار -->
+      <div style="margin-bottom:12px;">
+        <div style="color:var(--gold);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">مبلغ الدولار $</div>
+        <input type="text" inputmode="decimal" id="sfMabD" value="0" oninput="fmtInput(this);sfCalcFromD()"
+          style="width:100%;background:var(--bg3);border:2px solid rgba(251,191,36,.4);border-radius:8px;padding:10px;font-family:'Cairo',sans-serif;font-size:18px;font-weight:900;color:var(--gold);text-align:center;direction:ltr;">
+      </div>
+
+      <!-- سهم التحويل -->
+      <div style="text-align:center;margin:8px 0;font-size:22px;color:var(--text-dim);" id="sfArrow">⇅</div>
+
+      <!-- مبلغ الدينار -->
+      <div>
+        <div style="color:var(--accent);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">مبلغ الدينار IQD</div>
+        <input type="text" inputmode="numeric" id="sfMabDin" value="0" oninput="fmtInput(this);sfCalcFromDin()"
+          style="width:100%;background:var(--bg3);border:2px solid rgba(34,211,238,.4);border-radius:8px;padding:10px;font-family:'Cairo',sans-serif;font-size:18px;font-weight:900;color:var(--accent);text-align:center;direction:ltr;">
+      </div>
+    </div>
+
+    <!-- نتيجة التأثير على القاصة -->
+    <div id="sfResultCard" style="display:none;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px;margin-bottom:12px;">
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">بعد العملية — رصيد القاصة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:rgba(240,192,64,0.1);border:1px solid rgba(240,192,64,0.3);border-radius:8px;padding:8px;text-align:center;">
+          <div style="color:#f0c040;font-size:10px;font-weight:600;">دولار $</div>
+          <div id="sfAfterD" style="color:#f0e060;font-size:15px;font-weight:900;direction:ltr;">0</div>
+        </div>
+        <div style="background:rgba(96,216,160,0.1);border:1px solid rgba(96,216,160,0.3);border-radius:8px;padding:8px;text-align:center;">
+          <div style="color:#60d8a0;font-size:10px;font-weight:600;">دينار IQD</div>
+          <div id="sfAfterDin" style="color:#80ffb8;font-size:13px;font-weight:900;direction:ltr;">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ملاحظات -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;">
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">ملاحظات</div>
+      <textarea id="sfNotes" placeholder="اختياري..."
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;resize:none;height:55px;"></textarea>
+    </div>
+
+  </div>
+
+  <!-- TOOLBAR -->
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#040d1a;border-top:1px solid rgba(34,211,238,.2);display:flex;gap:8px;padding:8px 12px;z-index:200;max-width:480px;margin:0 auto;">
+    <button onclick="sfSave()"
+      style="flex:2;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;background:#f0c040;border:none;color:#0a1628;cursor:pointer;">
+      💾 تنفيذ وحفظ
+    </button>
+    <button onclick="sfReset()"
+      style="flex:1;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);color:white;cursor:pointer;">
+      🔄 مسح
+    </button>
+    <button onclick="goPage('pageMain')"
+      style="flex:1;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);color:white;cursor:pointer;">
+      🏠
+    </button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 7 — KHULASA (الخلاصة / رأس المال)
+====================================================== -->
+<div id="pageKhulasa" class="page">
+
+  <!-- HEADER -->
+  <div class="kh-header">
+    <div class="kh-date" id="khDate">—</div>
+    <div class="kh-title">الخلاصة</div>
+    <div class="kh-rate-wrap">
+      <span class="kh-rate-lbl">سعر الصرف</span>
+      <input type="number" id="khRate" class="kh-rate-input" value="1480" min="1" step="1" oninput="khRender()">
+    </div>
+  </div>
+
+  <div class="kh-page">
+
+    <!-- أعمدة الجدول -->
+    <div class="kh-cols">
+      <div class="kh-col-lbl">دينار</div>
+      <div class="kh-col-lbl">دولار</div>
+      <div></div>
+    </div>
+    <hr class="kh-hr">
+
+    <!-- صافي ديون العملاء -->
+    <div class="kh-row">
+      <div id="kh-cust-din" class="kh-val">0</div>
+      <div id="kh-cust-d"   class="kh-val dolar">0</div>
+      <div class="kh-lbl">صافي ديون العملاء</div>
+    </div>
+
+    <!-- صافي ديون الشركات -->
+    <div class="kh-row">
+      <div id="kh-comp-din" class="kh-val">0</div>
+      <div id="kh-comp-d"   class="kh-val dolar">0</div>
+      <div class="kh-lbl">صافي ديون الشركات</div>
+    </div>
+
+    <!-- الصندوق الفعلي -->
+    <div class="kh-row">
+      <div id="kh-sand-din" class="kh-val">0</div>
+      <div id="kh-sand-d"   class="kh-val dolar">0</div>
+      <div class="kh-lbl">الصندوق الفعلي</div>
+    </div>
+    <hr class="kh-hr">
+
+    <!-- المجموع -->
+    <div class="kh-row total">
+      <div id="kh-tot-din" class="kh-val">0</div>
+      <div id="kh-tot-d"   class="kh-val dolar">0</div>
+      <div class="kh-lbl">المجموع</div>
+    </div>
+
+    <!-- الصافي بالدينار -->
+    <div class="kh-net-grid">
+      <div id="kh-net-din" class="kh-net-card">0</div>
+      <div class="kh-net-lbl">الصافي بالدينار</div>
+    </div>
+
+    <!-- الصافي بالدولار -->
+    <div class="kh-net-grid" style="margin-bottom:16px;">
+      <div id="kh-net-d" class="kh-net-card dolar">0</div>
+      <div class="kh-net-lbl">الصافي بالدولار</div>
+    </div>
+
+    <!-- ملاحظة -->
+    <div class="kh-note">
+      <div>📌 <b>طريقة الحساب:</b></div>
+      <div>الصافي = الصندوق + ديون الشركات − ديون العملاء</div>
+      <div style="margin-top:3px;">الصافي بالدولار = الصافي بالدينار ÷ سعر الصرف</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="kh-toolbar">
+    <button class="kh-tbtn primary" onclick="khRender()">🔄 تحديث</button>
+    <button class="kh-tbtn ghost" onclick="smartPrint('الخلاصة')">🖨️</button>
+    <button class="kh-tbtn ghost" onclick="goPage('pageMain')">🏠</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE 8 — SETTINGS (الإعدادات)
+====================================================== -->
+<div id="pageSettings" class="page">
+
+  <!-- HEADER -->
+  <div style="background:linear-gradient(135deg,#040d1a,#071e38);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+    <div style="font-size:20px;">⚙️</div>
+    <div style="font-size:19px;font-weight:900;color:white;text-decoration:underline;text-underline-offset:3px;">الإعدادات</div>
+    <button onclick="goPage('pageMain')" style="background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);border-radius:7px;color:white;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;">🏠 رئيسية</button>
+  </div>
+
+  <div style="padding:14px;max-width:480px;margin:0 auto;padding-bottom:30px;">
+
+    <!-- ══ قسم 0: الحساب ══ -->
+    <div style="background:rgba(96,160,255,0.08);border:1.5px solid rgba(96,160,255,0.3);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;">👤 الحساب</div>
+      <div id="stAccountEmail" style="color:rgba(255,255,255,0.6);font-size:12px;margin-bottom:10px;text-align:right;">—</div>
+      <button onclick="dbLoad()"
+        style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:white;cursor:pointer;margin-bottom:8px;">
+        🔄 تحميل البيانات من السحابة
+      </button>
+      <button id="btnGoAdmin" onclick="goPage('pageAdmin')" style="display:none;width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:#2a5aa0;border:1.5px solid #4a80d0;color:white;cursor:pointer;margin-bottom:8px;">
+        ➕ إدارة حسابات الشركات
+      </button>
+      <button onclick="doLogout()"
+        style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(251,113,133,.15);border:1.5px solid rgba(251,113,133,.4);color:#fb7185;cursor:pointer;">
+        🚪 تسجيل الخروج
+      </button>
+    </div>
+
+    <!-- ══ قسم 1: معلومات الشركة ══ -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:12px;display:flex;align-items:center;gap:6px;">🏢 معلومات الشركة</div>
+
+      <div style="margin-bottom:10px;">
+        <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">اسم الشركة / الصيرفة</div>
+        <input type="text" id="stCompName" placeholder="المنير للصيرفة"
+          style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;color:var(--text);direction:rtl;">
+      </div>
+
+      <div>
+        <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">تاريخ بداية العمل بالبرنامج</div>
+        <input type="date" id="stStartDate"
+          style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:ltr;text-align:center;">
+      </div>
+    </div>
+
+    <!-- ══ قسم 2: الرصيد الافتتاحي للقاصة ══ -->
+    <div style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(240,192,64,0.3);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="color:var(--gold);font-size:13px;font-weight:900;margin-bottom:4px;display:flex;align-items:center;gap:6px;">🏦 الرصيد الافتتاحي للقاصة</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-bottom:12px;text-align:right;">هذا هو رصيد القاصة في بداية استخدام البرنامج</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="color:var(--gold);font-size:11px;font-weight:700;margin-bottom:5px;text-align:center;">دولار $</div>
+          <input type="number" id="stInitD" min="0" step="0.01"
+            style="width:100%;background:#071e38;border:2px solid rgba(251,191,36,.5);border-radius:7px;padding:10px 8px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;color:var(--text);text-align:center;direction:ltr;">
+        </div>
+        <div>
+          <div style="color:var(--accent);font-size:11px;font-weight:700;margin-bottom:5px;text-align:center;">دينار IQD</div>
+          <input type="number" id="stInitDin" min="0" step="1"
+            style="width:100%;background:#071e38;border:2px solid rgba(34,211,238,.5);border-radius:7px;padding:10px 8px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;color:var(--text);text-align:center;direction:ltr;">
+        </div>
+      </div>
+
+      <!-- عرض الرصيد الحالي -->
+      <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px;margin-top:10px;">
+        <div style="color:rgba(255,255,255,0.5);font-size:10px;text-align:center;margin-bottom:5px;">الرصيد الحالي للقاصة (بعد جميع الحركات)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:rgba(240,192,64,0.1);border-radius:6px;padding:6px;text-align:center;">
+            <div style="color:#f0c040;font-size:10px;font-weight:600;">$</div>
+            <div id="stCurD" style="color:#f0e060;font-size:13px;font-weight:900;direction:ltr;">—</div>
+          </div>
+          <div style="background:rgba(96,216,160,0.1);border-radius:6px;padding:6px;text-align:center;">
+            <div style="color:#60d8a0;font-size:10px;font-weight:600;">IQD</div>
+            <div id="stCurDin" style="color:#80ffb8;font-size:12px;font-weight:900;direction:ltr;">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ قسم 3: سعر الصرف الافتراضي ══ -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:12px;display:flex;align-items:center;gap:6px;">💱 سعر الصرف الافتراضي</div>
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">سعر الصرف (دينار لكل دولار)</div>
+      <input type="number" id="stRate" min="1" step="1"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:10px 12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:900;color:var(--text);text-align:center;direction:ltr;">
+    </div>
+
+    <!-- ══ قسم 4: إدارة العملاء ══ -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:12px;display:flex;align-items:center;gap:6px;">👥 إضافة عميل جديد</div>
+
+      <div style="display:grid;grid-template-columns:70px 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:4px;text-align:center;">رقم</div>
+          <input type="text" id="stNewAmilId" placeholder="تلقائي" readonly
+            style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:8px 4px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text-dim);text-align:center;direction:ltr;">
+        </div>
+        <div>
+          <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:4px;text-align:right;">اسم العميل</div>
+          <input type="text" id="stNewAmilName" placeholder="أدخل اسم العميل"
+            style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:8px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;">
+        </div>
+      </div>
+
+      <!-- الرصيد الافتتاحي للعميل — 4 خانات منفصلة -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">
+        <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:10px;text-align:right;">الرصيد الافتتاحي (اختياري)</div>
+
+        <!-- دولار -->
+        <div style="margin-bottom:8px;">
+          <div style="color:var(--gold);font-size:10px;font-weight:900;margin-bottom:5px;text-align:center;letter-spacing:1px;">── دولار $ ──</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div>
+              <div style="color:var(--accent);font-size:10px;font-weight:700;margin-bottom:3px;text-align:center;">له (يدين لنا) $</div>
+              <input type="text" inputmode="decimal" id="stNewAmilDL" value="0" oninput="fmtInput(this)"
+                style="width:100%;background:var(--bg2);border:1.5px solid rgba(74,222,128,.3);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;color:var(--accent);text-align:center;direction:ltr;">
+            </div>
+            <div>
+              <div style="color:var(--red);font-size:10px;font-weight:700;margin-bottom:3px;text-align:center;">له علينا (ندين له) $</div>
+              <input type="text" inputmode="decimal" id="stNewAmilDA" value="0" oninput="fmtInput(this)"
+                style="width:100%;background:var(--bg2);border:1.5px solid rgba(248,113,113,.3);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;color:var(--red);text-align:center;direction:ltr;">
+            </div>
+          </div>
+        </div>
+
+        <!-- دينار -->
+        <div>
+          <div style="color:var(--accent);font-size:10px;font-weight:900;margin-bottom:5px;text-align:center;letter-spacing:1px;">── دينار IQD ──</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div>
+              <div style="color:var(--accent);font-size:10px;font-weight:700;margin-bottom:3px;text-align:center;">له (يدين لنا) IQD</div>
+              <input type="text" inputmode="numeric" id="stNewAmilDinL" value="0" oninput="fmtInput(this)"
+                style="width:100%;background:var(--bg2);border:1.5px solid rgba(74,222,128,.3);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;color:var(--accent);text-align:center;direction:ltr;">
+            </div>
+            <div>
+              <div style="color:var(--red);font-size:10px;font-weight:700;margin-bottom:3px;text-align:center;">له علينا (ندين له) IQD</div>
+              <input type="text" inputmode="numeric" id="stNewAmilDinA" value="0" oninput="fmtInput(this)"
+                style="width:100%;background:var(--bg2);border:1.5px solid rgba(248,113,113,.3);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;color:var(--red);text-align:center;direction:ltr;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="stAddAmil()"
+        style="width:100%;padding:10px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:#2a5aa0;border:none;color:white;cursor:pointer;margin-bottom:10px;">
+        ➕ إضافة العميل
+      </button>
+
+      <!-- قائمة العملاء -->
+      <div style="color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;margin-bottom:6px;text-align:right;">العملاء الحاليين (<span id="stAmilCount">0</span>)</div>
+      <div id="stAmilList" style="max-height:200px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- ══ قسم 5: حذف البيانات ══ -->
+    <div style="background:rgba(251,113,133,.06);border:1px solid rgba(251,113,133,.2);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="color:#ff8080;font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;">⚠️ منطقة الخطر</div>
+      <button onclick="stResetMoves()"
+        style="width:100%;padding:10px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(200,50,50,0.3);border:1.5px solid #cc4444;color:#ffaaaa;cursor:pointer;margin-bottom:8px;">
+        🗑 مسح جميع حركات الصندوق
+      </button>
+      <button onclick="stResetAll()"
+        style="width:100%;padding:10px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(200,50,50,0.5);border:1.5px solid #cc2222;color:white;cursor:pointer;">
+        ⚠️ إعادة ضبط المصنع (مسح كل شيء)
+      </button>
+    </div>
+
+    <!-- زر الحفظ -->
+    <button onclick="stSave()"
+      style="width:100%;padding:14px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;background:linear-gradient(135deg,#2a7a3a,#1a5a28);border:2px solid #40c060;color:white;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.3);">
+      💾 حفظ الإعدادات
+    </button>
+
+  </div>
+</div>
+
+<!-- ======================================================
+     PAGE — ADMIN (إدارة حسابات الشركات) — للمالك فقط
+====================================================== -->
+<div id="pageAdmin" class="page">
+  <div style="background:linear-gradient(135deg,#040d1a,#071e38);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+    <button onclick="goPage('pageSettings')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;">↩ رجوع</button>
+    <div style="font-size:16px;font-weight:900;color:var(--accent);">إدارة حسابات الشركات</div>
+    <div style="width:50px;"></div>
+  </div>
+
+  <div style="padding:14px;max-width:480px;margin:0 auto;padding-bottom:30px;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:12px;">➕ إنشاء حساب شركة جديد</div>
+
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">اسم الشركة</div>
+      <input type="text" id="adminBizName" placeholder="مثال: صيرفة الأمانة"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:rtl;margin-bottom:10px;">
+
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">إيميل صاحب الحساب</div>
+      <input type="email" id="adminBizEmail" placeholder="owner@example.com"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:14px;">
+
+      <button id="btnCreateTenant" onclick="adminCreateTenant()"
+        style="width:100%;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;background:var(--accent2);border:none;color:white;cursor:pointer;">
+        ➕ إنشاء الحساب
+      </button>
+      <div id="adminCreateErr" style="color:var(--red);font-size:12px;text-align:center;margin-top:8px;"></div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:var(--gold);font-size:13px;font-weight:900;margin-bottom:12px;">🔑 تغيير كلمة مرور شركة موجودة</div>
+
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">إيميل الشركة</div>
+      <input type="email" id="adminResetEmail" placeholder="owner@example.com"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:14px;">
+
+      <button id="btnResetTenant" onclick="adminResetPassword()"
+        style="width:100%;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;background:var(--gold);border:none;color:var(--bg);cursor:pointer;">
+        🔑 توليد كلمة مرور جديدة
+      </button>
+      <div id="adminResetErr" style="color:var(--red);font-size:12px;text-align:center;margin-top:8px;"></div>
+    </div>
+
+    <div id="adminResultBox" style="display:none;background:rgba(34,211,238,.08);border:1.5px solid rgba(34,211,238,.35);border-radius:var(--radius-md);padding:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:10px;">✅ تم إنشاء الحساب — انسخ وأرسل هذي البيانات للزبون</div>
+      <div style="background:var(--bg3);border-radius:7px;padding:10px;margin-bottom:8px;">
+        <div style="color:var(--text-dim);font-size:10px;">الإيميل</div>
+        <div id="adminResultEmail" style="color:var(--text);font-size:13px;font-weight:700;direction:ltr;text-align:left;"></div>
+      </div>
+      <div style="background:var(--bg3);border-radius:7px;padding:10px;margin-bottom:10px;">
+        <div style="color:var(--text-dim);font-size:10px;">كلمة المرور المؤقتة</div>
+        <div id="adminResultPassword" style="color:var(--gold);font-size:15px;font-weight:900;direction:ltr;text-align:left;"></div>
+      </div>
+      <button onclick="adminCopyResult()" style="width:100%;padding:10px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);cursor:pointer;">📋 نسخ البيانات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     MODAL — رمز الحماية
+====================================================== -->
+<div class="modal-ov" id="modalPin">
+  <div class="modal-box dark" style="background:#1a1a2a;border:2px solid #f0c040;">
+    <h3 class="modal-h3 dark" style="color:#f0c040;">🔐 رمز الحماية</h3>
+    <div style="color:rgba(255,255,255,0.5);font-size:12px;text-align:center;margin-bottom:14px;" id="pinLabel">أدخل رمز الحماية للمتابعة</div>
+
+    <!-- أرقام مدخلة -->
+    <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px;">
+      <div id="pinDot0" style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);transition:all .2s;"></div>
+      <div id="pinDot1" style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);transition:all .2s;"></div>
+      <div id="pinDot2" style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);transition:all .2s;"></div>
+      <div id="pinDot3" style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);transition:all .2s;"></div>
+    </div>
+
+    <!-- لوحة الأرقام -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <button onclick="pinPress('1')" class="pin-btn">1</button>
+      <button onclick="pinPress('2')" class="pin-btn">2</button>
+      <button onclick="pinPress('3')" class="pin-btn">3</button>
+      <button onclick="pinPress('4')" class="pin-btn">4</button>
+      <button onclick="pinPress('5')" class="pin-btn">5</button>
+      <button onclick="pinPress('6')" class="pin-btn">6</button>
+      <button onclick="pinPress('7')" class="pin-btn">7</button>
+      <button onclick="pinPress('8')" class="pin-btn">8</button>
+      <button onclick="pinPress('9')" class="pin-btn">9</button>
+      <button onclick="pinClear()" class="pin-btn" style="background:rgba(200,50,50,0.3);color:#ff8080;">مسح</button>
+      <button onclick="pinPress('0')" class="pin-btn">0</button>
+      <button onclick="pinDelete()" class="pin-btn" style="font-size:18px;">⌫</button>
+    </div>
+
+    <button class="modal-close-btn" style="background:#1a1a2a;color:#666;" onclick="pinCancel()">إلغاء</button>
+  </div>
+</div>
+
+<!-- ======================================================
+     JAVASCRIPT — SHARED STATE
+====================================================== -->
+<script>
+/* ============================================================
+   STATE — كل البيانات هنا مشتركة بين الصفحات
+============================================================ */
+const STATE = {
+  moves: [],
+  sayarfaMoves: [],
+  initBalD:   0,
+  initBalDin: 0,
+  settings: {
+    compName:    'المنير',
+    startDate:   '',
+    defaultRate: 1480,
+    initBalD:    0,
+    initBalDin:  0,
+  },
+  customers: [],
+  selectedAmilId: null,
+  krCurrency: 'dolar',
+  lastSand: 1000,
+};
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+/* تاريخ الصفحات للزر رجوع */
+const pageHistory = ['pageLogin'];
+
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='pageKashf')    krRender();
+  if(id==='pageArsada')   arRender();
+  if(id==='pageSandooq')  sReset();
+  if(id==='pageSayarfa')  sfOpen();
+  if(id==='pageKhulasa')  khOpen();
+  if(id==='pageSettings') stOpen();
+  // أضف للتاريخ
+  if(id !== pageHistory[pageHistory.length-1]){
+    pageHistory.push(id);
+    history.pushState({ page: id }, '', '');
+  }
+}
+
+// زر الرجوع — يرجع للصفحة السابقة
+window.addEventListener('popstate', ()=>{
+  pageHistory.pop();
+  const prev = pageHistory[pageHistory.length-1] || 'pageMain';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(prev).classList.add('active');
+  if(prev==='pageKashf')   krRender();
+  if(prev==='pageArsada')  arRender();
+  if(prev==='pageKhulasa') khOpen();
+});
+
+// عند أول تحميل
+window.addEventListener('load', ()=>{
+  history.pushState({ page: pageHistory[0] }, '', '');
+});
+
+/* ============================================================
+   UTILS
+============================================================ */
+function fmt(n){ return n?Number(n).toLocaleString():'0'; }
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+/* ============================================================
+   CLOCK
+============================================================ */
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours(), m=String(now.getMinutes()).padStart(2,'0');
+  const ampm=h>=12?'م':'ص'; const h12=h%12||12;
+  const days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const d=String(now.getDate()).padStart(2,'0');
+  const mo=String(now.getMonth()+1).padStart(2,'0');
+  const yr=now.getFullYear();
+  const elTime=document.getElementById('sTbTime');
+  const elDate=document.getElementById('sTbDate');
+  const elMain=document.getElementById('mainDate');
+  if(elTime) elTime.textContent=`${h12}:${m} ${ampm}`;
+  if(elDate) elDate.textContent=`${d}/${mo}/${yr}`;
+  if(elMain) elMain.innerHTML=`${days[now.getDay()]}<br>${d}/${mo}/${yr}`;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+/* ============================================================
+   PAGE 2 — SANDOOQ
+============================================================ */
+let sCurIdx=0;
+
+function sUpdateUI(){
+  const tot=STATE.moves.length;
+  const elTot  = document.getElementById('sTotRec');
+  const elCur  = document.getElementById('sCurIdx');
+  const elRec  = document.getElementById('sRecNum');
+  const hasCur = sCurIdx >= 0 && sCurIdx < tot;
+  if(elTot)  elTot.textContent  = tot;
+  if(elCur)  elCur.textContent  = hasCur ? sCurIdx+1 : 0;
+  if(elRec)  elRec.textContent  = hasCur ? sCurIdx+1 : '-';
+  if(hasCur) sLoad(STATE.moves[sCurIdx]);
+}
+
+function sLoad(r){
+  document.getElementById('sNoa').value=r.noa||'';
+  document.getElementById('sTarikh').value=r.tarikh||'';
+  document.getElementById('sRaqm').value=r.raqm||'';
+  document.getElementById('sHesab').value=r.hesab||'';
+  document.getElementById('sMabD').value=(r.mabD||0).toLocaleString('en-US');
+  document.getElementById('sMabDin').value=(r.mabDin||0).toLocaleString('en-US');
+  document.getElementById('sJiha').value=r.jiha||'';
+  document.getElementById('sSak').value=r.sak||'';
+  document.getElementById('sNotes').value=r.notes||'';
+  document.getElementById('sAmilNm').value=r.amilName||'';
+  document.getElementById('sAmilRaqm').value=r.amilId||'';
+  STATE.selectedAmilId=r.amilId||null;
+  if(r.noa) setNoa(r.noa); else checkAmilVisibility();
+  if(r.amilId) showAmilBal(r.amilId, r.noa, r.mabD||0, r.mabDin||0);
+}
+
+function sGet(){
+  // إذا كنا نعدّل سجل موجود فعلاً — لازم نحافظ على dbId حتى نحدّثه (PATCH)
+  // بدل ما ننشئ سجل مكرر جديد (POST) بقاعدة البيانات
+  const existing = sCurIdx < STATE.moves.length ? STATE.moves[sCurIdx] : null;
+  return {
+    noa:       document.getElementById('sNoa').value,
+    tarikh:    document.getElementById('sTarikh').value,
+    raqm:      document.getElementById('sRaqm').value,
+    hesab:     document.getElementById('sHesab').value,
+    mabD:      getRaw('sMabD'),
+    mabDin:    getRaw('sMabDin'),
+    jiha:      document.getElementById('sJiha').value,
+    sak:       document.getElementById('sSak').value,
+    notes:     document.getElementById('sNotes').value,
+    amilId:    STATE.selectedAmilId,
+    amilName:  document.getElementById('sAmilNm').value,
+    dbId:      existing ? (existing.dbId || existing.id) : undefined,
+    id:        existing ? existing.id : undefined,
+  };
+}
+
+// الحسابات اللي ما تحتاج عميل
+const NO_AMIL_HESAB = ['إيرادات عامة', 'مصاريف عامة'];
+
+function onNoa(){
+  checkAmilVisibility();
+}
+
+function onHesabChange(){
+  checkAmilVisibility();
+}
+
+function checkAmilVisibility(){
+  const noa   = document.getElementById('sNoa').value;
+  const hesab = document.getElementById('sHesab').value;
+  const noNeedAmil = NO_AMIL_HESAB.includes(hesab);
+  const hasNoa     = noa === 'قبض' || noa === 'صرف';
+
+  const ac = document.getElementById('sAmilCard');
+  const bc = document.getElementById('sBalCard');
+
+  // يظهر العميل فقط إذا: في نوع حركة + الحساب مو من النوع اللي ما يحتاج عميل
+  const showAmil = hasNoa && !noNeedAmil;
+  if(ac) ac.style.display = showAmil ? 'block' : 'none';
+  if(!showAmil && bc) bc.style.display = 'none';
+
+  // إذا اختار حساب ما يحتاج عميل — امسح العميل المختار
+  if(noNeedAmil){
+    const elNm   = document.getElementById('sAmilNm');
+    const elRaqm = document.getElementById('sAmilRaqm');
+    if(elNm)   elNm.value   = '';
+    if(elRaqm) elRaqm.value = '';
+    STATE.selectedAmilId = null;
+  }
+}
+
+function setNoa(val){
+  const prev = document.getElementById('sNoa').value;
+  document.getElementById('sNoa').value = val;
+
+  const bQ = document.getElementById('btnQabdh');
+  const bS = document.getElementById('btnSarf');
+  if(bQ && bS){
+    if(val==='قبض'){
+      bQ.style.background='#2d8a3e'; bQ.style.borderColor='#60c870'; bQ.style.color='white';
+      bS.style.background='rgba(255,255,255,0.1)'; bS.style.borderColor='rgba(255,255,255,0.3)'; bS.style.color='white';
+    } else {
+      bS.style.background='#c05020'; bS.style.borderColor='#ff8050'; bS.style.color='white';
+      bQ.style.background='rgba(255,255,255,0.1)'; bQ.style.borderColor='rgba(255,255,255,0.3)'; bQ.style.color='white';
+    }
+  }
+
+  // إذا تغير النوع — صفّر المبالغ أولاً ثم أعد الحساب
+  if(prev && prev !== val){
+    document.getElementById('sMabD').value   = '0';
+    document.getElementById('sMabDin').value = '0';
+    // صفّر عرض الأرصدة مباشرة بدون حساب
+    ['sPrevD','sPrevDin','sAfterD','sAfterDin'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.textContent='0';
+    });
+    toast('⚠️ تم تغيير نوع الحركة — أعد إدخال المبلغ');
+  }
+
+  checkAmilVisibility();
+  // استدعي calcAfter فقط إذا في مبلغ فعلي
+  if(getRaw('sMabD') > 0 || getRaw('sMabDin') > 0) calcAfter();
+}
+
+function calcAfter(){
+  if(!STATE.selectedAmilId) return;
+  const c=STATE.customers.find(x=>x.id===STATE.selectedAmilId);
+  if(!c) return;
+  const noa=document.getElementById('sNoa').value;
+  if(!noa) return;
+  const mabD=getRaw('sMabD');
+  const mabDin=getRaw('sMabDin');
+  const curD  = c.dL - c.dA;
+  const curDin= c.dinL - c.dinA;
+
+  // عرض الرصيد الحالي
+  document.getElementById('sPrevD').textContent   = curD.toLocaleString();
+  document.getElementById('sPrevDin').textContent = curDin.toLocaleString();
+
+  // حساب بعد الحركة
+  let afterD=curD, afterDin=curDin;
+  if(noa==='قبض'){ afterD-=mabD; afterDin-=mabDin; }
+  else            { afterD+=mabD; afterDin+=mabDin; }
+
+  const elD   = document.getElementById('sAfterD');
+  const elDin = document.getElementById('sAfterDin');
+  const lD    = document.getElementById('sAfterDLabel');
+  const lDin  = document.getElementById('sAfterDinLabel');
+
+  elD.textContent   = afterD.toLocaleString();
+  elDin.textContent = afterDin.toLocaleString();
+
+  // لون أخضر = رصيد إيجابي، أحمر = سالب
+  elD.style.color   = afterD   >= 0 ? '#60ff90' : '#ff6060';
+  elDin.style.color = afterDin >= 0 ? '#60ff90' : '#ff6060';
+
+  // عنوان توضيحي
+  const label = noa==='قبض' ? 'بعد القبض' : 'بعد الصرف';
+  if(lD)   lD.textContent   = label + ' $';
+  if(lDin) lDin.textContent = label + ' دينار';
+}
+
+function showAmilBal(id, noa, mabD, mabDin){
+  const c=STATE.customers.find(x=>x.id===parseInt(id));
+  if(!c) return;
+  document.getElementById('sBalCard').style.display='block';
+  const prevD  = c.dL - c.dA;
+  const prevDin= c.dinL - c.dinA;
+  document.getElementById('sPrevD').textContent  = prevD.toLocaleString();
+  document.getElementById('sPrevDin').textContent= prevDin.toLocaleString();
+  let afterD=prevD, afterDin=prevDin;
+  if(noa==='قبض'){ afterD-=mabD; afterDin-=mabDin; }
+  else            { afterD+=mabD; afterDin+=mabDin; }
+  document.getElementById('sAfterD').textContent  = afterD.toLocaleString();
+  document.getElementById('sAfterDin').textContent= afterDin.toLocaleString();
+}
+
+function openAmilModal(){
+  const list=document.getElementById('amilList');
+  list.innerHTML='';
+  STATE.customers.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='modal-opt';
+    b.textContent=`${c.name}`;
+    b.onclick=()=>{ selAmil(c.id); };
+    list.appendChild(b);
+  });
+  openModal('modalAmil');
+}
+
+function selAmil(id){
+  const c=STATE.customers.find(x=>x.id===id);
+  if(!c) return;
+
+  // إذا تغير العميل — صفّر المبالغ
+  if(STATE.selectedAmilId && STATE.selectedAmilId !== id){
+    document.getElementById('sMabD').value   = '0';
+    document.getElementById('sMabDin').value = '0';
+    toast('⚠️ تم تغيير العميل — أعد إدخال المبلغ');
+  }
+
+  STATE.selectedAmilId=id;
+  document.getElementById('sAmilNm').value=c.name;
+  document.getElementById('sAmilRaqm').value=c.id;
+  closeModal('modalAmil');
+  const noa=document.getElementById('sNoa').value;
+  const mabD=getRaw('sMabD');
+  const mabDin=getRaw('sMabDin');
+  showAmilBal(id, noa, mabD, mabDin);
+}
+
+function selHesab(v){
+  document.getElementById('sHesab').value=v;
+  closeModal('modalHesab');
+  onHesabChange();
+}
+
+function selJiha(v){
+  document.getElementById('sJiha').value = v;
+  // لون مختلف إذا اختار زبون
+  const el = document.getElementById('sJiha');
+  el.classList.toggle('customer', v !== 'الصندوق');
+  closeModal('modalJiha');
+}
+
+function openJihaModal(){
+  document.getElementById('jihaSearch').value='';
+  filterJihaList();
+  openModal('modalJiha');
+}
+
+function filterJihaList(){
+  const q=document.getElementById('jihaSearch').value.trim();
+  const list=document.getElementById('jihaList');
+  const filtered=q
+    ? STATE.customers.filter(c=>c.name.includes(q))
+    : STATE.customers;
+  list.innerHTML=filtered.map(c=>
+    `<button class="modal-opt" onclick="selJiha('${c.name.replace(/'/g,"\\'")}')">
+       <span style="color:#888;font-size:11px;margin-left:6px;">عميل</span>${c.name}
+     </button>`
+  ).join('');
+}
+
+// ريست كل حقول الصندوق
+function sReset(){
+  ['sNoa','sHesab','sSak','sAmilNm','sAmilRaqm'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  // جهة الصرف الافتراضية = الصندوق
+  const elJiha=document.getElementById('sJiha');
+  if(elJiha){
+    elJiha.value='الصندوق';
+    elJiha.classList.remove('customer');
+  }
+  const today=new Date();
+  const dd=String(today.getDate()).padStart(2,'0');
+  const mm=String(today.getMonth()+1).padStart(2,'0');
+  const elTarikh=document.getElementById('sTarikh');
+  if(elTarikh) elTarikh.value=`${today.getFullYear()}-${mm}-${dd}`;
+  const elD=document.getElementById('sMabD');     if(elD) elD.value='0';
+  const elDin=document.getElementById('sMabDin'); if(elDin) elDin.value='0';
+  const elNt=document.getElementById('sNotes');   if(elNt) elNt.value='';
+  const elAC=document.getElementById('sAmilCard'); if(elAC) elAC.style.display='none';
+  const elBC=document.getElementById('sBalCard');  if(elBC) elBC.style.display='none';
+  STATE.selectedAmilId=null;
+  sCurIdx=STATE.moves.length;
+  // رقم سند تلقائي — يُحسب من أعلى رقم موجود فعلياً بالسجلات (وليس عداد بالذاكرة)
+  // حتى ما يتكرر بعد أي تحديث للصفحة أو فتح من جهاز ثاني
+  STATE.lastSand = getNextSandNumber();
+  const elRaqm=document.getElementById('sRaqm');
+  if(elRaqm) elRaqm.value=STATE.lastSand;
+}
+
+function getNextSandNumber(){
+  let max = 1000;
+  STATE.moves.forEach(r=>{
+    const n = parseInt(r.raqm, 10);
+    if(!isNaN(n) && n > max) max = n;
+  });
+  return max + 1;
+}
+
+function sNew(){
+  sReset();
+  toast('✅ سجل جديد جاهز');
+}
+
+let _pendingMove = null; // الحركة المعلقة للتأكيد
+
+function sSave(){
+  if(_saving){ toast('⏳ فيه حفظ سابق لا يزال قيد التنفيذ — انتظر لحظة'); return; }
+  const r = sGet();
+  if(!r.noa)              { toast('⚠️ اختر نوع الحركة'); return; }
+  if(!r.mabD && !r.mabDin){ toast('⚠️ أدخل مبلغ');      return; }
+
+  // احفظ الحركة مؤقتاً
+  _pendingMove = r;
+
+  // اعرض موديل التأكيد
+  const isQabdh = r.noa === 'قبض';
+  const noa = document.getElementById('cfNoa');
+  noa.textContent = isQabdh ? '⬇️ قبض' : '⬆️ صرف';
+  noa.style.background = isQabdh ? 'rgba(74,222,128,.15)' : 'rgba(248,113,113,.15)';
+  noa.style.color       = isQabdh ? 'var(--accent)'       : 'var(--red)';
+  noa.style.border      = isQabdh ? '1.5px solid rgba(74,222,128,.4)' : '1.5px solid rgba(248,113,113,.4)';
+
+  document.getElementById('cfRaqm').textContent   = r.raqm   || '—';
+  document.getElementById('cfTarikh').textContent = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '—';
+  document.getElementById('cfHesab').textContent  = r.hesab  || '—';
+  document.getElementById('cfJiha').textContent   = r.jiha   || '—';
+  document.getElementById('cfMabD').textContent   = (r.mabD  ||0).toLocaleString();
+  document.getElementById('cfMabDin').textContent = (r.mabDin||0).toLocaleString();
+
+  const amilRow = document.getElementById('cfAmilRow');
+  if(r.amilName){
+    amilRow.style.display = 'flex';
+    document.getElementById('cfAmil').textContent = r.amilName;
+  } else {
+    amilRow.style.display = 'none';
+  }
+
+  openModal('modalConfirmSave');
+}
+
+let _saving = false; // يمنع الضغط المزدوج أثناء الحفظ
+
+async function confirmAndSave(){
+  if(_saving) return; // ضغطة مزدوجة أثناء الحفظ — تجاهلها
+  const r = _pendingMove;
+  if(!r) return;
+
+  const btn = document.getElementById('btnConfirmSave');
+  _saving = true;
+  if(btn){ btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = '⏳ جاري الحفظ...'; }
+
+  const wasEdit = sCurIdx < STATE.moves.length;
+  const old = wasEdit ? STATE.moves[sCurIdx] : null;
+
+  // إذا تعديل على حركة قديمة — أرجع تأثيرها أولاً
+  if(wasEdit) reverseAllEffects(old);
+
+  // طبّق تأثير الحركة الجديدة (تحديث تفاؤلي محلي)
+  applyAllEffects(r);
+  if(wasEdit){
+    STATE.moves[sCurIdx] = r;
+  } else {
+    STATE.moves.push(r);
+    sCurIdx = STATE.moves.length - 1;
+  }
+  sUpdateUI();
+
+  // احفظ فعلياً بقاعدة البيانات وانتظر النتيجة
+  const ok = await dbSaveMove(r);
+
+  if(!ok){
+    // فشل الحفظ — تراجع عن كل التغييرات المحلية حتى لا تختلف الشاشة عن قاعدة البيانات
+    reverseAllEffects(r);
+    if(wasEdit){
+      applyAllEffects(old);
+      STATE.moves[sCurIdx] = old;
+    } else {
+      STATE.moves.pop();
+      sCurIdx = STATE.moves.length;
+    }
+    sUpdateUI();
+    toast('❌ لم يتم الحفظ — تحقق من الاتصال وحاول مرة ثانية');
+    _saving = false;
+    if(btn){ btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '✅ تأكيد وحفظ'; }
+    closeModal('modalConfirmSave');
+    return;
+  }
+
+  // حدّث أرصدة العملاء المتأثرين في DB
+  if(r.amilId){
+    const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
+    if(c) await dbUpdateCustomerBal(c);
+  }
+  const jihaC = STATE.customers.find(x=>x.name===r.jiha);
+  if(jihaC) await dbUpdateCustomerBal(jihaC);
+
+  toast('✅ تم الحفظ وتحديث الأرصدة');
+  _pendingMove = null;
+  _saving = false;
+  if(btn){ btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '✅ تأكيد وحفظ'; }
+  closeModal('modalConfirmSave');
+  sReset();
+}
+
+// --------- تطبيق تأثير الحركة على العميل (الحساب الرئيسي) وجهة الصرف ---------
+function applyAllEffects(r){
+  // 1) العميل في الحساب الرئيسي
+  if(r.amilId){
+    const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
+    if(c) applyToCustomer(c, r.noa, r.mabD, r.mabDin);
+  }
+  // 2) جهة الصرف — إذا كانت زبون
+  const jihaC = STATE.customers.find(x=>x.name===r.jiha);
+  if(jihaC){
+    // جهة الصرف تأثيرها معكوس:
+    // قبض من العميل الرئيسي = صرف لجهة الصرف (يزيد رصيدها)
+    // صرف للعميل الرئيسي  = قبض من جهة الصرف (ينقص رصيدها)
+    const jihaEffect = r.noa==='قبض' ? 'صرف' : 'قبض';
+    applyToCustomer(jihaC, jihaEffect, r.mabD, r.mabDin);
+  }
+  // 3) إذا جهة الصرف = الصندوق → يتغير رصيد القاصة
+  if(r.jiha==='الصندوق'){
+    if(r.noa==='قبض'){
+      STATE.initBalD   += r.mabD;
+      STATE.initBalDin += r.mabDin;
+    } else if(r.noa==='صرف'){
+      STATE.initBalD   -= r.mabD;
+      STATE.initBalDin -= r.mabDin;
+    }
+  }
+}
+
+function reverseAllEffects(r){
+  if(r.amilId){
+    const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
+    if(c){
+      const rev = r.noa==='قبض' ? 'صرف' : 'قبض';
+      applyToCustomer(c, rev, r.mabD, r.mabDin);
+    }
+  }
+  const jihaC = STATE.customers.find(x=>x.name===r.jiha);
+  if(jihaC){
+    const jihaRev = r.noa==='قبض' ? 'قبض' : 'صرف';
+    applyToCustomer(jihaC, jihaRev, r.mabD, r.mabDin);
+  }
+  if(r.jiha==='الصندوق'){
+    if(r.noa==='قبض'){
+      STATE.initBalD   -= r.mabD;
+      STATE.initBalDin -= r.mabDin;
+    } else if(r.noa==='صرف'){
+      STATE.initBalD   += r.mabD;
+      STATE.initBalDin += r.mabDin;
+    }
+  }
+}
+
+// تغيير رصيد زبون حسب نوع الحركة
+// المنطق المحاسبي:
+//   dL = له  = العميل يدين لنا (net+)
+//   dA = عليه = نحن ندين له (net-)
+//   net = dL - dA
+//
+//   قبض: العميل دفع لنا → ديننا له نقص، أو ديوننا له نقصت
+//        → dL ينقص أولاً، إذا صفر dA يزيد (صرنا ندينه)
+//   صرف: دفعنا للعميل → ديننا له زادت، أو ديونه لنا زادت
+//        → dA ينقص أولاً، إذا صفر dL يزيد
+function applyToCustomer(c, noa, mabD, mabDin){
+  if(noa==='قبض'){
+    // العميل دفع لنا — net ينقص (dL ينقص أو dA يزيد)
+    if(mabD > 0){
+      if(c.dL >= mabD){ c.dL -= mabD; }
+      else { const rem = mabD - c.dL; c.dL = 0; c.dA += rem; }
+    }
+    if(mabDin > 0){
+      if(c.dinL >= mabDin){ c.dinL -= mabDin; }
+      else { const rem = mabDin - c.dinL; c.dinL = 0; c.dinA += rem; }
+    }
+  } else if(noa==='صرف'){
+    // نحن دفعنا للعميل — net يزيد (dA ينقص أو dL يزيد)
+    if(mabD > 0){
+      if(c.dA >= mabD){ c.dA -= mabD; }
+      else { const rem = mabD - c.dA; c.dA = 0; c.dL += rem; }
+    }
+    if(mabDin > 0){
+      if(c.dinA >= mabDin){ c.dinA -= mabDin; }
+      else { const rem = mabDin - c.dinA; c.dinA = 0; c.dinL += rem; }
+    }
+  }
+}
+
+// دوال قديمة لا تزال تُستخدم من sDel
+function applyMove(c,r)  { applyToCustomer(c, r.noa, r.mabD, r.mabDin); }
+function reverseMove(c,r){ applyToCustomer(c, r.noa==='قبض'?'صرف':'قبض', r.mabD, r.mabDin); }
+
+function sDel(){
+  if(!STATE.moves.length){ toast('⚠️ لا يوجد سجل'); return; }
+  requirePin('🗑 حذف الحركة الحالية', async ()=>{
+    if(!confirm('تأكيد حذف هذه الحركة؟')) return;
+    const r = STATE.moves[sCurIdx];
+    const rowId = r.dbId || r.id;
+
+    // أولاً: احذف من Supabase وانتظر
+    if(rowId){
+      try {
+        await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+      } catch(e){
+        toast('❌ فشل الحذف من قاعدة البيانات: ' + e.message);
+        console.error('sDel DB error:', e);
+        return; // وقف إذا فشل الحذف
+      }
+    }
+
+    // ثانياً: أرجع الأرصدة محلياً
+    reverseAllEffects(r);
+
+    // ثالثاً: حدّث أرصدة العملاء في DB
+    if(r.amilId){
+      const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
+      if(c) dbUpdateCustomerBal(c);
+    }
+    const jihaC2 = STATE.customers.find(x=>x.name===r.jiha);
+    if(jihaC2) dbUpdateCustomerBal(jihaC2);
+
+    // رابعاً: احفظ رصيد القاصة الجديد
+    await dbSaveSettings();
+
+    // أخيراً: امسح من STATE
+    STATE.moves.splice(sCurIdx,1);
+    if(sCurIdx>=STATE.moves.length) sCurIdx=Math.max(0,STATE.moves.length-1);
+    sReset();
+    toast('🗑 تم الحذف بنجاح');
+  });
+}
+
+function sNavFirst(){ if(STATE.moves.length){sCurIdx=0; sUpdateUI();} }
+function sNavLast() { if(STATE.moves.length){sCurIdx=STATE.moves.length-1; sUpdateUI();} }
+function sNavPrev() { if(sCurIdx>0){sCurIdx--; sUpdateUI();} }
+function sNavNext() { if(sCurIdx<STATE.moves.length-1){sCurIdx++; sUpdateUI();} }
+
+/* ============================================================
+   PAGE 3 — KASHF RASEED
+============================================================ */
+function krCur(cur){
+  STATE.krCurrency=cur;
+  document.getElementById('krBtnD').classList.toggle('act',   cur==='dolar');
+  document.getElementById('krBtnDin').classList.toggle('act', cur==='dinar');
+  document.getElementById('krTitle').textContent=
+    cur==='dolar'?'كشف رصيد الصندوق (دولار)':'كشف رصيد الصندوق (دينار)';
+  krRender();
+}
+
+function krRender(){
+  const isDolar=STATE.krCurrency==='dolar';
+  // ابدأ من الرصيد الافتتاحي فقط — الحركات تُضاف أدناه
+  const initBal=isDolar ? STATE.settings.initBalD : STATE.settings.initBalDin;
+  let raseed=initBal, totW=0, totS=0;
+
+  let html=`<div class="kr-card sabiq" onclick="krDetail({sand:'',date:'',name:'رصيد سابق',noa:'',wared:0,sader:0,raseed:${initBal},notes:''})">
+    <div class="kr-card-top">
+      <span class="kr-card-icon">📌</span>
+      <span class="kr-card-name">رصيد سابق</span>
+    </div>
+    <div class="kr-card-bottom">
+      <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">—</span></div>
+      <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">—</span></div>
+      <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${initBal<0?' neg':''}">${fmt(initBal)}</span></div>
+    </div>
+  </div>`;
+
+  STATE.moves.forEach((r,i)=>{
+    // فقط الحركات اللي جهة صرفها الصندوق تظهر بكشف الصندوق
+    if(r.jiha !== 'الصندوق') return;
+
+    const wared = isDolar
+      ? (r.noa==='قبض'?r.mabD:0)
+      : (r.noa==='قبض'?r.mabDin:0);
+    const sader = isDolar
+      ? (r.noa==='صرف'?r.mabD:0)
+      : (r.noa==='صرف'?r.mabDin:0);
+    if(!wared && !sader) return;
+    raseed+=wared-sader;
+    totW+=wared; totS+=sader;
+    const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'-';
+    const noaCls = r.noa==='قبض' ? 'qabdh' : 'sarf';
+    html+=`<div class="kr-card" onclick='krDetail(${JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared,sader,raseed,notes:r.notes})})'>
+      <div class="kr-card-top">
+        <span class="kr-card-noa ${noaCls}">${r.noa||'-'}</span>
+        <span class="kr-card-name">${r.amilName||r.hesab||'-'}</span>
+        <span class="kr-card-raqm">#${r.raqm||i+1}</span>
+      </div>
+      <div class="kr-card-bottom">
+        <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(wared)}</span></div>
+        <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">${fmt(sader)}</span></div>
+        <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${raseed<0?' neg':''}">${fmt(raseed)}</span></div>
+      </div>
+    </div>`;
+  });
+
+  // حركات الصيرفة تظهر بكشف الصندوق لأنها تأثر على القاصة
+  STATE.sayarfaMoves.forEach((r,i)=>{
+    let wared=0, sader=0;
+    if(isDolar){
+      if(r.type==='شراء') wared=r.mabD;   // اشترينا دولار = دولار يدخل القاصة
+      else                 sader=r.mabD;   // بعنا دولار   = دولار يطلع القاصة
+    } else {
+      if(r.type==='شراء') sader=r.mabDin; // اشترينا دولار = دينار يطلع القاصة
+      else                 wared=r.mabDin; // بعنا دولار   = دينار يدخل القاصة
+    }
+    if(!wared && !sader) return;
+    raseed+=wared-sader;
+    totW+=wared; totS+=sader;
+    const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'-';
+    const label=`${r.type} دولار · ${r.rate} IQD/$`;
+    html+=`<div class="kr-card sayarfa" onclick='krDetail(${JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared,sader,raseed,notes:r.notes||''})})'>
+      <div class="kr-card-top">
+        <span class="kr-card-icon">💱</span>
+        <span class="kr-card-name">${label}</span>
+        <span class="kr-card-raqm">صيرفة</span>
+      </div>
+      <div class="kr-card-bottom">
+        <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(wared)}</span></div>
+        <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">${fmt(sader)}</span></div>
+        <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${raseed<0?' neg':''}">${fmt(raseed)}</span></div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('krBody').innerHTML=html;
+  document.getElementById('krTotS').textContent=fmt(totS);
+  document.getElementById('krTotW').textContent=fmt(totW);
+  document.getElementById('krTotR').textContent=fmt(raseed);
+}
+
+function krDetail(r){
+  document.getElementById('kd-sand').textContent  =r.sand||'-';
+  document.getElementById('kd-date').textContent  =r.date||'-';
+  document.getElementById('kd-name').textContent  =r.name||'رصيد سابق';
+  document.getElementById('kd-noa').textContent   =r.noa||'-';
+  document.getElementById('kd-wared').textContent =fmt(r.wared);
+  document.getElementById('kd-sader').textContent =fmt(r.sader);
+  document.getElementById('kd-raseed').textContent=fmt(r.raseed);
+  document.getElementById('kd-notes').textContent =r.notes||'-';
+  openModal('modalKashfDetail');
+}
+
+/* ============================================================
+   PAGE 4 — ARSADA OMALAA
+============================================================ */
+let arFiltered=[...STATE.customers];
+
+function arFilter(){
+  const q=document.getElementById('arSearch').value.trim();
+  arFiltered=q?STATE.customers.filter(c=>c.name.includes(q)):[...STATE.customers];
+  arRender();
+}
+
+function arRender(){
+  // دائماً حدّث arFiltered من STATE أولاً إذا ما في بحث
+  const q = document.getElementById('arSearch')?.value?.trim() || '';
+  if(!q) arFiltered = [...STATE.customers];
+  const body=document.getElementById('arBody');
+  let html='', tDL=0, tDA=0, tDinL=0, tDinA=0;
+  arFiltered.forEach((c,i)=>{
+    tDL+=c.dL; tDA+=c.dA; tDinL+=c.dinL; tDinA+=c.dinA;
+    const star = c.dL>50000||c.dinL>10000000 ? '⭐' : '';
+    html+=`<div class="ar-card" onclick="arDetail(${c.id})">
+      <div class="ar-card-top">
+        <span class="ar-card-name">${c.name}</span>
+        <span class="ar-card-star">${star}</span>
+      </div>
+      <div class="ar-card-grid">
+        <div class="ar-card-amt"><span class="l">دينار له</span><span class="v ${c.dinL?'hv':'zero'}">${fmt(c.dinL)}</span></div>
+        <div class="ar-card-amt"><span class="l">دينار عليه</span><span class="v ${c.dinA?'hv':'zero'}">${fmt(c.dinA)}</span></div>
+        <div class="ar-card-amt"><span class="l">دولار له</span><span class="v ${c.dL?'hv':'zero'}">${fmt(c.dL)}</span></div>
+        <div class="ar-card-amt"><span class="l">دولار عليه</span><span class="v ${c.dA?'hv':'zero'}">${fmt(c.dA)}</span></div>
+      </div>
+    </div>`;
+  });
+  body.innerHTML=html;
+  document.getElementById('arTDinL').textContent=fmt(tDinL);
+  document.getElementById('arTDinA').textContent=fmt(tDinA);
+  document.getElementById('arTDL').textContent=fmt(tDL);
+  document.getElementById('arTDA').textContent=fmt(tDA);
+  document.getElementById('arNetDin').textContent=fmt(Math.abs(tDinL-tDinA))+(tDinL-tDinA<0?' (عليه)':'-');
+  document.getElementById('arNetD').textContent=fmt(Math.abs(tDL-tDA))+(tDL-tDA<0?' (عليه)':'-');
+}
+
+function arDetail(id){
+  // افتح صفحة كشف حساب العميل
+  openKashfAmil(id);
+}
+
+/* ============================================================
+   SEARCH MODAL
+============================================================ */
+function openSearchModal(){
+  document.getElementById('searchRecInput').value='';
+  filterSearch();
+  openModal('modalSearch');
+}
+
+function filterSearch(){
+  const q = document.getElementById('searchRecInput').value.trim();
+  const list = document.getElementById('searchList');
+  const results = q
+    ? STATE.moves.filter((r,i)=>
+        (r.raqm && r.raqm.includes(q)) ||
+        (r.amilName && r.amilName.includes(q)) ||
+        (r.hesab && r.hesab.includes(q))
+      ).map((r,_)=>({ r, i: STATE.moves.indexOf(r) }))
+    : STATE.moves.map((r,i)=>({ r, i }));
+
+  if(!results.length){
+    list.innerHTML='<div style="text-align:center;color:#888;padding:16px;font-size:13px;">لا توجد نتائج</div>';
+    return;
+  }
+
+  list.innerHTML = results.map(({r,i})=>{
+    const dateStr = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '-';
+    return `<div class="search-item" onclick="loadFromSearch(${i})">
+      <div class="si-raqm">${r.raqm||'#'+( i+1)}</div>
+      <div class="si-info">
+        <div class="si-name">${r.amilName || r.hesab || 'بدون اسم'}</div>
+        <div class="si-meta">${r.noa||'-'} · ${dateStr} · $${(r.mabD||0).toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadFromSearch(idx){
+  sCurIdx = idx;
+  sUpdateUI();
+  closeModal('modalSearch');
+  toast('✅ تم تحميل السجل رقم ' + (idx+1));
+}
+
+/* ============================================================
+   PAGE 5 — KASHF HESAB AMIL
+============================================================ */
+let kaAmilId = null;
+let kaCurrency = 'dolar';
+
+function openKashfAmil(id){
+  kaAmilId = id;
+  kaCurrency = 'dolar';
+  // ضبط التواريخ — آخر شهر افتراضي
+  const today = new Date();
+  const to = today.toISOString().split('T')[0];
+  const from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+  document.getElementById('kaFrom').value = from;
+  document.getElementById('kaTo').value   = to;
+  // أزرار العملة
+  document.getElementById('kaBtnD').className   = 'ka-cur-btn act-d';
+  document.getElementById('kaBtnDin').className = 'ka-cur-btn';
+  document.getElementById('kaBtnAll').className = 'ka-cur-btn';
+  kaRender();
+  goPage('pageKashfAmil');
+}
+
+function kaCur(cur){
+  kaCurrency = cur;
+  document.getElementById('kaBtnD').className   = cur==='dolar' ? 'ka-cur-btn act-d'   : 'ka-cur-btn';
+  document.getElementById('kaBtnDin').className = cur==='dinar' ? 'ka-cur-btn act-din' : 'ka-cur-btn';
+  document.getElementById('kaBtnAll').className = cur==='all'   ? 'ka-cur-btn act-din' : 'ka-cur-btn';
+  kaRender();
+}
+
+function kaRender(){
+  const c = STATE.customers.find(x=>x.id===kaAmilId);
+  if(!c) return;
+
+  // اسم ورصيد العميل
+  document.getElementById('kaName').textContent = 'كشف حساب: ' + c.name;
+  const netD   = c.dL - c.dA;
+  const netDin = c.dinL - c.dinA;
+  document.getElementById('kaBD').textContent    = fmt(c.dL);
+  document.getElementById('kaBDin').textContent  = fmt(c.dinL);
+  document.getElementById('kaNetD').textContent   = (netD<0?'-':'')+fmt(Math.abs(netD));
+  document.getElementById('kaNetDin').textContent = (netDin<0?'-':'')+fmt(Math.abs(netDin));
+
+  // فلتر التاريخ
+  const from = document.getElementById('kaFrom').value;
+  const to   = document.getElementById('kaTo').value;
+
+  // الحركات
+  const moves = STATE.moves.filter(r=>{
+    const isAmil = parseInt(r.amilId) === c.id;
+    const isJiha = r.jiha === c.name;
+    if(!isAmil && !isJiha) return false;
+    if(from && r.tarikh < from) return false;
+    if(to   && r.tarikh > to)   return false;
+    return true;
+  });
+
+  const isDolar = kaCurrency === 'dolar';
+  const isDinar = kaCurrency === 'dinar';
+  const isAll   = kaCurrency === 'all';
+
+  let raseed = 0, totW = 0, totS = 0;
+  let html = '';
+
+  let prevRaseed = 0;
+  STATE.moves.forEach(r=>{
+    const isAmil = parseInt(r.amilId) === c.id;
+    if(!isAmil) return;
+    if(from && r.tarikh >= from) return;
+    if(isDolar || isAll){
+      if(r.noa==='قبض') prevRaseed -= r.mabD;
+      else              prevRaseed += r.mabD;
+    } else {
+      if(r.noa==='قبض') prevRaseed -= r.mabDin;
+      else              prevRaseed += r.mabDin;
+    }
+  });
+  raseed = prevRaseed;
+
+  html += `<div class="ka-row sabiq-row">
+    <div class="katd">📌</div>
+    <div class="katd raseed">${fmt(raseed)}</div>
+    <div class="katd wared"></div>
+    <div class="katd sader"></div>
+    <div class="katd noa">رصيد سابق</div>
+    <div class="katd sand"></div>
+  </div>`;
+
+  moves.forEach(r=>{
+    const isAmil = parseInt(r.amilId) === c.id;
+    const isJiha = r.jiha === c.name;
+    let wared = 0, sader = 0;
+
+    if(isDolar || isAll){
+      if(isAmil){
+        if(r.noa==='قبض') sader = r.mabD;
+        else              wared = r.mabD;
+      } else if(isJiha){
+        if(r.noa==='قبض') wared = r.mabD;
+        else              sader = r.mabD;
+      }
+    }
+    if(isDinar){
+      wared = 0; sader = 0;
+      if(isAmil){
+        if(r.noa==='قبض') sader = r.mabDin;
+        else              wared = r.mabDin;
+      } else if(isJiha){
+        if(r.noa==='قبض') wared = r.mabDin;
+        else              sader = r.mabDin;
+      }
+    }
+    if(!wared && !sader) return;
+
+    raseed += wared - sader;
+    totW += wared; totS += sader;
+    const dateStr = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '-';
+    const jihaLabel = isJiha ? `(جهة صرف)` : r.jiha||'-';
+    const rc = raseed < 0 ? 'color:#ff6060;' : '';
+
+    html += `<div class="ka-row">
+      <div class="katd" style="color:#888;">📄</div>
+      <div class="katd raseed" style="${rc}">${fmt(raseed)}</div>
+      <div class="katd wared">${fmt(wared)}</div>
+      <div class="katd sader">${fmt(sader)}</div>
+      <div class="katd noa">${r.noa} · ${jihaLabel}</div>
+      <div class="katd sand">${r.raqm||'-'}<br><span style="color:#666;font-size:9px;">${dateStr}</span></div>
+    </div>`;
+  });
+
+  if(!moves.length){
+    html += `<div style="text-align:center;color:#888;padding:30px;font-size:13px;">لا توجد حركات في هذه الفترة</div>`;
+  }
+
+  document.getElementById('kaBody').innerHTML = html;
+}
+
+// ── طباعة كشف حساب العميل — نسخة احترافية ──
+function printKashfAmil(){
+  const c = STATE.customers.find(x=>x.id===kaAmilId);
+  if(!c){ toast('⚠️ اختر عميلاً أولاً'); return; }
+
+  const from     = document.getElementById('kaFrom').value;
+  const to       = document.getElementById('kaTo').value;
+  const fromStr  = from ? from.split('-').reverse().join('/') : '—';
+  const toStr    = to   ? to.split('-').reverse().join('/')   : '—';
+  const compName = STATE.settings.compName || 'المنير';
+  const today    = new Date().toLocaleDateString('ar-IQ',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // كل الحركات المتعلقة بالعميل في الفترة
+  const moves = STATE.moves.filter(r=>{
+    const isAmil = parseInt(r.amilId) === c.id;
+    const isJiha = r.jiha === c.name;
+    if(!isAmil && !isJiha) return false;
+    if(from && r.tarikh < from) return false;
+    if(to   && r.tarikh > to)   return false;
+    return true;
+  }).sort((a,b)=> (a.tarikh||'').localeCompare(b.tarikh||''));
+
+  // رصيد سابق قبل الفترة
+  let prevD=0, prevDin=0;
+  STATE.moves.forEach(r=>{
+    if(parseInt(r.amilId)!==c.id) return;
+    if(from && r.tarikh>=from) return;
+    if(r.noa==='قبض'){ prevD-=r.mabD; prevDin-=r.mabDin; }
+    else              { prevD+=r.mabD; prevDin+=r.mabDin; }
+  });
+
+  let raseedD=prevD, raseedDin=prevDin;
+  let totWD=0,totSD=0,totWDin=0,totSDin=0;
+  const fN=(n)=> n ? n.toLocaleString() : '';
+  const fNS=(n)=> n===0?'0': n<0 ? `${Math.abs(n).toLocaleString()}-` : n.toLocaleString();
+
+  let rows='';
+  moves.forEach((r,i)=>{
+    const isAmil=parseInt(r.amilId)===c.id;
+    const isJiha=r.jiha===c.name;
+    let wD=0,sD=0,wDin=0,sDin=0;
+    if(isAmil){
+      if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
+      else              { wD=r.mabD; wDin=r.mabDin; }
+    } else if(isJiha){
+      if(r.noa==='قبض'){ wD=r.mabD; wDin=r.mabDin; }
+      else              { sD=r.mabD; sDin=r.mabDin; }
+    }
+    raseedD+=wD-sD; raseedDin+=wDin-sDin;
+    totWD+=wD; totSD+=sD; totWDin+=wDin; totSDin+=sDin;
+    const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'';
+    const bg = i%2===0?'#fff':'#f8f8f8';
+    rows+=`<tr style="background:${bg};">
+      <td style="color:#888;font-size:10px;">${r.notes||''}</td>
+      <td>${fN(wDin)||fN(wD)}</td>
+      <td>${fN(sDin)||fN(sD)}</td>
+      <td style="font-weight:700;color:${r.noa==='قبض'?'#c00':'#007'};">${r.noa||''}</td>
+      <td style="color:#555;">${r.raqm||''}</td>
+      <td>${dateStr}</td>
+    </tr>`;
+  });
+
+  // المتبقي
+  const netD   = c.dL - c.dA;
+  const netDin = c.dinL - c.dinA;
+  // بذمتنا = موجب → نحن ندين للعميل | بذمتهم = سالب → العميل يديننا
+  const bZimtina_D   = raseedD   > 0 ? raseedD   : 0;
+  const bZimtihom_D  = raseedD   < 0 ? Math.abs(raseedD)   : 0;
+  const bZimtina_Din = raseedDin > 0 ? raseedDin : 0;
+  const bZimtihom_Din= raseedDin < 0 ? Math.abs(raseedDin) : 0;
+
+  const html=`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>كشف حساب — ${c.name}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Cairo',sans-serif;background:#fff;color:#161616;font-size:11px;padding:12px 14px;font-variant-numeric:tabular-nums;}
+/* زر الطباعة */
+.print-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-bottom:12px;padding:12px;background:#14304f;color:white;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;cursor:pointer;}
+/* هيدر */
+.header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:2px solid #14304f;padding-bottom:8px;margin-bottom:10px;}
+.header-left{font-size:10px;color:#555;line-height:1.8;}
+.header-center{text-align:center;}
+.header-center h1{font-size:19px;font-weight:900;color:#14304f;}
+.header-center h2{font-size:12px;font-weight:700;color:#444;margin:2px 0;}
+.header-center .cname{font-size:14px;font-weight:900;color:#111;border:1.5px solid #14304f;border-radius:6px;padding:3px 14px;display:inline-block;margin-top:3px;}
+.header-right{text-align:left;font-size:10px;color:#555;line-height:1.8;}
+/* الفترة */
+.period-bar{text-align:center;color:#555;font-size:11px;font-weight:700;margin-bottom:10px;}
+/* الجدول */
+table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.5px;}
+thead tr{background:#14304f;color:white;}
+thead th{padding:6px 4px;text-align:center;border:1px solid #0d2438;font-weight:700;font-size:10px;}
+.row-sabiq td{background:#e6ecf2;font-weight:900;border:1px solid #ccd6df;}
+tbody td{padding:5px 4px;border:1px solid #e2e2e2;text-align:center;vertical-align:middle;}
+tbody tr:nth-child(even){background:#fafafa;}
+.noa-qabdh{color:#0d7a5f;font-weight:900;}
+.noa-sarf{color:#a8501f;font-weight:900;}
+/* الإجماليات */
+.totals-section{border:1px solid #ccd6df;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#f6f8fa;}
+.totals-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;}
+.tot-cell .lbl{font-size:9px;color:#666;margin-bottom:2px;}
+.tot-cell .val{font-size:12px;font-weight:900;color:#14304f;}
+/* المتبقي */
+.balance{border-radius:8px;padding:10px;text-align:center;margin-bottom:8px;}
+.balance.biz{background:#f7ece3;border:1.5px solid #a8501f;color:#a8501f;}
+.balance.bina{background:#e6f3ee;border:1.5px solid #0d7a5f;color:#0d7a5f;}
+.balance.zero{background:#f4f4f4;border:1.5px dashed #ccc;color:#777;}
+.balance .bl{font-size:10px;font-weight:700;}
+.balance .bv{font-size:14px;font-weight:900;}
+/* فوتر */
+.footer{display:flex;justify-content:space-between;font-size:9px;color:#888;border-top:1px solid #ddd;padding-top:6px;margin-top:4px;}
+@media print{
+  .print-btn{display:none!important;}
+  body{padding:4px 6px;}
+  @page{size:A4;margin:10mm;}
+}
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
+
+<!-- هيدر -->
+<div class="header">
+  <div class="header-left">
+    <div>التاريخ: ${today}</div>
+    <div>رقم العميل: ${c.id}</div>
+  </div>
+  <div class="header-center">
+    <h1>${compName}</h1>
+    <h2>كشف حساب</h2>
+    <div class="cname">${c.name}</div>
+  </div>
+  <div class="header-right">
+    <div>دولار — دينار</div>
+  </div>
+</div>
+
+<!-- الفترة -->
+<div class="period-bar">
+  للفترة من ${fromStr} الى ${toStr}
+</div>
+
+<!-- الجدول الرئيسي -->
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">الملاحظات</th>
+      <th colspan="2">دينار</th>
+      <th colspan="2">دولار $</th>
+      <th rowspan="2">النوع</th>
+      <th rowspan="2">الرقم</th>
+      <th rowspan="2">التاريخ</th>
+    </tr>
+    <tr>
+      <th>له</th>
+      <th>عليه</th>
+      <th>له</th>
+      <th>عليه</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- رصيد سابق -->
+    <tr class="row-sabiq">
+      <td>ر. سابق</td>
+      <td>${prevDin>0?fN(prevDin):''}</td>
+      <td>${prevDin<0?fN(Math.abs(prevDin)):''}</td>
+      <td>${prevD>0?fN(prevD):''}</td>
+      <td>${prevD<0?fN(Math.abs(prevD)):''}</td>
+      <td></td><td></td><td></td>
+    </tr>
+    ${moves.map((r)=>{
+      const isAmil=parseInt(r.amilId)===c.id;
+      const isJiha=r.jiha===c.name;
+      let wD=0,sD=0,wDin=0,sDin=0;
+      if(isAmil){
+        if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
+        else              { wD=r.mabD; wDin=r.mabDin; }
+      } else if(isJiha){
+        if(r.noa==='قبض'){ wD=r.mabD; wDin=r.mabDin; }
+        else              { sD=r.mabD; sDin=r.mabDin; }
+      }
+      const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'';
+      return `<tr>
+        <td style="text-align:right;color:#555;font-size:9px;max-width:100px;">${r.notes||''}</td>
+        <td>${fN(wDin)}</td>
+        <td>${fN(sDin)}</td>
+        <td>${fN(wD)}</td>
+        <td>${fN(sD)}</td>
+        <td class="${r.noa==='قبض'?'noa-qabdh':'noa-sarf'}">${r.noa||''}</td>
+        <td style="color:#555;font-size:10px;">${r.raqm||''}</td>
+        <td style="font-size:10px;">${dateStr}</td>
+      </tr>`;
+    }).join('')}
+  </tbody>
+</table>
+
+<!-- الإجماليات -->
+<div class="totals-section">
+  <div class="totals-grid">
+    <div class="tot-cell"><div class="lbl">إجمالي له دينار</div><div class="val">${fN(totWDin)}</div></div>
+    <div class="tot-cell"><div class="lbl">إجمالي عليه دينار</div><div class="val">${fN(totSDin)}</div></div>
+    <div class="tot-cell"><div class="lbl">إجمالي له دولار</div><div class="val">${fN(totWD)}</div></div>
+    <div class="tot-cell"><div class="lbl">إجمالي عليه دولار</div><div class="val">${fN(totSD)}</div></div>
+  </div>
+</div>
+
+<!-- المتبقي -->
+${(bZimtihom_Din||bZimtihom_D) ? `<div class="balance biz">
+    <div class="bl">المتبقي بذمتهم</div>
+    ${bZimtihom_Din?`<div class="bv">${fN(bZimtihom_Din)} دينار</div>`:''}
+    ${bZimtihom_D?`<div class="bv">${fN(bZimtihom_D)} $</div>`:''}
+  </div>` : (bZimtina_Din||bZimtina_D) ? `<div class="balance bina">
+    <div class="bl">المتبقي بذمتنا</div>
+    ${bZimtina_Din?`<div class="bv">${fN(bZimtina_Din)} دينار</div>`:''}
+    ${bZimtina_D?`<div class="bv">${fN(bZimtina_D)} $</div>`:''}
+  </div>` : `<div class="balance zero"><div class="bl">الحساب مسوّى</div></div>`}
+
+<!-- فوتر -->
+<div class="footer">
+  <span>${compName}</span>
+  <span>صفحة 1 من 1</span>
+  <span>${today}</span>
+</div>
+</body></html>`;
+
+  try {
+    const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.target='_blank'; a.rel='noopener';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
+  } catch(e){
+    const w=window.open('','_blank');
+    if(w){ w.document.write(html); w.document.close(); }
+  }
+}
+
+/* ============================================================
+   PAGE 6 — SAYARFA
+============================================================ */
+function sfOpen(){
+  sfRefreshBal();
+  sfReset();
+  // تاريخ اليوم
+  const now=new Date();
+  const d=String(now.getDate()).padStart(2,'0');
+  const m=String(now.getMonth()+1).padStart(2,'0');
+  const el=document.getElementById('sfDate');
+  if(el) el.textContent=`${d}/${m}/${now.getFullYear()}`;
+}
+
+function sfRefreshBal(){
+  const elD  =document.getElementById('sfBalD');
+  const elDin=document.getElementById('sfBalDin');
+  if(elD)   elD.textContent  = STATE.initBalD.toLocaleString();
+  if(elDin) elDin.textContent= STATE.initBalDin.toLocaleString();
+}
+
+function sfSetType(type){
+  document.getElementById('sfType').value=type;
+  const bBuy =document.getElementById('sfBtnBuy');
+  const bSell=document.getElementById('sfBtnSell');
+  const arrow=document.getElementById('sfArrow');
+  if(type==='شراء'){
+    // شراء دولار: ندفع دينار ونستلم دولار
+    bBuy.style.background ='#1a7a30'; bBuy.style.borderColor ='#40d060'; bBuy.style.color='white';
+    bSell.style.background='rgba(255,255,255,0.1)'; bSell.style.borderColor='rgba(255,255,255,0.3)'; bSell.style.color='white';
+    if(arrow) arrow.textContent='دينار ← دولار  💵';
+  } else {
+    // بيع دولار: ندفع دولار ونستلم دينار
+    bSell.style.background='#7a1a1a'; bSell.style.borderColor='#d04040'; bSell.style.color='white';
+    bBuy.style.background ='rgba(255,255,255,0.1)'; bBuy.style.borderColor='rgba(255,255,255,0.3)'; bBuy.style.color='white';
+    if(arrow) arrow.textContent='دولار ← دينار  🪙';
+  }
+  sfCalc();
+}
+
+function sfCalcFromD(){
+  const rate = getRaw('sfRate');
+  const mabD = getRaw('sfMabD');
+  document.getElementById('sfMabDin').value = Math.round(mabD * rate).toLocaleString('en-US');
+  sfShowResult();
+}
+
+function sfCalcFromDin(){
+  const rate   = getRaw('sfRate');
+  const mabDin = getRaw('sfMabDin');
+  if(rate>0) document.getElementById('sfMabD').value = parseFloat((mabDin/rate).toFixed(2)).toLocaleString('en-US');
+  sfShowResult();
+}
+
+function sfCalc(){ sfCalcFromD(); }
+
+function sfShowResult(){
+  const type  = document.getElementById('sfType').value;
+  const mabD  = getRaw('sfMabD');
+  const mabDin= getRaw('sfMabDin');
+  if(!type || (!mabD && !mabDin)){
+    document.getElementById('sfResultCard').style.display='none';
+    return;
+  }
+  let afterD   = STATE.initBalD;
+  let afterDin = STATE.initBalDin;
+  if(type==='شراء'){
+    afterD   += mabD;    // نستلم دولار
+    afterDin -= mabDin;  // ندفع دينار
+  } else {
+    afterD   -= mabD;    // ندفع دولار
+    afterDin += mabDin;  // نستلم دينار
+  }
+  document.getElementById('sfAfterD').textContent   = afterD.toLocaleString();
+  document.getElementById('sfAfterDin').textContent = afterDin.toLocaleString();
+  // لون أحمر إذا سالب
+  document.getElementById('sfAfterD').style.color   = afterD<0   ? '#ff6060' : '#f0e060';
+  document.getElementById('sfAfterDin').style.color = afterDin<0 ? '#ff6060' : '#80ffb8';
+  document.getElementById('sfResultCard').style.display='block';
+}
+
+function sfSave(){
+  const type  = document.getElementById('sfType').value;
+  const mabD  = getRaw('sfMabD');
+  const mabDin= getRaw('sfMabDin');
+  const rate  = getRaw('sfRate');
+  const notes = document.getElementById('sfNotes').value;
+
+  if(!type)              { toast('⚠️ اختر نوع العملية'); return; }
+  if(!mabD && !mabDin)   { toast('⚠️ أدخل المبلغ'); return; }
+  if(!rate)              { toast('⚠️ أدخل سعر الصرف'); return; }
+
+  // تأثير على القاصة
+  if(type==='شراء'){
+    STATE.initBalD   += mabD;    // نستلم دولار
+    STATE.initBalDin -= mabDin;  // ندفع دينار
+  } else {
+    STATE.initBalD   -= mabD;    // ندفع دولار
+    STATE.initBalDin += mabDin;  // نستلم دينار
+  }
+
+  // سجّل الحركة
+  const now=new Date();
+  STATE.sayarfaMoves.push({
+    type, mabD, mabDin, rate, notes,
+    tarikh: now.toISOString().split('T')[0],
+    time:   `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    balDAfter:   STATE.initBalD,
+    balDinAfter: STATE.initBalDin,
+  });
+
+  // حدّث كشف الصندوق إذا كان مفتوح
+  krRender();
+
+  toast(`✅ تم تنفيذ ${type} الدولار — تحديث القاصة`);
+  sfRefreshBal();
+  // حفظ في Supabase
+  dbSaveSayarfa(STATE.sayarfaMoves[STATE.sayarfaMoves.length-1]);
+  sfReset();
+}
+
+function sfReset(){
+  document.getElementById('sfType').value='';
+  document.getElementById('sfMabD').value='0';
+  document.getElementById('sfMabDin').value='0';
+  document.getElementById('sfNotes').value='';
+  document.getElementById('sfResultCard').style.display='none';
+  // أزرار النوع
+  ['sfBtnBuy','sfBtnSell'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){ b.style.background='rgba(255,255,255,0.1)'; b.style.borderColor='rgba(255,255,255,0.3)'; b.style.color='white'; }
+  });
+  const arrow=document.getElementById('sfArrow');
+  if(arrow) arrow.textContent='⇅';
+}
+
+/* ============================================================
+   PAGE 7 — KHULASA (الخلاصة / رأس المال)
+============================================================ */
+function khOpen(){
+  // تاريخ اليوم
+  const now = new Date();
+  const d = String(now.getDate()).padStart(2,'0');
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const el = document.getElementById('khDate');
+  if(el) el.textContent = `الخلاصة ليوم ${d}/${m}/${now.getFullYear()}`;
+  khRender();
+}
+
+function khRender(){
+  const rate = getRaw('khRate')||1480;
+
+  // ── 1. صافي ديون العملاء ──────────────────────────────────
+  // نحسب لكل عميل: رصيده الافتتاحي + تأثير حركاته
+  let custNetD   = 0;
+  let custNetDin = 0;
+
+  STATE.customers.forEach(c=>{
+    // ابدأ من الرصيد الافتتاحي المحفوظ
+    let netD   = (c.initDL != null ? c.initDL : c.dL) - (c.initDA != null ? c.initDA : c.dA);
+    let netDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
+
+    // أضف تأثير الحركات الخاصة بهذا العميل
+    // قبض: net ينقص (العميل دفع لنا)
+    // صرف: net يزيد (دفعنا للعميل)
+    STATE.moves.forEach(r=>{
+      if(parseInt(r.amilId) !== c.id) return;
+      if(r.hesab === 'ذمم الشركات') return;
+      if(r.noa==='قبض'){ netD -= r.mabD; netDin -= r.mabDin; }
+      else              { netD += r.mabD; netDin += r.mabDin; }
+    });
+
+    custNetD   += netD;
+    custNetDin += netDin;
+  });
+
+  // ── 2. صافي ديون الشركات ─────────────────────────────────
+  let compNetD   = 0;
+  let compNetDin = 0;
+  STATE.moves.forEach(r=>{
+    if(r.hesab !== 'ذمم الشركات') return;
+    if(r.noa==='صرف'){ compNetD += r.mabD; compNetDin += r.mabDin; }
+    else              { compNetD -= r.mabD; compNetDin -= r.mabDin; }
+  });
+
+  // ── 4. الصندوق الفعلي — الرصيد الافتتاحي + الحركات ───────
+  const sandD   = STATE.initBalD;
+  const sandDin = STATE.initBalDin;
+
+  // ── 5. المجموع ────────────────────────────────────────────
+  // رأس المال = الصندوق + ديون لنا عند العملاء/الشركات
+  // custNet/compNet موجب = لنا، سالب = علينا
+  const totD   = sandD   + compNetD   + custNetD;
+  const totDin = sandDin + compNetDin + custNetDin;
+
+  // ── 6. الصافي ────────────────────────────────────────────
+  const netDin = totDin + Math.round(totD * rate);
+  const netD   = totD   + totDin / rate;
+
+  // ── تحديث الـ UI ─────────────────────────────────────────
+  const fmtC = (n)=>{
+    const s = Math.round(Math.abs(n)).toLocaleString();
+    return n < 0 ? `-${s}` : s;
+  };
+
+  // يملأ رقم القيمة ويلوّنها أحمر لو سالبة (دَين علينا) بدل اللون الثابت
+  const setVal = (id, n)=>{
+    const el = document.getElementById(id);
+    el.textContent = fmtC(n);
+    el.classList.toggle('neg', n < 0);
+  };
+
+  setVal('kh-cust-din', custNetDin);
+  setVal('kh-cust-d',   custNetD);
+  setVal('kh-comp-din', compNetDin);
+  setVal('kh-comp-d',   compNetD);
+  setVal('kh-sand-din', sandDin);
+  setVal('kh-sand-d',   sandD);
+  setVal('kh-tot-din',  totDin);
+  setVal('kh-tot-d',    totD);
+
+  const elNetDin = document.getElementById('kh-net-din');
+  const elNetD   = document.getElementById('kh-net-d');
+  const netDRounded = parseFloat(netD.toFixed(0));
+  elNetDin.textContent = fmtC(netDin);
+  elNetD.textContent   = fmtC(netDRounded);
+  elNetDin.classList.toggle('neg', netDin < 0);
+  elNetD.classList.toggle('neg', netDRounded < 0);
+}
+
+/* ============================================================
+   PAGE 8 — SETTINGS (الإعدادات)
+============================================================ */
+function stOpen(){
+  // ملء الحقول بالقيم الحالية
+  const el = (id) => document.getElementById(id);
+
+  el('stCompName').value  = STATE.settings.compName  || '';
+  el('stStartDate').value = STATE.settings.startDate || new Date().toISOString().split('T')[0];
+  el('stRate').value      = STATE.settings.defaultRate|| 1480;
+  el('stInitD').value     = STATE.settings.initBalD   || 0;
+  el('stInitDin').value   = STATE.settings.initBalDin || 0;
+
+  // رصيد القاصة الحالي
+  el('stCurD').textContent   = STATE.initBalD.toLocaleString();
+  el('stCurDin').textContent = STATE.initBalDin.toLocaleString();
+
+  // رقم العميل التالي
+  const nextId = STATE.customers.length > 0
+    ? Math.max(...STATE.customers.map(c=>c.id)) + 1
+    : 1;
+  el('stNewAmilId').value = nextId;
+  el('stNewAmilName').value = '';
+
+  stRenderAmilList();
+}
+
+function stRenderAmilList(){
+  const list = document.getElementById('stAmilList');
+  const count = document.getElementById('stAmilCount');
+  count.textContent = STATE.customers.length;
+
+  if(!STATE.customers.length){
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:12px;font-size:12px;">لا يوجد عملاء</div>';
+    return;
+  }
+
+  list.innerHTML = STATE.customers.map(c=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;margin-bottom:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:7px;">
+      <button onclick="stDelAmil(${c.id})"
+        style="background:rgba(200,50,50,0.3);border:1px solid #cc4444;border-radius:5px;color:#ffaaaa;font-size:11px;font-weight:700;padding:3px 8px;cursor:pointer;font-family:'Cairo',sans-serif;">
+        حذف
+      </button>
+      <div style="flex:1;text-align:right;margin-right:8px;">
+        <span style="color:white;font-size:13px;font-weight:700;">${c.name}</span>
+        <span style="color:rgba(255,255,255,0.4);font-size:10px;margin-right:6px;">#${c.id}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+let _amilBalType = 'له'; // افتراضي: العميل يدين لنا
+
+function setAmilBalType(type){
+  _amilBalType = type;
+  const btnLah   = document.getElementById('btnAmilBalLah');
+  const btnAlayh = document.getElementById('btnAmilBalAlayh');
+  if(type==='له'){
+    btnLah.style.background   = 'var(--bg4)'; btnLah.style.color   = 'var(--accent)'; btnLah.style.borderColor = 'var(--border2)';
+    btnAlayh.style.background = 'var(--bg2)'; btnAlayh.style.color = 'var(--text-dim)'; btnAlayh.style.borderColor = 'var(--border)';
+  } else {
+    btnAlayh.style.background = 'rgba(248,113,113,.15)'; btnAlayh.style.color = 'var(--red)'; btnAlayh.style.borderColor = 'rgba(248,113,113,.4)';
+    btnLah.style.background   = 'var(--bg2)'; btnLah.style.color = 'var(--text-dim)'; btnLah.style.borderColor = 'var(--border)';
+  }
+}
+
+async function stAddAmil(){
+  const nameEl = document.getElementById('stNewAmilName');
+  const name   = nameEl.value.trim();
+  if(!name){ toast('⚠️ أدخل اسم العميل'); return; }
+  if(STATE.customers.find(c=>c.name===name)){ toast('⚠️ العميل موجود مسبقاً'); return; }
+
+  const dL   = getRaw('stNewAmilDL');
+  const dA   = getRaw('stNewAmilDA');
+  const dinL = getRaw('stNewAmilDinL');
+  const dinA = getRaw('stNewAmilDinA');
+
+  try {
+    const res = await sbFetch('customers', 'POST',
+      { name, d_a: dA, d_l: dL, din_a: dinA, din_l: dinL,
+        init_d_l: dL, init_d_a: dA, init_din_l: dinL, init_din_a: dinA });
+    const newId = res && res[0] ? res[0].id : (
+      STATE.customers.length > 0
+        ? Math.max(...STATE.customers.map(c=>c.id)) + 1
+        : 1
+    );
+    const newCustomer = { id:newId, dbId:newId, name, dA, dL, dinA, dinL,
+      initDL: dL, initDA: dA, initDinL: dinL, initDinA: dinA };
+    STATE.customers.push(newCustomer);
+    arFiltered = [...STATE.customers];
+
+    // صفّر الحقول
+    nameEl.value = '';
+    document.getElementById('stNewAmilDL').value    = '0';
+    document.getElementById('stNewAmilDA').value    = '0';
+    document.getElementById('stNewAmilDinL').value  = '0';
+    document.getElementById('stNewAmilDinA').value  = '0';
+
+    stRenderAmilList();
+    arRender();
+    toast(`✅ تمت إضافة: ${name}${(dL||dA||dinL||dinA) ? ' مع الرصيد الافتتاحي' : ''}`);
+  } catch(e){
+    toast('❌ فشل الإضافة: ' + e.message);
+    console.error('stAddAmil error:', e);
+  }
+}
+
+function stDelAmil(id){
+  const c = STATE.customers.find(x=>x.id===id);
+  if(!c) return;
+  requirePin(`🗑 حذف العميل: ${c.name}`, async ()=>{
+    if(c.dL||c.dA||c.dinL||c.dinA){
+      if(!confirm(`تحذير: العميل "${c.name}" عنده أرصدة. هل تريد حذفه؟`)) return;
+    } else {
+      if(!confirm(`حذف العميل "${c.name}"؟`)) return;
+    }
+    // أولاً احذف من Supabase وانتظر
+    try {
+      await sbFetch(`customers?id=eq.${id}`, 'DELETE');
+    } catch(e){
+      toast('❌ فشل الحذف: ' + e.message);
+      console.error('stDelAmil DB error:', e);
+      return;
+    }
+    // ثانياً امسح من STATE
+    STATE.customers = STATE.customers.filter(x=>x.id!==id);
+    arFiltered = [...STATE.customers];
+    stRenderAmilList();
+    arRender();
+    toast(`🗑 تم حذف: ${c.name}`);
+  });
+}
+
+function stSave(){
+  const el = (id) => document.getElementById(id);
+
+  const newInitD   = parseFloat(el('stInitD').value)   || 0;
+  const newInitDin = parseFloat(el('stInitDin').value) || 0;
+  const newRate    = parseFloat(el('stRate').value)    || 1480;
+  const compName   = el('stCompName').value.trim();
+  const startDate  = el('stStartDate').value;
+
+  // احسب الفرق بين الرصيد الافتتاحي القديم والجديد
+  const diffD   = newInitD   - (STATE.settings.initBalD   || 0);
+  const diffDin = newInitDin - (STATE.settings.initBalDin || 0);
+
+  // عدّل القاصة الحالية بالفرق
+  STATE.initBalD   += diffD;
+  STATE.initBalDin += diffDin;
+
+  // احفظ الإعدادات
+  STATE.settings = {
+    compName, startDate,
+    defaultRate: newRate,
+    initBalD:   newInitD,
+    initBalDin: newInitDin,
+  };
+
+  // حدّث سعر الصرف في الخلاصة والصيرفة
+  const khRateEl = document.getElementById('khRate');
+  if(khRateEl) khRateEl.value = newRate;
+  const sfRateEl = document.getElementById('sfRate');
+  if(sfRateEl) sfRateEl.value = newRate;
+
+  // حدّث اسم الشركة بالهيدر الرئيسي
+  if(compName){
+    const logo = document.querySelector('.main-logo');
+    if(logo) logo.textContent = compName;
+  }
+
+  // حدّث عرض الرصيد الحالي
+  el('stCurD').textContent   = STATE.initBalD.toLocaleString();
+  el('stCurDin').textContent = STATE.initBalDin.toLocaleString();
+
+  toast('✅ تم حفظ الإعدادات بنجاح');
+  dbSaveSettings();
+}
+
+// تسجيل الخروج — يرجع المستخدم لصفحة الدخول
+async function doLogout(){
+  await sbClient.auth.signOut();
+}
+
+function stResetMoves(){
+  requirePin('⚠️ مسح جميع الحركات', async ()=>{
+    if(!confirm('هل تريد مسح جميع حركات الصندوق والصيرفة؟\nستبقى أرصدة العملاء كما هي.')) return;
+    toast('⏳ جاري المسح...');
+    try {
+      await sbFetch('moves?created_at=gte.2000-01-01',         'DELETE');
+      await sbFetch('sayarfa_moves?created_at=gte.2000-01-01', 'DELETE');
+      // أرجع أرصدة العملاء للصفر
+      for(const c of STATE.customers){
+        await sbFetch(`customers?id=eq.${c.id}`, 'PATCH',
+          { d_a:0, d_l:0, din_a:0, din_l:0 });
+      }
+      // صفّر رصيد القاصة بـ Supabase مباشرة — الفلتر لازم حتى Postgres يقبل التحديث
+      await sbFetch(`settings?company_id=eq.${await myId()}`, 'PATCH', {
+        init_bal_d_current:  0,
+        init_bal_din_current: 0,
+      });
+    } catch(e){
+      toast('❌ خطأ: ' + e.message);
+      console.error(e); return;
+    }
+    // صفّر محلياً
+    STATE.initBalD   = 0;
+    STATE.initBalDin = 0;
+    STATE.customers.forEach(c=>{ c.dL=0; c.dA=0; c.dinL=0; c.dinA=0; });
+    STATE.moves        = [];
+    STATE.sayarfaMoves = [];
+    await dbLoad();
+    stOpen();
+    toast('✅ تم مسح الحركات وصفّر الرصيد');
+  });
+}
+
+function stResetAll(){
+  requirePin('⚠️⚠️ إعادة ضبط المصنع الكاملة', async ()=>{
+    if(!confirm('⚠️ تحذير: سيتم مسح كل البيانات (العملاء، الحركات، الأرصدة).\nهل أنت متأكد؟')) return;
+    if(!confirm('تأكيد أخير: هذا الإجراء لا يمكن التراجع عنه!')) return;
+    toast('⏳ جاري المسح الكامل...');
+    try {
+      await sbFetch('moves?created_at=gte.2000-01-01',         'DELETE');
+      await sbFetch('sayarfa_moves?created_at=gte.2000-01-01', 'DELETE');
+      await sbFetch('customers?created_at=gte.2000-01-01',     'DELETE');
+      await sbFetch(`settings?company_id=eq.${await myId()}`, 'PATCH', {
+        comp_name:'', default_rate:1480,
+        init_bal_d:0, init_bal_din:0,
+        init_bal_d_current:0, init_bal_din_current:0
+      });
+    } catch(e){
+      toast('❌ خطأ: ' + e.message);
+      console.error(e); return;
+    }
+    STATE.moves        = [];
+    STATE.sayarfaMoves = [];
+    STATE.initBalD   = 0;
+    STATE.initBalDin = 0;
+    STATE.customers  = [];
+    STATE.settings   = { compName:'', startDate:'', defaultRate:1480, initBalD:0, initBalDin:0 };
+    await dbLoad();
+    stOpen();
+    toast('✅ تم إعادة الضبط بنجاح');
+  });
+}
+
+/* ============================================================
+   SUPABASE CONFIG
+============================================================ */
+const SB_URL = 'https://qycglhyqjzztzjiilsku.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5Y2dsaHlxanp6dHpqaWlsc2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDg3MTEsImV4cCI6MjA5MDUyNDcxMX0.fIvwt6zus0am_KjgMZC-JpwVB_5YkNRZN7qs6HDicPk';
+
+// عميل Supabase الحقيقي — يدير تسجيل الدخول والجلسة تلقائياً
+const sbClient = supabase.createClient(SB_URL, SB_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// ── مساعد طلبات ──────────────────────────────────────────
+// يرسل توكن المستخدم المسجّل دخوله (إذا موجود) بدل مفتاح anon الثابت
+// حتى تطبّق قواعد العزل بين الشركات (RLS) على مستوى قاعدة البيانات
+async function sbFetch(path, method='GET', body=null){
+  const { data: { session } } = await sbClient.auth.getSession();
+  const headers = {
+    'apikey':        SB_KEY,
+    'Authorization': `Bearer ${session?.access_token || SB_KEY}`,
+    'Content-Type':  'application/json',
+    'Prefer':        'return=representation',
+  };
+  const opts = { method, headers };
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(SB_URL + '/rest/v1/' + path, opts);
+  if(!res.ok){
+    const err = await res.text();
+    throw new Error(`Supabase ${method} ${path}: ${res.status} — ${err}`);
+  }
+  if(res.status === 204) return null;
+  return res.json();
+}
+
+// UUID المستخدم المسجّل دخوله حالياً — لازم نمرره صراحة كفلتر بأوامر
+// تعديل/حذف settings لأن PostgREST يرفض UPDATE بدون شرط WHERE
+async function myId(){
+  const { data: { session } } = await sbClient.auth.getSession();
+  return session?.user?.id;
+}
+
+/* ============================================================
+   DB — تحميل البيانات من Supabase
+============================================================ */
+async function dbLoad(){
+  dbSetStatus('جاري تحميل البيانات...', '#f0c040');
+  try {
+    // 1) الإعدادات — بدون فلتر id، RLS يرجع صف شركتك بس
+    const settings = await sbFetch('settings');
+    if(settings && settings[0]){
+      const s = settings[0];
+      STATE.settings = {
+        compName:    s.comp_name    || 'المنير',
+        startDate:   s.start_date  || '',
+        defaultRate: s.default_rate|| 1480,
+        initBalD:    s.init_bal_d  || 0,
+        initBalDin:  s.init_bal_din|| 0,
+      };
+      // ابدأ من الرصيد الافتتاحي فقط — نحسب الباقي من الحركات
+      STATE.initBalD   = s.init_bal_d   || 0;
+      STATE.initBalDin = s.init_bal_din || 0;
+      const logo = document.querySelector('.main-logo');
+      if(logo && s.comp_name) logo.textContent = s.comp_name;
+    }
+
+    // 2) العملاء
+    const customers = await sbFetch('customers?order=id.asc');
+    if(customers && customers.length){
+      STATE.customers = customers.map(c=>({
+        dbId: c.id, id: c.id, name: c.name,
+        dA: c.d_a||0, dL: c.d_l||0, dinA: c.din_a||0, dinL: c.din_l||0,
+        // الرصيد الافتتاحي — نحفظه من init_ إذا موجود، وإلا نستخدم الرصيد الحالي
+        initDL:   c.init_d_l   != null ? c.init_d_l   : c.d_l  ||0,
+        initDA:   c.init_d_a   != null ? c.init_d_a   : c.d_a  ||0,
+        initDinL: c.init_din_l != null ? c.init_din_l : c.din_l||0,
+        initDinA: c.init_din_a != null ? c.init_din_a : c.din_a||0,
+      }));
+    }
+
+    // 3) حركات الصندوق
+    const moves = await sbFetch('moves?order=id.asc');
+    if(moves && moves.length){
+      STATE.moves = moves.map(m=>({
+        dbId: m.id, id: m.id,
+        noa: m.noa, tarikh: m.tarikh, raqm: m.raqm, hesab: m.hesab,
+        mabD: m.mab_d||0, mabDin: m.mab_din||0,
+        jiha: m.jiha, sak: m.sak, notes: m.notes,
+        amilId: m.amil_id, amilName: m.amil_name,
+      }));
+
+      // احسب رصيد الصندوق من الحركات — بدون ما نعتمد على init_bal_d_current
+      STATE.moves.forEach(r=>{
+        if(r.jiha === 'الصندوق'){
+          if(r.noa==='قبض'){ STATE.initBalD+=r.mabD; STATE.initBalDin+=r.mabDin; }
+          else              { STATE.initBalD-=r.mabD; STATE.initBalDin-=r.mabDin; }
+        }
+      });
+    }
+
+    // 4) حركات الصيرفة
+    const smoves = await sbFetch('sayarfa_moves?order=id.asc');
+    if(smoves && smoves.length){
+      STATE.sayarfaMoves = smoves.map(m=>({
+        dbId: m.id, id: m.id,
+        type: m.type, mabD: m.mab_d||0, mabDin: m.mab_din||0,
+        rate: m.rate||1480, notes: m.notes, tarikh: m.tarikh,
+        time: m.time_str, balDAfter: m.bal_d_after||0, balDinAfter: m.bal_din_after||0,
+      }));
+
+      // احسب تأثير الصيرفة على الصندوق
+      STATE.sayarfaMoves.forEach(m=>{
+        if(m.type==='شراء'){ STATE.initBalD+=m.mabD; STATE.initBalDin-=m.mabDin; }
+        else               { STATE.initBalD-=m.mabD; STATE.initBalDin+=m.mabDin; }
+      });
+    }
+
+    dbSetStatus('✅ متصل بقاعدة البيانات', '#60ff90');
+    arRender();
+    krRender();
+    toast('✅ تم تحميل البيانات');
+  } catch(e){
+    dbSetStatus('❌ ' + e.message, '#ff6060');
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   DB — حفظ حركة جديدة
+============================================================ */
+async function dbSaveMove(r){
+  try {
+    const row = {
+      noa: r.noa, tarikh: r.tarikh, raqm: r.raqm,
+      hesab: r.hesab, mab_d: r.mabD, mab_din: r.mabDin,
+      jiha: r.jiha, sak: r.sak, notes: r.notes,
+      amil_id: r.amilId||null, amil_name: r.amilName||null,
+    };
+    if(r.dbId){
+      await sbFetch(`moves?id=eq.${r.dbId}`, 'PATCH', row);
+    } else {
+      const res = await sbFetch('moves', 'POST', row);
+      if(res && res[0]) r.dbId = res[0].id;
+    }
+    await dbSaveSettings();
+    return true;
+  } catch(e){ console.error('dbSaveMove:', e); toast('❌ فشل الحفظ بقاعدة البيانات: ' + e.message); return false; }
+}
+
+async function dbDeleteMove(r){
+  const rowId = r.dbId || r.id;
+  console.log('dbDeleteMove called, rowId:', rowId, 'r:', r);
+  if(!rowId){ console.warn('dbDeleteMove: no id found', r); return; }
+  try {
+    await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+    await dbSaveSettings();
+  } catch(e){ console.error('dbDeleteMove:', e); toast('⚠️ خطأ بالحذف: ' + e.message); }
+}
+
+/* ============================================================
+   DB — حفظ حركة صيرفة
+============================================================ */
+async function dbSaveSayarfa(r){
+  try {
+    const row = {
+      type: r.type, mab_d: r.mabD, mab_din: r.mabDin,
+      rate: r.rate, notes: r.notes, tarikh: r.tarikh,
+      time_str: r.time,
+      bal_d_after: r.balDAfter, bal_din_after: r.balDinAfter,
+    };
+    const res = await sbFetch('sayarfa_moves', 'POST', row);
+    if(res && res[0]) r.dbId = res[0].id;
+    await dbSaveSettings();
+  } catch(e){ console.error('dbSaveSayarfa:', e); }
+}
+
+/* ============================================================
+   DB — حفظ / تحديث عميل
+============================================================ */
+async function dbSaveCustomer(c){
+  try {
+    const row = { name: c.name, d_a: c.dA, d_l: c.dL, din_a: c.dinA, din_l: c.dinL };
+    if(c.dbId || typeof c.id === 'number'){
+      // update
+      await sbFetch(`customers?id=eq.${c.id}`, 'PATCH', row);
+    } else {
+      const res = await sbFetch('customers', 'POST', { name: c.name, d_a:0, d_l:0, din_a:0, din_l:0 });
+      if(res && res[0]) c.id = res[0].id;
+    }
+  } catch(e){ console.error('dbSaveCustomer:', e); }
+}
+
+async function dbDeleteCustomer(id){
+  try { await sbFetch(`customers?id=eq.${id}`, 'DELETE'); }
+  catch(e){ console.error('dbDeleteCustomer:', e); }
+}
+
+// حفظ أرصدة عميل بعد كل حركة
+async function dbUpdateCustomerBal(c){
+  try {
+    await sbFetch(`customers?id=eq.${c.id}`, 'PATCH',
+      { d_a: c.dA, d_l: c.dL, din_a: c.dinA, din_l: c.dinL });
+  } catch(e){ console.error('dbUpdateCustomerBal:', e); }
+}
+
+/* ============================================================
+   DB — حفظ الإعدادات والقاصة
+============================================================ */
+async function dbSaveSettings(){
+  try {
+    await sbFetch(`settings?company_id=eq.${await myId()}`, 'PATCH', {
+      comp_name:           STATE.settings.compName,
+      start_date:          STATE.settings.startDate,
+      default_rate:        STATE.settings.defaultRate,
+      init_bal_d:          STATE.settings.initBalD,
+      init_bal_din:        STATE.settings.initBalDin,
+      init_bal_d_current:  STATE.initBalD,
+      init_bal_din_current:STATE.initBalDin,
+    });
+  } catch(e){ console.error('dbSaveSettings:', e); }
+}
+
+/* ============================================================
+   DB STATUS
+============================================================ */
+function dbSetStatus(msg, color){
+  const el = document.getElementById('dbStatus');
+  if(el){ el.textContent = msg; el.style.color = color||'white'; }
+}
+
+/* ============================================================
+   PIN PROTECTION — رمز الحماية 8888
+============================================================ */
+const PIN_CODE = '8888';
+let pinCurrent = '';
+let pinCallback = null;
+
+function requirePin(label, callback){
+  pinCurrent  = '';
+  pinCallback = callback;
+  pinUpdateDots();
+  document.getElementById('pinLabel').textContent = label;
+  document.getElementById('modalPin').classList.add('show');
+}
+
+function pinPress(digit){
+  if(pinCurrent.length >= 4) return;
+  pinCurrent += digit;
+  pinUpdateDots();
+  if(pinCurrent.length === 4){
+    setTimeout(()=>{
+      if(pinCurrent === PIN_CODE){
+        document.getElementById('modalPin').classList.remove('show');
+        pinCurrent = '';
+        pinUpdateDots();
+        if(pinCallback){ pinCallback(); pinCallback=null; }
+      } else {
+        // رمز خاطئ — اهزّ وامسح
+        const dots = document.querySelectorAll('[id^="pinDot"]');
+        dots.forEach(d=>{ d.style.background='#ff4040'; d.style.borderColor='#ff4040'; });
+        setTimeout(()=>{
+          pinCurrent='';
+          pinUpdateDots();
+          toast('❌ رمز خاطئ');
+        }, 600);
+      }
+    }, 150);
+  }
+}
+
+function pinDelete(){
+  pinCurrent = pinCurrent.slice(0,-1);
+  pinUpdateDots();
+}
+
+function pinClear(){
+  pinCurrent = '';
+  pinUpdateDots();
+}
+
+function pinCancel(){
+  pinCurrent  = '';
+  pinCallback = null;
+  pinUpdateDots();
+  document.getElementById('modalPin').classList.remove('show');
+}
+
+function pinUpdateDots(){
+  for(let i=0;i<4;i++){
+    const d = document.getElementById('pinDot'+i);
+    if(d){
+      d.style.background    = i < pinCurrent.length ? '#f0c040' : 'rgba(255,255,255,0.2)';
+      d.style.borderColor   = i < pinCurrent.length ? '#f0c040' : 'rgba(255,255,255,0.3)';
+    }
+  }
+}
+
+/* ============================================================
+   NUMBER FORMATTING — تنسيق الأرقام تلقائياً
+============================================================ */
+function fmtInput(el){
+  const pos = el.selectionStart;
+  const raw = el.value.replace(/[^0-9.]/g, '');
+  if(!raw || raw === '.'){ el.value = raw; return; }
+  // منع أكثر من نقطة عشرية
+  const parts = raw.split('.');
+  const intPart = parts[0];
+  const decPart = parts.length > 1 ? '.' + parts[1] : '';
+  // أضف الفواصل كل 3 أرقام
+  const formatted = parseInt(intPart || '0').toLocaleString('en-US') + decPart;
+  el.value = formatted;
+}
+
+// قراءة القيمة الحقيقية بدون فواصل
+function getRaw(id){
+  const val = (document.getElementById(id)?.value || '0').replace(/,/g, '');
+  return parseFloat(val) || 0;
+}
+
+/* ============================================================
+   SMART PRINT — طباعة ذكية للموبايل والكمبيوتر
+============================================================ */
+function smartPrint(pageTitle){
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(isMobile){
+    // على الموبايل: أظهر تعليمات واضحة
+    const box = document.createElement('div');
+    box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+    box.innerHTML=`
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px 20px 0 0;padding:22px 18px;width:100%;max-width:480px;">
+        <div style="color:var(--accent);font-size:16px;font-weight:900;text-align:center;margin-bottom:6px;">🖨️ طباعة / حفظ PDF</div>
+        <div style="color:var(--text-dim);font-size:12px;text-align:center;margin-bottom:16px;">${pageTitle||'الصفحة الحالية'}</div>
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="color:var(--text2);font-size:12px;font-weight:700;margin-bottom:8px;">📱 على الموبايل:</div>
+          <div style="color:var(--text);font-size:13px;line-height:2;">
+            1️⃣ اضغط <b style="color:var(--accent);">متابعة</b> أدناه<br>
+            2️⃣ اختر <b style="color:var(--gold);">حفظ كـ PDF</b> أو <b style="color:var(--gold);">طباعة</b><br>
+            3️⃣ اختر الطابعة أو احفظ الملف
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="this.closest('div[style]').remove();window.print();"
+            style="flex:2;padding:13px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;background:var(--accent2);border:none;color:white;cursor:pointer;">
+            ✅ متابعة
+          </button>
+          <button onclick="this.closest('div[style]').remove();"
+            style="flex:1;padding:13px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;">
+            إلغاء
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(box);
+  } else {
+    window.print();
+  }
+}
+
+// تحسين الكيبورد — أرقام للحقول الرقمية، عربي للنصية
+function setupInputModes(){
+  // حقول الأرقام — كيبورد أرقام فقط
+  const numIds = ['sMabD','sMabDin','sfMabD','sfMabDin','sfRate',
+                  'stInitD','stInitDin','khRate'];
+  numIds.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.setAttribute('inputmode','decimal');
+      el.setAttribute('autocomplete','off');
+      el.setAttribute('autocorrect','off');
+      el.setAttribute('autocapitalize','off');
+    }
+  });
+  // حقول النص — إيقاف الإصلاح التلقائي
+  const txtIds = ['sRaqm','sSak','sNotes','stCompName','stNewAmilName','sfNotes'];
+  txtIds.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.setAttribute('autocomplete','off');
+      el.setAttribute('autocorrect','off');
+      el.setAttribute('spellcheck','false');
+    }
+  });
+}
+
+/* ============================================================
+   AUTH — تسجيل الدخول / الخروج
+   الموقع ما يحمّل أي بيانات إلا بعد التأكد من الجلسة
+============================================================ */
+async function doLogin(){
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl    = document.getElementById('loginErr');
+  const btn      = document.getElementById('btnLogin');
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'أدخل الإيميل وكلمة المرور'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الدخول...';
+  const { error } = await sbClient.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'دخول';
+  if(error) errEl.textContent = 'خطأ: بيانات الدخول غير صحيحة';
+}
+
+/* ============================================================
+   ADMIN — إنشاء حسابات شركات جديدة (يظهر بس للمالك)
+   يستدعي دالة خادمة (Edge Function) بدل ما يستخدم صلاحية service_role
+   بالمتصفح — حتى لو حد قرأ كود الموقع ما يقدر ينشئ حساب لنفسه
+============================================================ */
+async function adminCreateTenant(){
+  const bizName = document.getElementById('adminBizName').value.trim();
+  const email   = document.getElementById('adminBizEmail').value.trim();
+  const errEl   = document.getElementById('adminCreateErr');
+  const btn     = document.getElementById('btnCreateTenant');
+  errEl.textContent = '';
+  if(!bizName || !email){ errEl.textContent = 'أدخل اسم الشركة والإيميل'; return; }
+
+  btn.disabled = true; btn.textContent = '⏳ جاري الإنشاء...';
+  try {
+    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
+      body: { email, business_name: bizName }
+    });
+    if(error){
+      // استخرج رسالة الخطأ الحقيقية من رد الدالة بدل الرسالة العامة
+      let msg = error.message;
+      if(error.context && typeof error.context.json === 'function'){
+        try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
+      }
+      throw new Error(msg);
+    }
+    if(data?.error) throw new Error(data.error);
+
+    document.getElementById('adminResultEmail').textContent    = data.email;
+    document.getElementById('adminResultPassword').textContent = data.password;
+    document.getElementById('adminResultBox').style.display = 'block';
+    document.getElementById('adminBizName').value  = '';
+    document.getElementById('adminBizEmail').value = '';
+    toast('✅ تم إنشاء الحساب');
+  } catch(e){
+    errEl.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '➕ إنشاء الحساب';
+  }
+}
+
+function adminCopyResult(){
+  const email = document.getElementById('adminResultEmail').textContent;
+  const pass  = document.getElementById('adminResultPassword').textContent;
+  navigator.clipboard.writeText(`الإيميل: ${email}\nكلمة المرور: ${pass}`);
+  toast('📋 تم النسخ');
+}
+
+async function adminResetPassword(){
+  const email = document.getElementById('adminResetEmail').value.trim();
+  const errEl = document.getElementById('adminResetErr');
+  const btn   = document.getElementById('btnResetTenant');
+  errEl.textContent = '';
+  if(!email){ errEl.textContent = 'أدخل إيميل الشركة'; return; }
+
+  btn.disabled = true; btn.textContent = '⏳ جاري التغيير...';
+  try {
+    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
+      body: { action: 'reset_password', email }
+    });
+    if(error){
+      let msg = error.message;
+      if(error.context && typeof error.context.json === 'function'){
+        try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
+      }
+      throw new Error(msg);
+    }
+    if(data?.error) throw new Error(data.error);
+
+    document.getElementById('adminResultEmail').textContent    = data.email;
+    document.getElementById('adminResultPassword').textContent = data.password;
+    document.getElementById('adminResultBox').style.display = 'block';
+    document.getElementById('adminResetEmail').value = '';
+    toast('✅ تم توليد كلمة مرور جديدة');
+  } catch(e){
+    errEl.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '🔑 توليد كلمة مرور جديدة';
+  }
+}
+
+// نتتبع آخر مستخدم حمّلنا بياناته — لو تغيّر (تسجيل دخول بحساب ثاني بنفس التبويب
+// أو تزامن جلسة من تبويب ثاني) لازم نعيد التحميل، حتى لو الصفحة نفسها ما انسوى لها reload
+let _loadedForUserId = null;
+async function enterApp(session){
+  const emailEl = document.getElementById('stAccountEmail');
+  if(emailEl) emailEl.textContent = session.user.email || '';
+  const adminBtn = document.getElementById('btnGoAdmin');
+  if(adminBtn) adminBtn.style.display = session.user.app_metadata?.is_owner ? 'block' : 'none';
+
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageMain').classList.add('active');
+  pageHistory.length = 0; pageHistory.push('pageMain');
+
+  if(_loadedForUserId !== session.user.id){
+    _loadedForUserId = session.user.id;
+    await dbLoad();
+  }
+}
+
+function showLogin(){
+  _loadedForUserId = null;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageLogin').classList.add('active');
+  pageHistory.length = 0; pageHistory.push('pageLogin');
+  const pwEl = document.getElementById('loginPassword');
+  if(pwEl) pwEl.value = '';
+}
+
+sbClient.auth.onAuthStateChange((event, session) => {
+  if(session){ enterApp(session); } else { showLogin(); }
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+arRender();
+krRender();
+updateClock();
+setupInputModes();
+
+// تسجيل Service Worker للـ PWA
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(()=> console.log('✅ PWA Service Worker registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>

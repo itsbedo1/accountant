@@ -2134,7 +2134,7 @@ async function confirmAndSave(){
   if(jihaC) await dbUpdateCustomerBal(jihaC);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  if(r.amilId) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin);
+  if(r.amilId) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, wasEdit ? 'edit' : 'new');
 
   toast('✅ تم الحفظ وتحديث الأرصدة');
   _pendingMove = null;
@@ -2262,6 +2262,9 @@ function sDel(){
     }
     const jihaC2 = STATE.customers.find(x=>x.name===r.jiha);
     if(jihaC2) dbUpdateCustomerBal(jihaC2);
+
+    // إشعار تليجرام للعميل بإلغاء الحركة
+    if(r.amilId) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, 'delete');
 
     // رابعاً: احفظ رصيد القاصة الجديد
     await dbSaveSettings();
@@ -2452,7 +2455,8 @@ function copyTelegramLink(id){
 }
 
 // يرسل إشعار تليجرام للعميل بعد حركة قبض/صرف — يفشل بصمت لو ما عنده بوت أو ربط
-async function sendTelegramNotif(customerId, noa, mabD, mabDin){
+// kind: 'new' حركة جديدة | 'edit' تعديل حركة | 'delete' حذف حركة
+async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new'){
   try {
     const token = STATE.settings.tgBotToken;
     if(!token) return;
@@ -2461,12 +2465,22 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin){
 
     const curD  = c.dL - c.dA;
     const curDin= c.dinL - c.dinA;
-    const action = noa==='قبض' ? 'تم قبض' : 'تم صرف';
     let amountParts = [];
     if(mabD)   amountParts.push(`${Number(mabD).toLocaleString()}$`);
     if(mabDin) amountParts.push(`${Number(mabDin).toLocaleString()} د.ع`);
-    const text = `${action} ${amountParts.join(' و ')} ${noa==='قبض'?'من':'الى'} حسابك.\n`
-      + `رصيدك الحالي: ${curD.toLocaleString()}$ | ${curDin.toLocaleString()} د.ع`;
+    const amountStr = amountParts.join(' و ') || '0';
+    const dir = noa==='قبض' ? 'من' : 'الى';
+
+    let actionLine;
+    if(kind === 'delete'){
+      actionLine = `⚠️ تم إلغاء حركة ${noa||''} بمبلغ ${amountStr} ${dir} حسابك`;
+    } else if(kind === 'edit'){
+      actionLine = `✏️ تم تعديل حركة على حسابك — ${noa==='قبض'?'تم قبض':'تم صرف'} ${amountStr} ${dir} حسابك`;
+    } else {
+      actionLine = `${noa==='قبض'?'تم قبض':'تم صرف'} ${amountStr} ${dir} حسابك`;
+    }
+
+    const text = `${actionLine}.\nرصيدك الحالي: ${curD.toLocaleString()}$ | ${curDin.toLocaleString()} د.ع`;
 
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},

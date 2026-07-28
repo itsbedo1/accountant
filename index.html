@@ -1423,6 +1423,15 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       </div>
     </div>
 
+    <!-- ══ قسم: بوت تليجرام للإشعارات ══ -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:6px;">📨 إشعارات تليجرام</div>
+      <div style="color:var(--text-dim);font-size:11px;margin-bottom:10px;text-align:right;">اربط بوت تليجرام حتى يوصل العملاء إشعار تلقائي بكل حركة على حسابهم</div>
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">توكن البوت (من BotFather)</div>
+      <input type="text" id="stTgToken" placeholder="123456:ABC-DEF..."
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:ltr;">
+    </div>
+
     <!-- ══ قسم 2: الرصيد الافتتاحي للقاصة ══ -->
     <div style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(240,192,64,0.3);border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="color:var(--gold);font-size:13px;font-weight:900;margin-bottom:4px;display:flex;align-items:center;gap:6px;">🏦 الرصيد الافتتاحي للقاصة</div>
@@ -2124,6 +2133,9 @@ async function confirmAndSave(){
   const jihaC = STATE.customers.find(x=>x.name===r.jiha);
   if(jihaC) await dbUpdateCustomerBal(jihaC);
 
+  // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
+  if(r.amilId) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin);
+
   toast('✅ تم الحفظ وتحديث الأرصدة');
   _pendingMove = null;
   _saving = false;
@@ -2393,9 +2405,11 @@ function arRender(){
   arFiltered.forEach((c,i)=>{
     tDL+=c.dL; tDA+=c.dA; tDinL+=c.dinL; tDinA+=c.dinA;
     const star = c.dL>50000||c.dinL>10000000 ? '⭐' : '';
+    const tgIcon = c.tgChatId ? '✅' : '📨';
     html+=`<div class="ar-card" onclick="arDetail(${c.id})">
       <div class="ar-card-top">
         <span class="ar-card-name">${c.name}</span>
+        <span class="ar-card-star" onclick="event.stopPropagation();copyTelegramLink(${c.id})" title="${c.tgChatId?'مربوط بتليجرام':'انسخ رابط ربط تليجرام'}">${tgIcon}</span>
         <span class="ar-card-star">${star}</span>
       </div>
       <div class="ar-card-grid">
@@ -2418,6 +2432,47 @@ function arRender(){
 function arDetail(id){
   // افتح صفحة كشف حساب العميل
   openKashfAmil(id);
+}
+
+// ينسخ رابط ربط العميل ببوت تليجرام — العميل يضغطه ويسوي Start مرة وحدة وخلاص
+function copyTelegramLink(id){
+  const c = STATE.customers.find(x=>x.id===id);
+  if(!c) return;
+  if(!STATE.settings.tgBotUser){
+    toast('⚠️ لازم تربط بوت تليجرام من الإعدادات أولاً');
+    return;
+  }
+  if(c.tgChatId){
+    toast(`✅ ${c.name} مربوط بتليجرام مسبقاً`);
+    return;
+  }
+  const link = `https://t.me/${STATE.settings.tgBotUser}?start=${c.id}`;
+  navigator.clipboard.writeText(link);
+  toast('📋 انسخ الرابط وأرسله لـ ' + c.name);
+}
+
+// يرسل إشعار تليجرام للعميل بعد حركة قبض/صرف — يفشل بصمت لو ما عنده بوت أو ربط
+async function sendTelegramNotif(customerId, noa, mabD, mabDin){
+  try {
+    const token = STATE.settings.tgBotToken;
+    if(!token) return;
+    const c = STATE.customers.find(x=>x.id===parseInt(customerId));
+    if(!c || !c.tgChatId) return;
+
+    const curD  = c.dL - c.dA;
+    const curDin= c.dinL - c.dinA;
+    const action = noa==='قبض' ? 'تم قبض' : 'تم صرف';
+    let amountParts = [];
+    if(mabD)   amountParts.push(`${Number(mabD).toLocaleString()}$`);
+    if(mabDin) amountParts.push(`${Number(mabDin).toLocaleString()} د.ع`);
+    const text = `${action} ${amountParts.join(' و ')} ${noa==='قبض'?'من':'الى'} حسابك.\n`
+      + `رصيدك الحالي: ${curD.toLocaleString()}$ | ${curDin.toLocaleString()} د.ع`;
+
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: c.tgChatId, text })
+    });
+  } catch(e){ console.error('sendTelegramNotif:', e); }
 }
 
 /* ============================================================
@@ -3088,6 +3143,8 @@ function stOpen(){
   el('stRate').value      = STATE.settings.defaultRate|| 1480;
   el('stInitD').value     = STATE.settings.initBalD   || 0;
   el('stInitDin').value   = STATE.settings.initBalDin || 0;
+  const elTgToken = el('stTgToken');
+  if(elTgToken) elTgToken.value = STATE.settings.tgBotToken || '';
 
   // رصيد القاصة الحالي
   el('stCurD').textContent   = STATE.initBalD.toLocaleString();
@@ -3209,7 +3266,7 @@ function stDelAmil(id){
   });
 }
 
-function stSave(){
+async function stSave(){
   const el = (id) => document.getElementById(id);
 
   const newInitD   = parseFloat(el('stInitD').value)   || 0;
@@ -3217,6 +3274,7 @@ function stSave(){
   const newRate    = parseFloat(el('stRate').value)    || 1480;
   const compName   = el('stCompName').value.trim();
   const startDate  = el('stStartDate').value;
+  const tgToken    = (el('stTgToken')?.value || '').trim();
 
   // احسب الفرق بين الرصيد الافتتاحي القديم والجديد
   const diffD   = newInitD   - (STATE.settings.initBalD   || 0);
@@ -3226,12 +3284,35 @@ function stSave(){
   STATE.initBalD   += diffD;
   STATE.initBalDin += diffDin;
 
+  // إذا توكن بوت تليجرام جديد أو تغيّر — تحقق منه وسجّل الـ webhook تلقائياً
+  let tgBotUser = STATE.settings.tgBotUser || '';
+  if(tgToken && tgToken !== STATE.settings.tgBotToken){
+    try {
+      const meRes = await fetch(`https://api.telegram.org/bot${tgToken}/getMe`);
+      const me = await meRes.json();
+      if(!me.ok) throw new Error('توكن غير صحيح');
+      tgBotUser = me.result.username;
+      const uid = await myId();
+      const hookUrl = `${SB_URL}/functions/v1/telegram-webhook?company=${uid}`;
+      await fetch(`https://api.telegram.org/bot${tgToken}/setWebhook`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ url: hookUrl })
+      });
+      toast('✅ تم ربط بوت تليجرام: @' + tgBotUser);
+    } catch(e){
+      toast('❌ فشل ربط بوت تليجرام: ' + e.message);
+      return;
+    }
+  }
+
   // احفظ الإعدادات
   STATE.settings = {
     compName, startDate,
     defaultRate: newRate,
     initBalD:   newInitD,
     initBalDin: newInitDin,
+    tgBotToken: tgToken,
+    tgBotUser:  tgBotUser,
   };
 
   // حدّث سعر الصرف في الخلاصة والصيرفة
@@ -3378,6 +3459,8 @@ async function dbLoad(){
         defaultRate: s.default_rate|| 1480,
         initBalD:    s.init_bal_d  || 0,
         initBalDin:  s.init_bal_din|| 0,
+        tgBotToken:  s.telegram_bot_token    || '',
+        tgBotUser:   s.telegram_bot_username || '',
       };
       // ابدأ من الرصيد الافتتاحي فقط — نحسب الباقي من الحركات
       STATE.initBalD   = s.init_bal_d   || 0;
@@ -3397,6 +3480,7 @@ async function dbLoad(){
         initDA:   c.init_d_a   != null ? c.init_d_a   : c.d_a  ||0,
         initDinL: c.init_din_l != null ? c.init_din_l : c.din_l||0,
         initDinA: c.init_din_a != null ? c.init_din_a : c.din_a||0,
+        tgChatId: c.telegram_chat_id || null,
       }));
     }
 
@@ -3538,6 +3622,8 @@ async function dbSaveSettings(){
       init_bal_din:        STATE.settings.initBalDin,
       init_bal_d_current:  STATE.initBalD,
       init_bal_din_current:STATE.initBalDin,
+      telegram_bot_token:    STATE.settings.tgBotToken || null,
+      telegram_bot_username: STATE.settings.tgBotUser  || null,
     });
   } catch(e){ console.error('dbSaveSettings:', e); }
 }

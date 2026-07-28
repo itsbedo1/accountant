@@ -1890,10 +1890,10 @@ function calcAfter(){
   document.getElementById('sPrevD').textContent   = curD.toLocaleString();
   document.getElementById('sPrevDin').textContent = curDin.toLocaleString();
 
-  // حساب بعد الحركة
+  // حساب بعد الحركة — قبض من العميل يزيد رصيده له، صرف له ينقصه
   let afterD=curD, afterDin=curDin;
-  if(noa==='قبض'){ afterD-=mabD; afterDin-=mabDin; }
-  else            { afterD+=mabD; afterDin+=mabDin; }
+  if(noa==='قبض'){ afterD+=mabD; afterDin+=mabDin; }
+  else            { afterD-=mabD; afterDin-=mabDin; }
 
   const elD   = document.getElementById('sAfterD');
   const elDin = document.getElementById('sAfterDin');
@@ -1922,8 +1922,8 @@ function showAmilBal(id, noa, mabD, mabDin){
   document.getElementById('sPrevD').textContent  = prevD.toLocaleString();
   document.getElementById('sPrevDin').textContent= prevDin.toLocaleString();
   let afterD=prevD, afterDin=prevDin;
-  if(noa==='قبض'){ afterD-=mabD; afterDin-=mabDin; }
-  else            { afterD+=mabD; afterDin+=mabDin; }
+  if(noa==='قبض'){ afterD+=mabD; afterDin+=mabDin; }
+  else            { afterD-=mabD; afterDin-=mabDin; }
   document.getElementById('sAfterD').textContent  = afterD.toLocaleString();
   document.getElementById('sAfterDin').textContent= afterDin.toLocaleString();
 }
@@ -2211,17 +2211,7 @@ function reverseAllEffects(r){
 //        → dA ينقص أولاً، إذا صفر dL يزيد
 function applyToCustomer(c, noa, mabD, mabDin){
   if(noa==='قبض'){
-    // العميل دفع لنا — net ينقص (dL ينقص أو dA يزيد)
-    if(mabD > 0){
-      if(c.dL >= mabD){ c.dL -= mabD; }
-      else { const rem = mabD - c.dL; c.dL = 0; c.dA += rem; }
-    }
-    if(mabDin > 0){
-      if(c.dinL >= mabDin){ c.dinL -= mabDin; }
-      else { const rem = mabDin - c.dinL; c.dinL = 0; c.dinA += rem; }
-    }
-  } else if(noa==='صرف'){
-    // نحن دفعنا للعميل — net يزيد (dA ينقص أو dL يزيد)
+    // استلمنا من العميل — يسدد أي دين عليه أولاً (dA ينقص)، والباقي يصير رصيد له (dL يزيد)
     if(mabD > 0){
       if(c.dA >= mabD){ c.dA -= mabD; }
       else { const rem = mabD - c.dA; c.dA = 0; c.dL += rem; }
@@ -2229,6 +2219,16 @@ function applyToCustomer(c, noa, mabD, mabDin){
     if(mabDin > 0){
       if(c.dinA >= mabDin){ c.dinA -= mabDin; }
       else { const rem = mabDin - c.dinA; c.dinA = 0; c.dinL += rem; }
+    }
+  } else if(noa==='صرف'){
+    // دفعنا للعميل — يسحب من رصيده الموجود أولاً (dL ينقص)، والباقي يصير دين عليه (dA يزيد)
+    if(mabD > 0){
+      if(c.dL >= mabD){ c.dL -= mabD; }
+      else { const rem = mabD - c.dL; c.dL = 0; c.dA += rem; }
+    }
+    if(mabDin > 0){
+      if(c.dinL >= mabDin){ c.dinL -= mabDin; }
+      else { const rem = mabDin - c.dinL; c.dinL = 0; c.dinA += rem; }
     }
   }
 }
@@ -2613,11 +2613,11 @@ function kaRender(){
     if(!isAmil) return;
     if(from && r.tarikh >= from) return;
     if(isDolar || isAll){
-      if(r.noa==='قبض') prevRaseed -= r.mabD;
-      else              prevRaseed += r.mabD;
+      if(r.noa==='قبض') prevRaseed += r.mabD;
+      else              prevRaseed -= r.mabD;
     } else {
-      if(r.noa==='قبض') prevRaseed -= r.mabDin;
-      else              prevRaseed += r.mabDin;
+      if(r.noa==='قبض') prevRaseed += r.mabDin;
+      else              prevRaseed -= r.mabDin;
     }
   });
   raseed = prevRaseed;
@@ -2638,21 +2638,21 @@ function kaRender(){
 
     if(isDolar || isAll){
       if(isAmil){
-        if(r.noa==='قبض') sader = r.mabD;
-        else              wared = r.mabD;
-      } else if(isJiha){
         if(r.noa==='قبض') wared = r.mabD;
         else              sader = r.mabD;
+      } else if(isJiha){
+        if(r.noa==='قبض') sader = r.mabD;
+        else              wared = r.mabD;
       }
     }
     if(isDinar){
       wared = 0; sader = 0;
       if(isAmil){
-        if(r.noa==='قبض') sader = r.mabDin;
-        else              wared = r.mabDin;
-      } else if(isJiha){
         if(r.noa==='قبض') wared = r.mabDin;
         else              sader = r.mabDin;
+      } else if(isJiha){
+        if(r.noa==='قبض') sader = r.mabDin;
+        else              wared = r.mabDin;
       }
     }
     if(!wared && !sader) return;
@@ -2707,8 +2707,8 @@ function printKashfAmil(){
   STATE.moves.forEach(r=>{
     if(parseInt(r.amilId)!==c.id) return;
     if(from && r.tarikh>=from) return;
-    if(r.noa==='قبض'){ prevD-=r.mabD; prevDin-=r.mabDin; }
-    else              { prevD+=r.mabD; prevDin+=r.mabDin; }
+    if(r.noa==='قبض'){ prevD+=r.mabD; prevDin+=r.mabDin; }
+    else              { prevD-=r.mabD; prevDin-=r.mabDin; }
   });
 
   let raseedD=prevD, raseedDin=prevDin;
@@ -2722,11 +2722,11 @@ function printKashfAmil(){
     const isJiha=r.jiha===c.name;
     let wD=0,sD=0,wDin=0,sDin=0;
     if(isAmil){
-      if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
-      else              { wD=r.mabD; wDin=r.mabDin; }
-    } else if(isJiha){
       if(r.noa==='قبض'){ wD=r.mabD; wDin=r.mabDin; }
       else              { sD=r.mabD; sDin=r.mabDin; }
+    } else if(isJiha){
+      if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
+      else              { wD=r.mabD; wDin=r.mabDin; }
     }
     raseedD+=wD-sD; raseedDin+=wDin-sDin;
     totWD+=wD; totSD+=sD; totWDin+=wDin; totSDin+=sDin;
@@ -2860,11 +2860,11 @@ tbody tr:nth-child(even){background:#fafafa;}
       const isJiha=r.jiha===c.name;
       let wD=0,sD=0,wDin=0,sDin=0;
       if(isAmil){
-        if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
-        else              { wD=r.mabD; wDin=r.mabDin; }
-      } else if(isJiha){
         if(r.noa==='قبض'){ wD=r.mabD; wDin=r.mabDin; }
         else              { sD=r.mabD; sDin=r.mabDin; }
+      } else if(isJiha){
+        if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
+        else              { wD=r.mabD; wDin=r.mabDin; }
       }
       const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'';
       return `<tr>
@@ -3087,13 +3087,13 @@ function khRender(){
     let netDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
 
     // أضف تأثير الحركات الخاصة بهذا العميل
-    // قبض: net ينقص (العميل دفع لنا)
-    // صرف: net يزيد (دفعنا للعميل)
+    // قبض: net يزيد (استلمنا منه — رصيد/أمانة له)
+    // صرف: net ينقص (دفعنا له — سحب من رصيده)
     STATE.moves.forEach(r=>{
       if(parseInt(r.amilId) !== c.id) return;
       if(r.hesab === 'ذمم الشركات') return;
-      if(r.noa==='قبض'){ netD -= r.mabD; netDin -= r.mabDin; }
-      else              { netD += r.mabD; netDin += r.mabDin; }
+      if(r.noa==='قبض'){ netD += r.mabD; netDin += r.mabDin; }
+      else              { netD -= r.mabD; netDin -= r.mabDin; }
     });
 
     custNetD   += netD;

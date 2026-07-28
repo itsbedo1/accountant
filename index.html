@@ -2134,7 +2134,10 @@ async function confirmAndSave(){
   if(jihaC) await dbUpdateCustomerBal(jihaC);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  if(r.amilId) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, wasEdit ? 'edit' : 'new');
+  if(r.amilId){
+    if(wasEdit) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin);
+    else        sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, 'new');
+  }
 
   toast('✅ تم الحفظ وتحديث الأرصدة');
   _pendingMove = null;
@@ -2456,7 +2459,15 @@ function copyTelegramLink(id){
 
 // يرسل إشعار تليجرام للعميل بعد حركة قبض/صرف — يفشل بصمت لو ما عنده بوت أو ربط
 // kind: 'new' حركة جديدة | 'edit' تعديل حركة | 'delete' حذف حركة
-async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new'){
+// oldMabD/oldMabDin: المبلغ قبل التعديل (لحالة edit بس) — حتى نوضح "كانت / صارت" بدل ما نكرر كإنه مبلغ جديد
+function fmtAmount(mabD, mabDin){
+  let parts = [];
+  if(mabD)   parts.push(`${Number(mabD).toLocaleString()}$`);
+  if(mabDin) parts.push(`${Number(mabDin).toLocaleString()} د.ع`);
+  return parts.join(' و ') || '0';
+}
+
+async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0){
   try {
     const token = STATE.settings.tgBotToken;
     if(!token) return;
@@ -2465,17 +2476,15 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new'){
 
     const curD  = c.dL - c.dA;
     const curDin= c.dinL - c.dinA;
-    let amountParts = [];
-    if(mabD)   amountParts.push(`${Number(mabD).toLocaleString()}$`);
-    if(mabDin) amountParts.push(`${Number(mabDin).toLocaleString()} د.ع`);
-    const amountStr = amountParts.join(' و ') || '0';
+    const amountStr = fmtAmount(mabD, mabDin);
     const dir = noa==='قبض' ? 'من' : 'الى';
 
     let actionLine;
     if(kind === 'delete'){
-      actionLine = `⚠️ تم إلغاء حركة ${noa||''} بمبلغ ${amountStr} ${dir} حسابك`;
+      actionLine = `⚠️ تم إلغاء حركة ${noa||''} بمبلغ ${amountStr} ${dir} حسابك — رجعت لرصيدك`;
     } else if(kind === 'edit'){
-      actionLine = `✏️ تم تعديل حركة على حسابك — ${noa==='قبض'?'تم قبض':'تم صرف'} ${amountStr} ${dir} حسابك`;
+      const oldAmountStr = fmtAmount(oldMabD, oldMabDin);
+      actionLine = `✏️ تم تعديل حركة سابقة على حسابك (${noa||''})\nكانت: ${oldAmountStr}\nصارت: ${amountStr}`;
     } else {
       actionLine = `${noa==='قبض'?'تم قبض':'تم صرف'} ${amountStr} ${dir} حسابك`;
     }

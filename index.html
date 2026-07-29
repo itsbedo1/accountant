@@ -2745,11 +2745,21 @@ function printKashfAmil(){
     </tr>`;
   }).join('');
 
-  // المتبقي — بذمتنا = موجب (احنا مدينين للعميل) | بذمتكم = سالب (العميل مدين لنا)
+  // المتبقي — بذمتنا (علينا له) = موجب | بذمتكم (عليه لنا) = سالب
   const bZimtina_D   = netD   > 0 ? netD   : 0;
   const bZimtihom_D  = netD   < 0 ? Math.abs(netD)   : 0;
   const bZimtina_Din = netDin > 0 ? netDin : 0;
   const bZimtihom_Din= netDin < 0 ? Math.abs(netDin) : 0;
+
+  // صف واحد لكل عملة فيها رصيد فعلي — نتجنب صفوف/خانات فاضية تسبب لخبطة
+  const balRows=[];
+  if(bZimtina_Din>0) balRows.push({lbl:'المتبقي بذمتنا (لكم علينا)', amt:bZimtina_Din, cur:'دينار'});
+  if(bZimtina_D>0)   balRows.push({lbl:'المتبقي بذمتنا (لكم علينا)', amt:bZimtina_D,   cur:'دولار'});
+  if(bZimtihom_Din>0)balRows.push({lbl:'المتبقي بذمتكم (لنا عليكم)', amt:bZimtihom_Din,cur:'دينار'});
+  if(bZimtihom_D>0)  balRows.push({lbl:'المتبقي بذمتكم (لنا عليكم)', amt:bZimtihom_D,  cur:'دولار'});
+  const balancesHtml = balRows.length
+    ? balRows.map(r=>`<tr><td class="lbl">${r.lbl}</td><td>${fN(r.amt)} ${r.cur}</td></tr>`).join('')
+    : `<tr><td class="lbl">الحساب متطابق</td><td>0</td></tr>`;
 
   const html=`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -2844,8 +2854,7 @@ tfoot td{padding:5px 3px;border:1px solid #999;text-align:center;font-weight:900
 </table>
 
 <table class="balances">
-  <tr><td class="lbl">المتبقي بذمتنا</td><td>${fN(bZimtina_Din)||'0'} دينار</td><td>${fN(bZimtina_D)||'0'} دولار</td></tr>
-  <tr><td class="lbl">المتبقي بذمتكم</td><td>${fN(bZimtihom_Din)||'0'} دينار</td><td>${fN(bZimtihom_D)||'0'} دولار</td></tr>
+  ${balancesHtml}
 </table>
 
 <div class="footer">

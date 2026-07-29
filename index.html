@@ -2711,45 +2711,45 @@ function printKashfAmil(){
     else              { prevD-=r.mabD; prevDin-=r.mabDin; }
   });
 
-  let raseedD=prevD, raseedDin=prevDin;
-  let totWD=0,totSD=0,totWDin=0,totSDin=0;
-  const fN=(n)=> n ? n.toLocaleString() : '';
-  const fNS=(n)=> n===0?'0': n<0 ? `${Math.abs(n).toLocaleString()}-` : n.toLocaleString();
+  let netD=prevD, netDin=prevDin; // net = له - عليه (منظور العميل)
+  let totLeD=0,totAlayhD=0,totLeDin=0,totAlayhDin=0;
+  const fN=(n)=> n ? Math.round(n).toLocaleString() : '';
+  // تنسيق الرصيد بطريقة محاسبية عراقية: سالب يطلع بإشارة ناقص بعد الرقم (105,134-)
+  const fSigned=(n)=> { const r=Math.round(n); return r===0 ? '0' : (r<0 ? `${Math.abs(r).toLocaleString()}-` : r.toLocaleString()); };
 
-  let rows='';
-  moves.forEach((r,i)=>{
+  const rowsHtml = moves.map((r)=>{
     const isAmil=parseInt(r.amilId)===c.id;
     const isJiha=r.jiha===c.name;
-    let wD=0,sD=0,wDin=0,sDin=0;
+    let leD=0,alayhD=0,leDin=0,alayhDin=0;
     if(isAmil){
-      if(r.noa==='قبض'){ wD=r.mabD; wDin=r.mabDin; }
-      else              { sD=r.mabD; sDin=r.mabDin; }
+      if(r.noa==='قبض'){ leD=r.mabD; leDin=r.mabDin; }
+      else              { alayhD=r.mabD; alayhDin=r.mabDin; }
     } else if(isJiha){
-      if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
-      else              { wD=r.mabD; wDin=r.mabDin; }
+      if(r.noa==='قبض'){ alayhD=r.mabD; alayhDin=r.mabDin; }
+      else              { leD=r.mabD; leDin=r.mabDin; }
     }
-    raseedD+=wD-sD; raseedDin+=wDin-sDin;
-    totWD+=wD; totSD+=sD; totWDin+=wDin; totSDin+=sDin;
+    netD += leD-alayhD; netDin += leDin-alayhDin;
+    totLeD+=leD; totAlayhD+=alayhD; totLeDin+=leDin; totAlayhDin+=alayhDin;
     const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'';
-    const bg = i%2===0?'#fff':'#f8f8f8';
-    rows+=`<tr style="background:${bg};">
-      <td style="color:#888;font-size:10px;">${r.notes||''}</td>
-      <td>${fN(wDin)||fN(wD)}</td>
-      <td>${fN(sDin)||fN(sD)}</td>
-      <td style="font-weight:700;color:${r.noa==='قبض'?'#c00':'#007'};">${r.noa||''}</td>
-      <td style="color:#555;">${r.raqm||''}</td>
+    return `<tr>
+      <td style="text-align:right;color:#555;font-size:9px;">${r.notes||(isJiha?r.amilName:'')||''}</td>
       <td>${dateStr}</td>
+      <td style="color:#555;">${r.raqm||''}</td>
+      <td style="font-weight:700;">${r.noa||''}</td>
+      <td>${fN(alayhDin)}</td>
+      <td>${fN(leDin)}</td>
+      <td style="font-weight:700;">${fSigned(netDin)}</td>
+      <td>${fN(alayhD)}</td>
+      <td>${fN(leD)}</td>
+      <td style="font-weight:700;">${fSigned(netD)}</td>
     </tr>`;
-  });
+  }).join('');
 
-  // المتبقي
-  const netD   = c.dL - c.dA;
-  const netDin = c.dinL - c.dinA;
-  // بذمتنا = موجب → نحن ندين للعميل | بذمتهم = سالب → العميل يديننا
-  const bZimtina_D   = raseedD   > 0 ? raseedD   : 0;
-  const bZimtihom_D  = raseedD   < 0 ? Math.abs(raseedD)   : 0;
-  const bZimtina_Din = raseedDin > 0 ? raseedDin : 0;
-  const bZimtihom_Din= raseedDin < 0 ? Math.abs(raseedDin) : 0;
+  // المتبقي — بذمتنا = موجب (احنا مدينين للعميل) | بذمتكم = سالب (العميل مدين لنا)
+  const bZimtina_D   = netD   > 0 ? netD   : 0;
+  const bZimtihom_D  = netD   < 0 ? Math.abs(netD)   : 0;
+  const bZimtina_Din = netDin > 0 ? netDin : 0;
+  const bZimtihom_Din= netDin < 0 ? Math.abs(netDin) : 0;
 
   const html=`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -2760,42 +2760,27 @@ function printKashfAmil(){
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Cairo',sans-serif;background:#fff;color:#161616;font-size:11px;padding:12px 14px;font-variant-numeric:tabular-nums;}
-/* زر الطباعة */
-.print-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-bottom:12px;padding:12px;background:#14304f;color:white;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;cursor:pointer;}
-/* هيدر */
-.header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:2px solid #14304f;padding-bottom:8px;margin-bottom:10px;}
-.header-left{font-size:10px;color:#555;line-height:1.8;}
+body{font-family:'Cairo',sans-serif;background:#fff;color:#000;font-size:10.5px;padding:12px 14px;font-variant-numeric:tabular-nums;}
+.print-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-bottom:12px;padding:12px;background:#222;color:white;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;cursor:pointer;}
+.header{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;margin-bottom:8px;}
+.header-left{font-size:11px;font-weight:700;line-height:1.9;}
 .header-center{text-align:center;}
-.header-center h1{font-size:19px;font-weight:900;color:#14304f;}
-.header-center h2{font-size:12px;font-weight:700;color:#444;margin:2px 0;}
-.header-center .cname{font-size:14px;font-weight:900;color:#111;border:1.5px solid #14304f;border-radius:6px;padding:3px 14px;display:inline-block;margin-top:3px;}
-.header-right{text-align:left;font-size:10px;color:#555;line-height:1.8;}
-/* الفترة */
-.period-bar{text-align:center;color:#555;font-size:11px;font-weight:700;margin-bottom:10px;}
-/* الجدول */
-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.5px;}
-thead tr{background:#14304f;color:white;}
-thead th{padding:6px 4px;text-align:center;border:1px solid #0d2438;font-weight:700;font-size:10px;}
-.row-sabiq td{background:#e6ecf2;font-weight:900;border:1px solid #ccd6df;}
-tbody td{padding:5px 4px;border:1px solid #e2e2e2;text-align:center;vertical-align:middle;}
-tbody tr:nth-child(even){background:#fafafa;}
-.noa-qabdh{color:#0d7a5f;font-weight:900;}
-.noa-sarf{color:#a8501f;font-weight:900;}
-/* الإجماليات */
-.totals-section{border:1px solid #ccd6df;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#f6f8fa;}
-.totals-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;}
-.tot-cell .lbl{font-size:9px;color:#666;margin-bottom:2px;}
-.tot-cell .val{font-size:12px;font-weight:900;color:#14304f;}
+.header-center h1{font-size:20px;font-weight:900;}
+.header-center h2{font-size:13px;font-weight:700;text-decoration:underline;margin-bottom:4px;}
+.header-center .cname{font-size:12px;font-weight:700;border:1px solid #000;border-radius:3px;padding:3px 16px;display:inline-block;}
+.header-right{text-align:left;font-size:12px;font-weight:700;}
+table{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:8px;font-size:10px;}
+thead .grp-row th{background:#e8e8e8;border:1px solid #999;font-weight:900;padding:4px;}
+thead .sub-row th{background:#f0f0f0;border:1px solid #999;font-weight:700;padding:4px;font-size:9.5px;}
+.row-sabiq td{background:#f0f0f0;font-weight:900;border:1px solid #999;}
+tbody td{padding:4px 3px;border:1px solid #ccc;text-align:center;vertical-align:middle;word-break:break-word;}
+tfoot td{padding:5px 3px;border:1px solid #999;text-align:center;font-weight:900;background:#e8e8e8;}
 /* المتبقي */
-.balance{border-radius:8px;padding:10px;text-align:center;margin-bottom:8px;}
-.balance.biz{background:#f7ece3;border:1.5px solid #a8501f;color:#a8501f;}
-.balance.bina{background:#e6f3ee;border:1.5px solid #0d7a5f;color:#0d7a5f;}
-.balance.zero{background:#f4f4f4;border:1.5px dashed #ccc;color:#777;}
-.balance .bl{font-size:10px;font-weight:700;}
-.balance .bv{font-size:14px;font-weight:900;}
+.balances{display:inline-block;margin-top:6px;border-collapse:collapse;}
+.balances td{border:1px solid #999;padding:5px 12px;font-size:11px;font-weight:700;}
+.balances .lbl{background:#e8e8e8;}
 /* فوتر */
-.footer{display:flex;justify-content:space-between;font-size:9px;color:#888;border-top:1px solid #ddd;padding-top:6px;margin-top:4px;}
+.footer{display:flex;justify-content:space-between;font-size:9px;color:#555;border-top:1px solid #ccc;padding-top:6px;margin-top:10px;}
 @media print{
   .print-btn{display:none!important;}
   body{padding:4px 6px;}
@@ -2806,11 +2791,10 @@ tbody tr:nth-child(even){background:#fafafa;}
 <body>
 <button class="print-btn" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
 
-<!-- هيدر -->
 <div class="header">
   <div class="header-left">
-    <div>التاريخ: ${today}</div>
-    <div>رقم العميل: ${c.id}</div>
+    <div>للفترة من ${fromStr}</div>
+    <div>الى ${toStr}</div>
   </div>
   <div class="header-center">
     <h1>${compName}</h1>
@@ -2818,91 +2802,52 @@ tbody tr:nth-child(even){background:#fafafa;}
     <div class="cname">${c.name}</div>
   </div>
   <div class="header-right">
-    <div>دولار — دينار</div>
+    <div>${c.id}</div>
   </div>
 </div>
 
-<!-- الفترة -->
-<div class="period-bar">
-  للفترة من ${fromStr} الى ${toStr}
-</div>
-
-<!-- الجدول الرئيسي -->
 <table>
+  <colgroup>
+    <col style="width:18%"><col style="width:8%"><col style="width:7%"><col style="width:7%">
+    <col style="width:9%"><col style="width:9%"><col style="width:12%">
+    <col style="width:9%"><col style="width:9%"><col style="width:12%">
+  </colgroup>
   <thead>
-    <tr>
+    <tr class="grp-row">
       <th rowspan="2">الملاحظات</th>
-      <th colspan="2">دينار</th>
-      <th colspan="2">دولار $</th>
-      <th rowspan="2">النوع</th>
-      <th rowspan="2">الرقم</th>
       <th rowspan="2">التاريخ</th>
+      <th rowspan="2">الرقم</th>
+      <th rowspan="2">النوع</th>
+      <th colspan="3">دينار</th>
+      <th colspan="3">دولار $</th>
     </tr>
-    <tr>
-      <th>له</th>
-      <th>عليه</th>
-      <th>له</th>
-      <th>عليه</th>
+    <tr class="sub-row">
+      <th>عليه</th><th>له</th><th>الرصيد</th>
+      <th>عليه</th><th>له</th><th>الرصيد</th>
     </tr>
   </thead>
   <tbody>
-    <!-- رصيد سابق -->
     <tr class="row-sabiq">
-      <td>ر. سابق</td>
-      <td>${prevDin>0?fN(prevDin):''}</td>
-      <td>${prevDin<0?fN(Math.abs(prevDin)):''}</td>
-      <td>${prevD>0?fN(prevD):''}</td>
-      <td>${prevD<0?fN(Math.abs(prevD)):''}</td>
-      <td></td><td></td><td></td>
+      <td colspan="4">رصيد سابق</td>
+      <td></td><td></td><td>${fSigned(prevDin)}</td>
+      <td></td><td></td><td>${fSigned(prevD)}</td>
     </tr>
-    ${moves.map((r)=>{
-      const isAmil=parseInt(r.amilId)===c.id;
-      const isJiha=r.jiha===c.name;
-      let wD=0,sD=0,wDin=0,sDin=0;
-      if(isAmil){
-        if(r.noa==='قبض'){ wD=r.mabD; wDin=r.mabDin; }
-        else              { sD=r.mabD; sDin=r.mabDin; }
-      } else if(isJiha){
-        if(r.noa==='قبض'){ sD=r.mabD; sDin=r.mabDin; }
-        else              { wD=r.mabD; wDin=r.mabDin; }
-      }
-      const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'';
-      return `<tr>
-        <td style="text-align:right;color:#555;font-size:9px;max-width:100px;">${r.notes||''}</td>
-        <td>${fN(wDin)}</td>
-        <td>${fN(sDin)}</td>
-        <td>${fN(wD)}</td>
-        <td>${fN(sD)}</td>
-        <td class="${r.noa==='قبض'?'noa-qabdh':'noa-sarf'}">${r.noa||''}</td>
-        <td style="color:#555;font-size:10px;">${r.raqm||''}</td>
-        <td style="font-size:10px;">${dateStr}</td>
-      </tr>`;
-    }).join('')}
+    ${rowsHtml}
   </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4">الإجمالي</td>
+      <td>${fN(totAlayhDin)}</td><td>${fN(totLeDin)}</td><td>${fSigned(netDin)}</td>
+      <td>${fN(totAlayhD)}</td><td>${fN(totLeD)}</td><td>${fSigned(netD)}</td>
+    </tr>
+  </tfoot>
 </table>
 
-<!-- الإجماليات -->
-<div class="totals-section">
-  <div class="totals-grid">
-    <div class="tot-cell"><div class="lbl">إجمالي له دينار</div><div class="val">${fN(totWDin)}</div></div>
-    <div class="tot-cell"><div class="lbl">إجمالي عليه دينار</div><div class="val">${fN(totSDin)}</div></div>
-    <div class="tot-cell"><div class="lbl">إجمالي له دولار</div><div class="val">${fN(totWD)}</div></div>
-    <div class="tot-cell"><div class="lbl">إجمالي عليه دولار</div><div class="val">${fN(totSD)}</div></div>
-  </div>
-</div>
+<table class="balances">
+  <tr><td class="lbl">المتبقي بذمتنا</td><td>${fN(bZimtina_Din)} دينار</td><td>${fN(bZimtina_D)} دولار</td></tr>
+  <tr><td class="lbl">المتبقي بذمتكم</td><td>${fN(bZimtihom_Din)} دينار</td><td>${fN(bZimtihom_D)} دولار</td></tr>
+</table>
 
-<!-- المتبقي -->
-${(bZimtihom_Din||bZimtihom_D) ? `<div class="balance biz">
-    <div class="bl">المتبقي بذمتهم</div>
-    ${bZimtihom_Din?`<div class="bv">${fN(bZimtihom_Din)} دينار</div>`:''}
-    ${bZimtihom_D?`<div class="bv">${fN(bZimtihom_D)} $</div>`:''}
-  </div>` : (bZimtina_Din||bZimtina_D) ? `<div class="balance bina">
-    <div class="bl">المتبقي بذمتنا</div>
-    ${bZimtina_Din?`<div class="bv">${fN(bZimtina_Din)} دينار</div>`:''}
-    ${bZimtina_D?`<div class="bv">${fN(bZimtina_D)} $</div>`:''}
-  </div>` : `<div class="balance zero"><div class="bl">الحساب مسوّى</div></div>`}
-
-<!-- فوتر -->
 <div class="footer">
   <span>${compName}</span>
   <span>صفحة 1 من 1</span>

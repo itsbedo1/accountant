@@ -810,7 +810,8 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 <div class="modal-ov" id="modalAmil">
   <div class="modal-box green">
     <h3 class="modal-h3 light">اختر العميل</h3>
-    <div id="amilList"></div>
+    <input class="search-input" id="amilSearch" type="text" placeholder="🔍 بحث عن عميل..." oninput="filterAmilList()">
+    <div id="amilList" style="max-height:42vh;overflow-y:auto;"></div>
     <button class="modal-close-btn" onclick="closeModal('modalAmil')">إلغاء</button>
   </div>
 </div>
@@ -1929,16 +1930,25 @@ function showAmilBal(id, noa, mabD, mabDin){
 }
 
 function openAmilModal(){
+  document.getElementById('amilSearch').value='';
+  filterAmilList();
+  openModal('modalAmil');
+}
+
+function filterAmilList(){
+  const q=document.getElementById('amilSearch').value.trim();
   const list=document.getElementById('amilList');
+  const filtered=q
+    ? STATE.customers.filter(c=>c.name.includes(q))
+    : STATE.customers;
   list.innerHTML='';
-  STATE.customers.forEach(c=>{
+  filtered.forEach(c=>{
     const b=document.createElement('button');
     b.className='modal-opt';
     b.textContent=`${c.name}`;
     b.onclick=()=>{ selAmil(c.id); };
     list.appendChild(b);
   });
-  openModal('modalAmil');
 }
 
 function selAmil(id){

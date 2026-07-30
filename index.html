@@ -3045,27 +3045,15 @@ function khRender(){
   const rate = getRaw('khRate')||1480;
 
   // ── 1. صافي ديون العملاء ──────────────────────────────────
-  // نحسب لكل عميل: رصيده الافتتاحي + تأثير حركاته
+  // نفس الأرصدة الحيّة المستخدمة بصفحة "أرصدة العملاء" (c.dL/c.dA/c.dinL/c.dinA)
+  // بدل إعادة حسابها من الرصيد الافتتاحي + الحركات، لأن ذلك يفقد الدقة
+  // إذا كانت STATE.moves غير مكتملة (مثلاً بسبب حد أقصى بالجلب من القاعدة)
   let custNetD   = 0;
   let custNetDin = 0;
 
   STATE.customers.forEach(c=>{
-    // ابدأ من الرصيد الافتتاحي المحفوظ
-    let netD   = (c.initDL != null ? c.initDL : c.dL) - (c.initDA != null ? c.initDA : c.dA);
-    let netDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
-
-    // أضف تأثير الحركات الخاصة بهذا العميل
-    // قبض: net يزيد (استلمنا منه — رصيد/أمانة له)
-    // صرف: net ينقص (دفعنا له — سحب من رصيده)
-    STATE.moves.forEach(r=>{
-      if(parseInt(r.amilId) !== c.id) return;
-      if(r.hesab === 'ذمم الشركات') return;
-      if(r.noa==='قبض'){ netD += r.mabD; netDin += r.mabDin; }
-      else              { netD -= r.mabD; netDin -= r.mabDin; }
-    });
-
-    custNetD   += netD;
-    custNetDin += netDin;
+    custNetD   += c.dL   - c.dA;
+    custNetDin += c.dinL - c.dinA;
   });
 
   // ── 2. صافي ديون الشركات ─────────────────────────────────

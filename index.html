@@ -2441,8 +2441,8 @@ function arRender(){
   document.getElementById('arTDinA').textContent=fmt(tDinA);
   document.getElementById('arTDL').textContent=fmt(tDL);
   document.getElementById('arTDA').textContent=fmt(tDA);
-  document.getElementById('arNetDin').textContent=fmt(Math.abs(tDinL-tDinA))+(tDinL-tDinA<0?' (عليه)':'-');
-  document.getElementById('arNetD').textContent=fmt(Math.abs(tDL-tDA))+(tDL-tDA<0?' (عليه)':'-');
+  document.getElementById('arNetDin').textContent=fmt(Math.abs(tDinL-tDinA))+(tDinL-tDinA<0?' (عليه)':' (لنا)');
+  document.getElementById('arNetD').textContent=fmt(Math.abs(tDL-tDA))+(tDL-tDA<0?' (عليه)':' (لنا)');
 }
 
 function arDetail(id){

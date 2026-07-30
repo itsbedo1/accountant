@@ -2607,7 +2607,10 @@ function kaRender(){
   let raseed = 0, totW = 0, totS = 0;
   let html = '';
 
-  let prevRaseed = 0;
+  // يبدأ من الرصيد الافتتاحي المحفوظ للعميل (نفس أسلوب khRender/printKashfAmil)
+  let prevRaseed = (isDolar || isAll)
+    ? (c.initDL   != null ? c.initDL   : c.dL)   - (c.initDA   != null ? c.initDA   : c.dA)
+    : (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
   STATE.moves.forEach(r=>{
     const isAmil = parseInt(r.amilId) === c.id;
     if(!isAmil) return;
@@ -2702,8 +2705,9 @@ function printKashfAmil(){
     return true;
   }).sort((a,b)=> (a.tarikh||'').localeCompare(b.tarikh||''));
 
-  // رصيد سابق قبل الفترة
-  let prevD=0, prevDin=0;
+  // رصيد سابق قبل الفترة — يبدأ من الرصيد الافتتاحي المحفوظ للعميل (نفس أسلوب khRender)
+  let prevD   = (c.initDL   != null ? c.initDL   : c.dL)   - (c.initDA   != null ? c.initDA   : c.dA);
+  let prevDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
   STATE.moves.forEach(r=>{
     if(parseInt(r.amilId)!==c.id) return;
     if(from && r.tarikh>=from) return;

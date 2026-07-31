@@ -716,6 +716,17 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 <body>
 
 <!-- ======================================================
+     LOADING OVERLAY — يمنع أي تفاعل مع التطبيق قبل ما تخلص بيانات
+     العملاء والحركات من التحميل الكامل، حتى ما يصير حفظ/تعديل بالغلط
+     على سجل قديم بسبب سباق توقيت (race condition) بين التحميل والتفاعل
+====================================================== -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:#040d1a;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+  <div style="width:44px;height:44px;border:4px solid rgba(34,211,238,.25);border-top-color:var(--accent);border-radius:50%;animation:loadingSpin 0.8s linear infinite;"></div>
+  <div style="color:white;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;">⏳ جاري تحميل البيانات...</div>
+</div>
+<style>@keyframes loadingSpin{to{transform:rotate(360deg);}}</style>
+
+<!-- ======================================================
      TOAST
 ====================================================== -->
 <div class="toast" id="toast"></div>
@@ -1698,6 +1709,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
    STATE — كل البيانات هنا مشتركة بين الصفحات
 ============================================================ */
 const STATE = {
+  dataReady: false, // يصير true بس بعد ما يخلص dbLoad() بالكامل — يمنع أي حفظ قبل اكتمال التحميل
   moves: [],
   sayarfaMoves: [],
   initBalD:   0,
@@ -2096,6 +2108,7 @@ let _pendingMove = null; // الحركة المعلقة للتأكيد
 
 function sSave(){
   if(_saving){ toast('⏳ فيه حفظ سابق لا يزال قيد التنفيذ — انتظر لحظة'); return; }
+  if(!STATE.dataReady){ toast('⏳ البيانات لسا تتحمل — انتظر لحظة وحاول مرة ثانية'); return; }
   const r = sGet();
   if(!r.noa)              { toast('⚠️ اختر نوع الحركة'); return; }
   if(!r.mabD && !r.mabDin){ toast('⚠️ أدخل مبلغ');      return; }
@@ -2308,6 +2321,7 @@ function applyMove(c,r)  { applyToCustomer(c, r.noa, r.mabD, r.mabDin); }
 function reverseMove(c,r){ applyToCustomer(c, r.noa==='قبض'?'صرف':'قبض', r.mabD, r.mabDin); }
 
 function sDel(){
+  if(!STATE.dataReady){ toast('⏳ البيانات لسا تتحمل — انتظر لحظة وحاول مرة ثانية'); return; }
   if(!STATE.moves.length){ toast('⚠️ لا يوجد سجل'); return; }
   if(sCurIdx<0 || sCurIdx>=STATE.moves.length){ toast('⚠️ ماكو سجل محمّل للحذف — دوّر عليه أولاً من البحث'); return; }
   requirePin('🗑 حذف الحركة الحالية', async ()=>{
@@ -3677,6 +3691,11 @@ async function myId(){
    DB — تحميل البيانات من Supabase
 ============================================================ */
 async function dbLoad(){
+  // نمنع أي حفظ/حذف لحد ما تخلص كل البيانات تحميل — يمنع سباق توقيت
+  // (race condition) بين التنقل السريع بالتطبيق واكتمال تحميل الحركات
+  STATE.dataReady = false;
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  if(loadingOverlay) loadingOverlay.style.display = 'flex';
   dbSetStatus('جاري تحميل البيانات...', '#f0c040');
   try {
     // 1) الإعدادات — بدون فلتر id، RLS يرجع صف شركتك بس
@@ -3758,6 +3777,12 @@ async function dbLoad(){
   } catch(e){
     dbSetStatus('❌ ' + e.message, '#ff6060');
     console.error(e);
+  } finally {
+    STATE.dataReady = true;
+    if(loadingOverlay) loadingOverlay.style.display = 'none';
+    // أي نموذج صندوق مفتوح لازم يتصفّر الحين بعد ما صارت STATE.moves كاملة —
+    // حتى ما يضل sCurIdx يشير لمكان كان صحيح مؤقتاً وقت التحميل الجزئي
+    if(document.getElementById('pageSandooq')?.classList.contains('active')) sReset();
   }
 }
 

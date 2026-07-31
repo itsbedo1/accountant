@@ -3585,6 +3585,24 @@ async function sbFetch(path, method='GET', body=null){
   return res.json();
 }
 
+// يجيب كل صفوف جدول مهما كان عددها — يجلبها على دفعات (صفحات) بدل طلب وحد
+// حتى لا يفقد سجلات بصمت إذا تجاوز الجدول الحد الأقصى الافتراضي لصف واحد بقاعدة البيانات
+async function sbFetchAll(path){
+  const PAGE = 1000;
+  let offset = 0;
+  let all = [];
+  while(true){
+    const sep = path.includes('?') ? '&' : '?';
+    const page = await sbFetch(`${path}${sep}limit=${PAGE}&offset=${offset}`);
+    if(!page || !page.length) break;
+    all = all.concat(page);
+    // نتقدم بعدد الصفوف اللي رجعت فعلياً (مو بعدد PAGE المطلوب) — يحافظ على صحة
+    // الجلب حتى لو الخادم يفرض حد أقصى أوطى من PAGE بكل طلب
+    offset += page.length;
+  }
+  return all;
+}
+
 // UUID المستخدم المسجّل دخوله حالياً — لازم نمرره صراحة كفلتر بأوامر
 // تعديل/حذف settings لأن PostgREST يرفض UPDATE بدون شرط WHERE
 async function myId(){
@@ -3619,7 +3637,7 @@ async function dbLoad(){
     }
 
     // 2) العملاء
-    const customers = await sbFetch('customers?order=id.asc');
+    const customers = await sbFetchAll('customers?order=id.asc');
     if(customers && customers.length){
       STATE.customers = customers.map(c=>({
         dbId: c.id, id: c.id, name: c.name,
@@ -3634,7 +3652,7 @@ async function dbLoad(){
     }
 
     // 3) حركات الصندوق
-    const moves = await sbFetch('moves?order=id.asc');
+    const moves = await sbFetchAll('moves?order=id.asc');
     if(moves && moves.length){
       STATE.moves = moves.map(m=>({
         dbId: m.id, id: m.id,
@@ -3654,7 +3672,7 @@ async function dbLoad(){
     }
 
     // 4) حركات الصيرفة
-    const smoves = await sbFetch('sayarfa_moves?order=id.asc');
+    const smoves = await sbFetchAll('sayarfa_moves?order=id.asc');
     if(smoves && smoves.length){
       STATE.sayarfaMoves = smoves.map(m=>({
         dbId: m.id, id: m.id,

@@ -3092,8 +3092,15 @@ function khRender(){
     el.classList.toggle('neg', n < 0);
   };
 
-  setVal('kh-cust-din', custNetDin);
-  setVal('kh-cust-d',   custNetD);
+  // صافي ديون العملاء: سالب = لنا (العميل مدين لنا)، موجب = علينا (نحن مدينين له)
+  // نفس تسمية "لنا/عليه" المستخدمة بصفحة "أرصدة العملاء"
+  const setCustVal = (id, n)=>{
+    const el = document.getElementById(id);
+    el.textContent = Math.round(Math.abs(n)).toLocaleString() + (n < 0 ? ' (لنا)' : ' (عليه)');
+    el.classList.toggle('neg', n >= 0);
+  };
+  setCustVal('kh-cust-din', custNetDin);
+  setCustVal('kh-cust-d',   custNetD);
   setVal('kh-comp-din', compNetDin);
   setVal('kh-comp-d',   compNetD);
   setVal('kh-sand-din', sandDin);

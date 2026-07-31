@@ -12,6 +12,17 @@ function jsonResponse(body: unknown, status = 200) {
   })
 }
 
+// يبني نص رصيد العميل من منظوره هو: net > 0 = له (لك) عندنا، net < 0 = عليه (عليك) لنا
+function formatBalanceText(cust: { d_a?: number; d_l?: number; din_a?: number; din_l?: number }) {
+  const netD = (cust.d_l || 0) - (cust.d_a || 0)
+  const netDin = (cust.din_l || 0) - (cust.din_a || 0)
+  const lines: string[] = []
+  if (netD) lines.push(`💵 ${Math.abs(netD).toLocaleString('en-US')}$ ${netD > 0 ? '(لك)' : '(عليك)'}`)
+  if (netDin) lines.push(`💴 ${Math.abs(netDin).toLocaleString('en-US')} د.ع ${netDin > 0 ? '(لك)' : '(عليك)'}`)
+  if (!lines.length) return '📊 رصيدك الحالي: متطابق (0)'
+  return `📊 رصيدك الحالي:\n${lines.join('\n')}`
+}
+
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url)
@@ -55,11 +66,12 @@ Deno.serve(async (req) => {
       .update({ telegram_chat_id: chatId })
       .eq('id', customerId)
       .eq('company_id', companyId)
-      .select('name')
+      .select('name, d_a, d_l, din_a, din_l')
 
+    const cust = updated?.[0]
     const replyText =
-      !updErr && updated && updated.length > 0
-        ? `تم الربط بنجاح ✅\nراح توصلك إشعارات ${settings.comp_name || ''} على كل حركة بحسابك.`
+      !updErr && cust
+        ? `تم الربط بنجاح ✅\nراح توصلك إشعارات ${settings.comp_name || ''} على كل حركة بحسابك.\n\n${formatBalanceText(cust)}`
         : 'ما لقينا حسابك — تأكد من الرابط اللي أرسله لك المحاسب.'
 
     await fetch(`https://api.telegram.org/bot${settings.telegram_bot_token}/sendMessage`, {

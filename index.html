@@ -3434,10 +3434,12 @@ function stCheckBalances(){
   STATE.customers.forEach(c=>{
     let expD   = (c.initDL   != null ? c.initDL   : c.dL)   - (c.initDA   != null ? c.initDA   : c.dA);
     let expDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
+    let hasMoves = false;
 
     STATE.moves.forEach(r=>{
       const isAmil = parseInt(r.amilId) === c.id;
       const isJiha = r.jiha === c.name;
+      if(isAmil || isJiha) hasMoves = true;
       if(isAmil){
         if(r.noa==='قبض'){ expD += r.mabD; expDin += r.mabDin; }
         else              { expD -= r.mabD; expDin -= r.mabDin; }
@@ -3451,7 +3453,7 @@ function stCheckBalances(){
     const diffD   = Math.round((curD - expD) * 100) / 100;
     const diffDin = Math.round(curDin - expDin);
     if(Math.abs(diffD) >= 1 || Math.abs(diffDin) >= 1){
-      mismatches.push({ name: c.name, id: c.id, diffD, diffDin });
+      mismatches.push({ name: c.name, id: c.id, diffD, diffDin, hasMoves });
     }
   });
 
@@ -3467,8 +3469,25 @@ function stCheckBalances(){
         <div style="color:white;font-weight:900;font-size:13px;margin-bottom:4px;">${escapeHtml(m.name)} (#${m.id})</div>
         ${m.diffD   ? `<div style="color:var(--gold);font-size:12px;">فرق دولار: ${m.diffD>0?'+':''}${m.diffD.toLocaleString()}$</div>` : ''}
         ${m.diffDin ? `<div style="color:var(--accent);font-size:12px;">فرق دينار: ${m.diffDin>0?'+':''}${m.diffDin.toLocaleString()} د.ع</div>` : ''}
+        ${m.hasMoves
+          ? `<div style="color:var(--red);font-size:11px;margin-top:6px;">⚠️ عنده حركات فعلية مسجلة — ما نصلحه تلقائياً، راجعه يدوياً</div>`
+          : `<button onclick="stFixBalance(${m.id})" style="margin-top:8px;width:100%;padding:8px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:900;background:rgba(96,255,144,.15);border:1.5px solid rgba(96,255,144,.5);color:#60ff90;cursor:pointer;">🔧 استرجاع الرصيد الافتتاحي (ماكو حركات فعلية إله)</button>`}
       </div>
     `).join('');
+}
+
+// يرجّع رصيد العميل الحي لنفس رصيده الافتتاحي المحفوظ — يُستخدم فقط
+// لعميل ماكو عنده أي حركة فعلية مسجلة (تأكدنا من هذا بـ stCheckBalances)
+async function stFixBalance(id){
+  const c = STATE.customers.find(x=>x.id===id);
+  if(!c) return;
+  const newDL=c.initDL||0, newDA=c.initDA||0, newDinL=c.initDinL||0, newDinA=c.initDinA||0;
+  if(!confirm(`استرجاع رصيد ${c.name} الافتتاحي:\nدولار له: ${newDL} / عليه: ${newDA}\nدينار له: ${newDinL} / عليه: ${newDinA}\n\nمتأكد؟`)) return;
+  c.dL=newDL; c.dA=newDA; c.dinL=newDinL; c.dinA=newDinA;
+  await dbSaveCustomer(c);
+  arRender();
+  toast(`✅ تم استرجاع رصيد ${c.name}`);
+  stCheckBalances();
 }
 
 let _amilBalType = 'له'; // افتراضي: العميل يدين لنا

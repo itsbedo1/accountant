@@ -2107,7 +2107,17 @@ function sSave(){
   // (يصير مثلاً لو بحث عن سجل قديم وبعدين غيّر المبلغ بدون ما يرجع للرئيسية أول)
   const wasEdit = sCurIdx>=0 && sCurIdx < STATE.moves.length;
   const editWarn = document.getElementById('cfEditWarn');
-  if(editWarn) editWarn.style.display = wasEdit ? 'block' : 'none';
+  if(editWarn){
+    editWarn.style.display = wasEdit ? 'block' : 'none';
+    if(wasEdit){
+      const old = STATE.moves[sCurIdx];
+      // خطر إضافي: لو السجل القديم كان لعميل مختلف تماماً — تحذير أوضح
+      const diffCust = old.amilId && r.amilId && parseInt(old.amilId) !== parseInt(r.amilId);
+      editWarn.textContent = diffCust
+        ? `⚠️ خطر — هذا السجل حالياً لعميل ثاني (${old.amilName||'؟'})! لو أكدت، بياناته تنمسح وتنستبدل بحركتك`
+        : '⚠️ انتباه — هذا تعديل على سجل موجود، مو سجل جديد';
+    }
+  }
   const btnConfirm = document.getElementById('btnConfirmSave');
   if(btnConfirm) btnConfirm.textContent = wasEdit ? '⚠️ تأكيد التعديل' : '✅ تأكيد وحفظ';
 
@@ -2623,10 +2633,22 @@ function filterSearch(){
 }
 
 function loadFromSearch(idx){
+  const r = STATE.moves[idx];
+  if(!r) return;
+  const who = r.amilName || r.hesab || 'بدون اسم';
+  // تأكيد صريح — فتح سجل من البحث يحط النموذج بوضع "تعديل" لهذا السجل بالذات
+  // وأي حفظ بعدها يعدّله بدل ما ينشئ سجل جديد، حتى لو كان لعميل ثاني تماماً
+  const ok = confirm(
+    `هل تريد فتح هذا السجل للتعديل؟\n\n` +
+    `${r.noa||'-'} — ${who}\n${(r.mabD||0).toLocaleString()}$ / ${(r.mabDin||0).toLocaleString()} د.ع\n\n` +
+    `⚠️ إذا أكدت، أي تغيير وحفظ بعدها يعدّل هذا السجل نفسه — مو سجل جديد.\n` +
+    `إذا تريد تسوي حركة جديدة، اضغط "إلغاء" وارجع للرئيسية ثم افتح الصندوق من جديد.`
+  );
+  if(!ok) return;
   sCurIdx = idx;
   sUpdateUI();
   closeModal('modalSearch');
-  toast('✅ تم تحميل السجل رقم ' + (idx+1));
+  toast('✏️ تم تحميل السجل رقم ' + (idx+1) + ' للتعديل');
 }
 
 /* ============================================================

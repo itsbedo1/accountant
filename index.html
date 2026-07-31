@@ -3471,7 +3471,8 @@ function stCheckBalances(){
         ${m.diffDin ? `<div style="color:var(--accent);font-size:12px;">فرق دينار: ${m.diffDin>0?'+':''}${m.diffDin.toLocaleString()} د.ع</div>` : ''}
         ${m.hasMoves
           ? `<div style="color:var(--red);font-size:11px;margin-top:6px;">⚠️ عنده حركات فعلية مسجلة — ما نصلحه تلقائياً، راجعه يدوياً</div>`
-          : `<button onclick="stFixBalance(${m.id})" style="margin-top:8px;width:100%;padding:8px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:900;background:rgba(96,255,144,.15);border:1.5px solid rgba(96,255,144,.5);color:#60ff90;cursor:pointer;">🔧 استرجاع الرصيد الافتتاحي (ماكو حركات فعلية إله)</button>`}
+          : `<div style="color:var(--gold);font-size:11px;margin-top:6px;">⚠️ ماكو حركة مسجلة بس هذا لا يعني الرصيد غلط بالضرورة — يمكن حركة حقيقية صارت وانفقد سجلها بس أثرها ضل بالرصيد. تأكد إنك ما سويت حركة حقيقية بهذا المبلغ لهذا العميل قبل ما تضغط استرجاع.</div>
+             <button onclick="stFixBalance(${m.id})" style="margin-top:8px;width:100%;padding:8px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:900;background:rgba(96,255,144,.15);border:1.5px solid rgba(96,255,144,.5);color:#60ff90;cursor:pointer;">🔧 استرجاع الرصيد الافتتاحي</button>`}
       </div>
     `).join('');
 }

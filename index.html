@@ -2495,12 +2495,28 @@ function copyTelegramLink(id){
     return;
   }
   if(c.tgChatId){
-    toast(`✅ ${c.name} مربوط بتليجرام مسبقاً`);
+    // مربوط مسبقاً — ممكن يكون بالغلط (مثلاً هو نفسه ضغط الرابط وربطه بحسابه)
+    // نعطيه خيار فك الربط حتى يرسل الرابط الصح للعميل الحقيقي
+    if(confirm(`${c.name} مربوط بتليجرام مسبقاً.\nهل تريد فك الربط الحالي حتى ترسل رابط جديد للعميل الصحيح؟`)){
+      unlinkTelegram(c);
+    }
     return;
   }
   const link = `https://t.me/${STATE.settings.tgBotUser}?start=${c.id}`;
   navigator.clipboard.writeText(link);
   toast('📋 انسخ الرابط وأرسله لـ ' + c.name);
+}
+
+async function unlinkTelegram(c){
+  c.tgChatId = null;
+  arRender();
+  try {
+    await sbFetch(`customers?id=eq.${c.id}`, 'PATCH', { telegram_chat_id: null });
+    toast(`✅ تم فك ربط تليجرام عن ${c.name} — انسخ الرابط وأرسله للعميل الصحيح`);
+  } catch(e){
+    console.error('unlinkTelegram:', e);
+    toast('❌ فشل فك الربط: ' + e.message);
+  }
 }
 
 // يرسل إشعار تليجرام للعميل بعد حركة قبض/صرف — يفشل بصمت لو ما عنده بوت أو ربط

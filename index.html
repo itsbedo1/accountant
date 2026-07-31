@@ -2529,6 +2529,16 @@ function fmtAmount(mabD, mabDin){
   return parts.join(' و ') || '0';
 }
 
+// يبني نص رصيد واضح من منظور العميل — بدل رقم سالب صغير يصعب ملاحظته
+// موجب = لك (بذمتنا لك)، سالب = عليك (بذمتك علينا)
+function fmtBalanceLine(curD, curDin){
+  const lines = [];
+  if(curD)   lines.push(`💵 ${Math.abs(curD).toLocaleString()}$ ${curD>0?'(لك)':'(عليك)'}`);
+  if(curDin) lines.push(`💴 ${Math.abs(curDin).toLocaleString()} د.ع ${curDin>0?'(لك)':'(عليك)'}`);
+  if(!lines.length) return 'رصيدك الحالي: متطابق (0)';
+  return `رصيدك الحالي:\n${lines.join('\n')}`;
+}
+
 async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0){
   try {
     const token = STATE.settings.tgBotToken;
@@ -2551,7 +2561,7 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
       actionLine = `${noa==='قبض'?'تم قبض':'تم صرف'} ${amountStr} ${dir} حسابك`;
     }
 
-    const text = `${actionLine}.\nرصيدك الحالي: ${curD.toLocaleString()}$ | ${curDin.toLocaleString()} د.ع`;
+    const text = `${actionLine}.\n${fmtBalanceLine(curD, curDin)}`;
 
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},

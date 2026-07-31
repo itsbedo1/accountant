@@ -1746,6 +1746,9 @@ window.addEventListener('popstate', ()=>{
   if(prev==='pageKashf')   krRender();
   if(prev==='pageArsada')  arRender();
   if(prev==='pageKhulasa') khOpen();
+  // لازم نصفّر نموذج الصندوق هنا برضو (زر رجوع بالموبايل ما يمر عبر goPage())
+  // وإلا يضل النموذج "متعلق" بسجل قديم كان محمّل قبل ما يتصفح المستخدم لصفحة ثانية
+  if(prev==='pageSandooq') sReset();
 });
 
 // عند أول تحميل

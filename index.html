@@ -726,6 +726,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 <div class="modal-ov" id="modalConfirmSave">
   <div class="modal-box dark" style="background:var(--bg2);border:1.5px solid var(--border2);">
     <h3 class="modal-h3 dark" style="color:var(--accent);">📋 تأكيد الحركة</h3>
+    <div id="cfEditWarn" style="display:none;background:rgba(251,191,36,.15);border:1.5px solid rgba(251,191,36,.5);border-radius:8px;padding:10px;margin-bottom:12px;text-align:center;color:var(--gold);font-size:13px;font-weight:900;">
+      ⚠️ انتباه — هذا تعديل على سجل موجود، مو سجل جديد
+    </div>
 
     <!-- نوع الحركة — بارز -->
     <div id="cfNoa" style="text-align:center;font-size:20px;font-weight:900;padding:10px;border-radius:10px;margin-bottom:12px;"></div>
@@ -2096,6 +2099,14 @@ function sSave(){
 
   // احفظ الحركة مؤقتاً
   _pendingMove = r;
+
+  // نبّه المستخدم لو هذا تعديل على سجل موجود بدل سجل جديد
+  // (يصير مثلاً لو بحث عن سجل قديم وبعدين غيّر المبلغ بدون ما يرجع للرئيسية أول)
+  const wasEdit = sCurIdx < STATE.moves.length;
+  const editWarn = document.getElementById('cfEditWarn');
+  if(editWarn) editWarn.style.display = wasEdit ? 'block' : 'none';
+  const btnConfirm = document.getElementById('btnConfirmSave');
+  if(btnConfirm) btnConfirm.textContent = wasEdit ? '⚠️ تأكيد التعديل' : '✅ تأكيد وحفظ';
 
   // اعرض موديل التأكيد
   const isQabdh = r.noa === 'قبض';

@@ -726,6 +726,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 <div class="modal-ov" id="modalConfirmSave">
   <div class="modal-box dark" style="background:var(--bg2);border:1.5px solid var(--border2);">
     <h3 class="modal-h3 dark" style="color:var(--accent);">📋 تأكيد الحركة</h3>
+    <div id="cfEditWarn" style="display:none;background:rgba(251,191,36,.15);border:1.5px solid rgba(251,191,36,.5);border-radius:8px;padding:10px;margin-bottom:12px;text-align:center;color:var(--gold);font-size:13px;font-weight:900;">
+      ⚠️ انتباه — هذا تعديل على سجل موجود، مو سجل جديد
+    </div>
 
     <!-- نوع الحركة — بارز -->
     <div id="cfNoa" style="text-align:center;font-size:20px;font-weight:900;padding:10px;border-radius:10px;margin-bottom:12px;"></div>
@@ -1792,7 +1795,7 @@ updateClock();
 /* ============================================================
    PAGE 2 — SANDOOQ
 ============================================================ */
-let sCurIdx=0;
+let sCurIdx=-1; // -1 = ماكو سجل محمّل (وضع سجل جديد) — لا يشير أبداً لأول سجل بالغلط
 
 function sUpdateUI(){
   const tot=STATE.moves.length;
@@ -1826,7 +1829,7 @@ function sLoad(r){
 function sGet(){
   // إذا كنا نعدّل سجل موجود فعلاً — لازم نحافظ على dbId حتى نحدّثه (PATCH)
   // بدل ما ننشئ سجل مكرر جديد (POST) بقاعدة البيانات
-  const existing = sCurIdx < STATE.moves.length ? STATE.moves[sCurIdx] : null;
+  const existing = (sCurIdx>=0 && sCurIdx < STATE.moves.length) ? STATE.moves[sCurIdx] : null;
   return {
     noa:       document.getElementById('sNoa').value,
     tarikh:    document.getElementById('sTarikh').value,
@@ -2097,6 +2100,14 @@ function sSave(){
   // احفظ الحركة مؤقتاً
   _pendingMove = r;
 
+  // نبّه المستخدم لو هذا تعديل على سجل موجود بدل سجل جديد
+  // (يصير مثلاً لو بحث عن سجل قديم وبعدين غيّر المبلغ بدون ما يرجع للرئيسية أول)
+  const wasEdit = sCurIdx>=0 && sCurIdx < STATE.moves.length;
+  const editWarn = document.getElementById('cfEditWarn');
+  if(editWarn) editWarn.style.display = wasEdit ? 'block' : 'none';
+  const btnConfirm = document.getElementById('btnConfirmSave');
+  if(btnConfirm) btnConfirm.textContent = wasEdit ? '⚠️ تأكيد التعديل' : '✅ تأكيد وحفظ';
+
   // اعرض موديل التأكيد
   const isQabdh = r.noa === 'قبض';
   const noa = document.getElementById('cfNoa');
@@ -2134,7 +2145,7 @@ async function confirmAndSave(){
   _saving = true;
   if(btn){ btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = '⏳ جاري الحفظ...'; }
 
-  const wasEdit = sCurIdx < STATE.moves.length;
+  const wasEdit = sCurIdx>=0 && sCurIdx < STATE.moves.length;
   const old = wasEdit ? STATE.moves[sCurIdx] : null;
 
   // إذا تعديل على حركة قديمة — أرجع تأثيرها أولاً
@@ -2285,6 +2296,7 @@ function reverseMove(c,r){ applyToCustomer(c, r.noa==='قبض'?'صرف':'قبض'
 
 function sDel(){
   if(!STATE.moves.length){ toast('⚠️ لا يوجد سجل'); return; }
+  if(sCurIdx<0 || sCurIdx>=STATE.moves.length){ toast('⚠️ ماكو سجل محمّل للحذف — دوّر عليه أولاً من البحث'); return; }
   requirePin('🗑 حذف الحركة الحالية', async ()=>{
     if(!confirm('تأكيد حذف هذه الحركة؟')) return;
     const r = STATE.moves[sCurIdx];

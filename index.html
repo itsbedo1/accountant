@@ -1754,6 +1754,12 @@ window.addEventListener('load', ()=>{
    UTILS
 ============================================================ */
 function fmt(n){ return n?Number(n).toLocaleString():'0'; }
+// ينقّي أي نص قبل حقنه بـ innerHTML — يمنع تنفيذ HTML/JS من أسماء عملاء أو ملاحظات مدخلة يدوياً
+function escapeHtml(str){
+  return String(str==null?'':str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -2029,8 +2035,8 @@ function filterJihaList(){
     ? STATE.customers.filter(c=>c.name.includes(q))
     : STATE.customers;
   list.innerHTML=filtered.map(c=>
-    `<button class="modal-opt" onclick="selJiha('${c.name.replace(/'/g,"\\'")}')">
-       <span style="color:#888;font-size:11px;margin-left:6px;">عميل</span>${c.name}
+    `<button class="modal-opt" onclick="selJiha(${escapeHtml(JSON.stringify(c.name))})">
+       <span style="color:#888;font-size:11px;margin-left:6px;">عميل</span>${escapeHtml(c.name)}
      </button>`
   ).join('');
 }
@@ -2370,11 +2376,11 @@ function krRender(){
     totW+=wared; totS+=sader;
     const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'-';
     const noaCls = r.noa==='قبض' ? 'qabdh' : 'sarf';
-    html+=`<div class="kr-card" onclick='krDetail(${JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared,sader,raseed,notes:r.notes})})'>
+    html+=`<div class="kr-card" onclick='krDetail(${escapeHtml(JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared,sader,raseed,notes:r.notes}))})'>
       <div class="kr-card-top">
         <span class="kr-card-noa ${noaCls}">${r.noa||'-'}</span>
-        <span class="kr-card-name">${r.amilName||r.hesab||'-'}</span>
-        <span class="kr-card-raqm">#${r.raqm||i+1}</span>
+        <span class="kr-card-name">${escapeHtml(r.amilName||r.hesab||'-')}</span>
+        <span class="kr-card-raqm">#${escapeHtml(r.raqm||i+1)}</span>
       </div>
       <div class="kr-card-bottom">
         <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(wared)}</span></div>
@@ -2399,7 +2405,7 @@ function krRender(){
     totW+=wared; totS+=sader;
     const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'-';
     const label=`${r.type} دولار · ${r.rate} IQD/$`;
-    html+=`<div class="kr-card sayarfa" onclick='krDetail(${JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared,sader,raseed,notes:r.notes||''})})'>
+    html+=`<div class="kr-card sayarfa" onclick='krDetail(${escapeHtml(JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared,sader,raseed,notes:r.notes||''}))})'>
       <div class="kr-card-top">
         <span class="kr-card-icon">💱</span>
         <span class="kr-card-name">${label}</span>
@@ -2454,7 +2460,7 @@ function arRender(){
     const tgIcon = c.tgChatId ? '✅' : '📨';
     html+=`<div class="ar-card" onclick="arDetail(${c.id})">
       <div class="ar-card-top">
-        <span class="ar-card-name">${c.name}</span>
+        <span class="ar-card-name">${escapeHtml(c.name)}</span>
         <span class="ar-card-star" onclick="event.stopPropagation();copyTelegramLink(${c.id})" title="${c.tgChatId?'مربوط بتليجرام':'انسخ رابط ربط تليجرام'}">${tgIcon}</span>
         <span class="ar-card-star">${star}</span>
       </div>
@@ -2566,10 +2572,10 @@ function filterSearch(){
   list.innerHTML = results.map(({r,i})=>{
     const dateStr = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '-';
     return `<div class="search-item" onclick="loadFromSearch(${i})">
-      <div class="si-raqm">${r.raqm||'#'+( i+1)}</div>
+      <div class="si-raqm">${escapeHtml(r.raqm||'#'+( i+1))}</div>
       <div class="si-info">
-        <div class="si-name">${r.amilName || r.hesab || 'بدون اسم'}</div>
-        <div class="si-meta">${r.noa||'-'} · ${dateStr} · $${(r.mabD||0).toLocaleString()}</div>
+        <div class="si-name">${escapeHtml(r.amilName || r.hesab || 'بدون اسم')}</div>
+        <div class="si-meta">${escapeHtml(r.noa||'-')} · ${dateStr} · $${(r.mabD||0).toLocaleString()}</div>
       </div>
     </div>`;
   }).join('');
@@ -2711,8 +2717,8 @@ function kaRender(){
       <div class="katd raseed" style="${rc}">${fmt(raseed)}</div>
       <div class="katd wared">${fmt(wared)}</div>
       <div class="katd sader">${fmt(sader)}</div>
-      <div class="katd noa">${r.noa} · ${jihaLabel}</div>
-      <div class="katd sand">${r.raqm||'-'}<br><span style="color:#666;font-size:9px;">${dateStr}</span></div>
+      <div class="katd noa">${escapeHtml(r.noa)} · ${escapeHtml(jihaLabel)}</div>
+      <div class="katd sand">${escapeHtml(r.raqm||'-')}<br><span style="color:#666;font-size:9px;">${dateStr}</span></div>
     </div>`;
   });
 
@@ -2776,10 +2782,10 @@ function printKashfAmil(){
     totLeD+=leD; totAlayhD+=alayhD; totLeDin+=leDin; totAlayhDin+=alayhDin;
     const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'';
     return `<tr>
-      <td style="text-align:right;color:#555;font-size:9px;">${r.notes||(isJiha?r.amilName:'')||''}</td>
+      <td style="text-align:right;color:#555;font-size:9px;">${escapeHtml(r.notes||(isJiha?r.amilName:'')||'')}</td>
       <td>${dateStr}</td>
-      <td style="color:#555;">${r.raqm||''}</td>
-      <td style="font-weight:700;">${r.noa||''}</td>
+      <td style="color:#555;">${escapeHtml(r.raqm||'')}</td>
+      <td style="font-weight:700;">${escapeHtml(r.noa||'')}</td>
       <td>${fN(alayhDin)}</td>
       <td>${fN(leDin)}</td>
       <td style="font-weight:700;">${fSigned(netDin)}</td>
@@ -2810,7 +2816,7 @@ function printKashfAmil(){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>كشف حساب — ${c.name}</title>
+<title>كشف حساب — ${escapeHtml(c.name)}</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -2851,9 +2857,9 @@ tfoot td{padding:5px 3px;border:1px solid #999;text-align:center;font-weight:900
     <div>الى ${toStr}</div>
   </div>
   <div class="header-center">
-    <h1>${compName}</h1>
+    <h1>${escapeHtml(compName)}</h1>
     <h2>كشف حساب</h2>
-    <div class="cname">${c.name}</div>
+    <div class="cname">${escapeHtml(c.name)}</div>
   </div>
   <div class="header-right">
     <div>${c.id}</div>
@@ -2902,7 +2908,7 @@ tfoot td{padding:5px 3px;border:1px solid #999;text-align:center;font-weight:900
 </table>
 
 <div class="footer">
-  <span>${compName}</span>
+  <span>${escapeHtml(compName)}</span>
   <span>صفحة 1 من 1</span>
   <span>${today}</span>
 </div>
@@ -3320,7 +3326,7 @@ function stRenderAmilList(){
         حذف
       </button>
       <div style="flex:1;text-align:right;margin-right:8px;">
-        <span style="color:white;font-size:13px;font-weight:700;">${c.name}</span>
+        <span style="color:white;font-size:13px;font-weight:700;">${escapeHtml(c.name)}</span>
         <span style="color:rgba(255,255,255,0.4);font-size:10px;margin-right:6px;">#${c.id}</span>
       </div>
     </div>

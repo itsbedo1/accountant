@@ -716,6 +716,17 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 <body>
 
 <!-- ======================================================
+     LOADING OVERLAY — يمنع أي تفاعل مع التطبيق قبل ما تخلص بيانات
+     العملاء والحركات من التحميل الكامل، حتى ما يصير حفظ/تعديل بالغلط
+     على سجل قديم بسبب سباق توقيت (race condition) بين التحميل والتفاعل
+====================================================== -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:#040d1a;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+  <div style="width:44px;height:44px;border:4px solid rgba(34,211,238,.25);border-top-color:var(--accent);border-radius:50%;animation:loadingSpin 0.8s linear infinite;"></div>
+  <div style="color:white;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;">⏳ جاري تحميل البيانات...</div>
+</div>
+<style>@keyframes loadingSpin{to{transform:rotate(360deg);}}</style>
+
+<!-- ======================================================
      TOAST
 ====================================================== -->
 <div class="toast" id="toast"></div>
@@ -1574,6 +1585,19 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       <div id="stAmilList" style="max-height:200px;overflow-y:auto;"></div>
     </div>
 
+    <!-- ══ قسم: فحص تطابق أرصدة العملاء ══ -->
+    <div style="background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.25);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="color:var(--gold);font-size:13px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:6px;">🔍 فحص تطابق أرصدة العملاء</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-bottom:10px;text-align:right;">
+        يقارن رصيد كل عميل الحالي بمجموع كل حركاته المسجلة — لو فيه فرق، معناه رصيده تأثر بدون حركة توضحه (مثل خطأ تعديل قديم).
+      </div>
+      <button onclick="stCheckBalances()"
+        style="width:100%;padding:10px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(240,192,64,.2);border:1.5px solid rgba(240,192,64,.5);color:var(--gold);cursor:pointer;margin-bottom:8px;">
+        🔍 فحص الآن
+      </button>
+      <div id="stBalanceCheckResult"></div>
+    </div>
+
     <!-- ══ قسم 5: حذف البيانات ══ -->
     <div style="background:rgba(251,113,133,.06);border:1px solid rgba(251,113,133,.2);border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="color:#ff8080;font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;">⚠️ منطقة الخطر</div>
@@ -1698,6 +1722,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
    STATE — كل البيانات هنا مشتركة بين الصفحات
 ============================================================ */
 const STATE = {
+  dataReady: false, // يصير true بس بعد ما يخلص dbLoad() بالكامل — يمنع أي حفظ قبل اكتمال التحميل
   moves: [],
   sayarfaMoves: [],
   initBalD:   0,
@@ -2096,6 +2121,7 @@ let _pendingMove = null; // الحركة المعلقة للتأكيد
 
 function sSave(){
   if(_saving){ toast('⏳ فيه حفظ سابق لا يزال قيد التنفيذ — انتظر لحظة'); return; }
+  if(!STATE.dataReady){ toast('⏳ البيانات لسا تتحمل — انتظر لحظة وحاول مرة ثانية'); return; }
   const r = sGet();
   if(!r.noa)              { toast('⚠️ اختر نوع الحركة'); return; }
   if(!r.mabD && !r.mabDin){ toast('⚠️ أدخل مبلغ');      return; }
@@ -2107,7 +2133,17 @@ function sSave(){
   // (يصير مثلاً لو بحث عن سجل قديم وبعدين غيّر المبلغ بدون ما يرجع للرئيسية أول)
   const wasEdit = sCurIdx>=0 && sCurIdx < STATE.moves.length;
   const editWarn = document.getElementById('cfEditWarn');
-  if(editWarn) editWarn.style.display = wasEdit ? 'block' : 'none';
+  if(editWarn){
+    editWarn.style.display = wasEdit ? 'block' : 'none';
+    if(wasEdit){
+      const old = STATE.moves[sCurIdx];
+      // خطر إضافي: لو السجل القديم كان لعميل مختلف تماماً — تحذير أوضح
+      const diffCust = old.amilId && r.amilId && parseInt(old.amilId) !== parseInt(r.amilId);
+      editWarn.textContent = diffCust
+        ? `⚠️ خطر — هذا السجل حالياً لعميل ثاني (${old.amilName||'؟'})! لو أكدت، بياناته تنمسح وتنستبدل بحركتك`
+        : '⚠️ انتباه — هذا تعديل على سجل موجود، مو سجل جديد';
+    }
+  }
   const btnConfirm = document.getElementById('btnConfirmSave');
   if(btnConfirm) btnConfirm.textContent = wasEdit ? '⚠️ تأكيد التعديل' : '✅ تأكيد وحفظ';
 
@@ -2298,6 +2334,7 @@ function applyMove(c,r)  { applyToCustomer(c, r.noa, r.mabD, r.mabDin); }
 function reverseMove(c,r){ applyToCustomer(c, r.noa==='قبض'?'صرف':'قبض', r.mabD, r.mabDin); }
 
 function sDel(){
+  if(!STATE.dataReady){ toast('⏳ البيانات لسا تتحمل — انتظر لحظة وحاول مرة ثانية'); return; }
   if(!STATE.moves.length){ toast('⚠️ لا يوجد سجل'); return; }
   if(sCurIdx<0 || sCurIdx>=STATE.moves.length){ toast('⚠️ ماكو سجل محمّل للحذف — دوّر عليه أولاً من البحث'); return; }
   requirePin('🗑 حذف الحركة الحالية', async ()=>{
@@ -2623,10 +2660,22 @@ function filterSearch(){
 }
 
 function loadFromSearch(idx){
+  const r = STATE.moves[idx];
+  if(!r) return;
+  const who = r.amilName || r.hesab || 'بدون اسم';
+  // تأكيد صريح — فتح سجل من البحث يحط النموذج بوضع "تعديل" لهذا السجل بالذات
+  // وأي حفظ بعدها يعدّله بدل ما ينشئ سجل جديد، حتى لو كان لعميل ثاني تماماً
+  const ok = confirm(
+    `هل تريد فتح هذا السجل للتعديل؟\n\n` +
+    `${r.noa||'-'} — ${who}\n${(r.mabD||0).toLocaleString()}$ / ${(r.mabDin||0).toLocaleString()} د.ع\n\n` +
+    `⚠️ إذا أكدت، أي تغيير وحفظ بعدها يعدّل هذا السجل نفسه — مو سجل جديد.\n` +
+    `إذا تريد تسوي حركة جديدة، اضغط "إلغاء" وارجع للرئيسية ثم افتح الصندوق من جديد.`
+  );
+  if(!ok) return;
   sCurIdx = idx;
   sUpdateUI();
   closeModal('modalSearch');
-  toast('✅ تم تحميل السجل رقم ' + (idx+1));
+  toast('✏️ تم تحميل السجل رقم ' + (idx+1) + ' للتعديل');
 }
 
 /* ============================================================
@@ -3374,6 +3423,54 @@ function stRenderAmilList(){
   `).join('');
 }
 
+// يقارن رصيد كل عميل الحالي (المخزّن) بالرصيد اللي المفروض ينتج من إعادة
+// حساب رصيده الافتتاحي + كل حركاته المسجلة — أي فرق معناه رصيده تغيّر
+// بدون حركة توضحه (مثل تأثير عكسي من تعديل خاطئ لسجل عميل ثاني)
+function stCheckBalances(){
+  const resultEl = document.getElementById('stBalanceCheckResult');
+  resultEl.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:8px;">⏳ جاري الفحص...</div>';
+
+  const mismatches = [];
+  STATE.customers.forEach(c=>{
+    let expD   = (c.initDL   != null ? c.initDL   : c.dL)   - (c.initDA   != null ? c.initDA   : c.dA);
+    let expDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
+
+    STATE.moves.forEach(r=>{
+      const isAmil = parseInt(r.amilId) === c.id;
+      const isJiha = r.jiha === c.name;
+      if(isAmil){
+        if(r.noa==='قبض'){ expD += r.mabD; expDin += r.mabDin; }
+        else              { expD -= r.mabD; expDin -= r.mabDin; }
+      } else if(isJiha){
+        if(r.noa==='قبض'){ expD -= r.mabD; expDin -= r.mabDin; }
+        else              { expD += r.mabD; expDin += r.mabDin; }
+      }
+    });
+
+    const curD = c.dL - c.dA, curDin = c.dinL - c.dinA;
+    const diffD   = Math.round((curD - expD) * 100) / 100;
+    const diffDin = Math.round(curDin - expDin);
+    if(Math.abs(diffD) >= 1 || Math.abs(diffDin) >= 1){
+      mismatches.push({ name: c.name, id: c.id, diffD, diffDin });
+    }
+  });
+
+  if(!mismatches.length){
+    resultEl.innerHTML = '<div style="text-align:center;color:#60ff90;font-size:12px;padding:10px;">✅ كل الأرصدة متطابقة — ما فيه أي فرق مشبوه</div>';
+    return;
+  }
+
+  resultEl.innerHTML =
+    `<div style="color:var(--red);font-size:12px;font-weight:900;margin-bottom:6px;text-align:center;">⚠️ لقينا ${mismatches.length} عميل عندهم فرق مشبوه:</div>` +
+    mismatches.map(m => `
+      <div style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.3);border-radius:8px;padding:10px;margin-bottom:6px;">
+        <div style="color:white;font-weight:900;font-size:13px;margin-bottom:4px;">${escapeHtml(m.name)} (#${m.id})</div>
+        ${m.diffD   ? `<div style="color:var(--gold);font-size:12px;">فرق دولار: ${m.diffD>0?'+':''}${m.diffD.toLocaleString()}$</div>` : ''}
+        ${m.diffDin ? `<div style="color:var(--accent);font-size:12px;">فرق دينار: ${m.diffDin>0?'+':''}${m.diffDin.toLocaleString()} د.ع</div>` : ''}
+      </div>
+    `).join('');
+}
+
 let _amilBalType = 'له'; // افتراضي: العميل يدين لنا
 
 function setAmilBalType(type){
@@ -3655,6 +3752,11 @@ async function myId(){
    DB — تحميل البيانات من Supabase
 ============================================================ */
 async function dbLoad(){
+  // نمنع أي حفظ/حذف لحد ما تخلص كل البيانات تحميل — يمنع سباق توقيت
+  // (race condition) بين التنقل السريع بالتطبيق واكتمال تحميل الحركات
+  STATE.dataReady = false;
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  if(loadingOverlay) loadingOverlay.style.display = 'flex';
   dbSetStatus('جاري تحميل البيانات...', '#f0c040');
   try {
     // 1) الإعدادات — بدون فلتر id، RLS يرجع صف شركتك بس
@@ -3736,6 +3838,12 @@ async function dbLoad(){
   } catch(e){
     dbSetStatus('❌ ' + e.message, '#ff6060');
     console.error(e);
+  } finally {
+    STATE.dataReady = true;
+    if(loadingOverlay) loadingOverlay.style.display = 'none';
+    // أي نموذج صندوق مفتوح لازم يتصفّر الحين بعد ما صارت STATE.moves كاملة —
+    // حتى ما يضل sCurIdx يشير لمكان كان صحيح مؤقتاً وقت التحميل الجزئي
+    if(document.getElementById('pageSandooq')?.classList.contains('active')) sReset();
   }
 }
 

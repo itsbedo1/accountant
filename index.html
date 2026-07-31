@@ -816,6 +816,16 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
   </div>
 </div>
 
+<!-- MODAL — اختيار عميل (الصيرفة) -->
+<div class="modal-ov" id="modalSfAmil">
+  <div class="modal-box green">
+    <h3 class="modal-h3 light">اختر العميل</h3>
+    <input class="search-input" id="sfAmilSearch" type="text" placeholder="🔍 بحث عن عميل..." oninput="sfFilterAmilList()">
+    <div id="sfAmilList" style="max-height:42vh;overflow-y:auto;"></div>
+    <button class="modal-close-btn" onclick="closeModal('modalSfAmil')">إلغاء</button>
+  </div>
+</div>
+
 <!-- MODAL — تفاصيل حركة كشف -->
 <div class="modal-ov" id="modalKashfDetail">
   <div class="modal-box dark">
@@ -1193,7 +1203,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 
     <!-- رصيد القاصة الحالي -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;">
-      <div style="color:var(--text-dim);font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">رصيد القاصة الحالي</div>
+      <div id="sfBalTitle" style="color:var(--text-dim);font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">رصيد القاصة الحالي</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div style="background:rgba(240,192,64,0.15);border:1.5px solid rgba(240,192,64,0.4);border-radius:8px;padding:10px;text-align:center;">
           <div style="color:#f0c040;font-size:10px;font-weight:700;margin-bottom:3px;">دولار $</div>
@@ -1203,6 +1213,26 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
           <div style="color:#60d8a0;font-size:10px;font-weight:700;margin-bottom:3px;">دينار IQD</div>
           <div id="sfBalDin" style="color:#80ffb8;font-size:14px;font-weight:900;direction:ltr;">0</div>
         </div>
+      </div>
+    </div>
+
+    <!-- نوع الحركة: نقدي (القاصة) أو ذمم عملاء -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:12px;">
+      <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:8px;text-align:right;">نوع الحركة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button id="sfBtnCash" onclick="sfSetMode('نقدي')"
+          style="padding:12px 6px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;">
+          💰 نقدي (القاصة)
+        </button>
+        <button id="sfBtnAmil" onclick="sfSetMode('ذمم عملاء')"
+          style="padding:12px 6px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;">
+          👤 ذمم عملاء
+        </button>
+      </div>
+      <div id="sfAmilRow" style="display:none;margin-top:10px;">
+        <div style="color:var(--accent);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">العميل</div>
+        <input type="text" id="sfAmilNm" placeholder="اضغط لاختيار العميل ▾" readonly onclick="sfOpenAmilModal()"
+          style="width:100%;background:#071e38;border:2px solid rgba(34,211,238,.4);border-radius:8px;padding:10px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;color:var(--text);text-align:center;cursor:pointer;">
       </div>
     </div>
 
@@ -1255,7 +1285,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 
     <!-- نتيجة التأثير على القاصة -->
     <div id="sfResultCard" style="display:none;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px;margin-bottom:12px;">
-      <div style="color:var(--text-dim);font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">بعد العملية — رصيد القاصة</div>
+      <div id="sfResultTitle" style="color:var(--text-dim);font-size:11px;font-weight:700;text-align:center;margin-bottom:8px;">بعد العملية — رصيد القاصة</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div style="background:rgba(240,192,64,0.1);border:1px solid rgba(240,192,64,0.3);border-radius:8px;padding:8px;text-align:center;">
           <div style="color:#f0c040;font-size:10px;font-weight:600;">دولار $</div>
@@ -2895,8 +2925,11 @@ tfoot td{padding:5px 3px;border:1px solid #999;text-align:center;font-weight:900
 /* ============================================================
    PAGE 6 — SAYARFA
 ============================================================ */
+let sfMode = 'نقدي'; // نقدي (القاصة) أو ذمم عملاء
+let sfSelectedAmilId = null;
+
 function sfOpen(){
-  sfRefreshBal();
+  sfSetMode('نقدي');
   sfReset();
   // تاريخ اليوم
   const now=new Date();
@@ -2906,9 +2939,69 @@ function sfOpen(){
   if(el) el.textContent=`${d}/${m}/${now.getFullYear()}`;
 }
 
+// نقدي = تأثير على رصيد القاصة (كالسابق) | ذمم عملاء = تحويل عملة داخل رصيد عميل محدد بدون مساس بالقاصة
+function sfSetMode(mode){
+  sfMode = mode;
+  const bCash=document.getElementById('sfBtnCash');
+  const bAmil=document.getElementById('sfBtnAmil');
+  if(mode==='نقدي'){
+    bCash.style.background='#1a5a8a'; bCash.style.borderColor='#40a0e0'; bCash.style.color='white';
+    bAmil.style.background='rgba(255,255,255,0.1)'; bAmil.style.borderColor='rgba(255,255,255,0.3)'; bAmil.style.color='white';
+    document.getElementById('sfAmilRow').style.display='none';
+    document.getElementById('sfBalTitle').textContent='رصيد القاصة الحالي';
+    document.getElementById('sfResultTitle').textContent='بعد العملية — رصيد القاصة';
+  } else {
+    bAmil.style.background='#1a5a8a'; bAmil.style.borderColor='#40a0e0'; bAmil.style.color='white';
+    bCash.style.background='rgba(255,255,255,0.1)'; bCash.style.borderColor='rgba(255,255,255,0.3)'; bCash.style.color='white';
+    document.getElementById('sfAmilRow').style.display='block';
+    document.getElementById('sfBalTitle').textContent='رصيد العميل الحالي';
+    document.getElementById('sfResultTitle').textContent='بعد العملية — رصيد العميل';
+    sfSelectedAmilId = null;
+    document.getElementById('sfAmilNm').value='';
+  }
+  sfRefreshBal();
+  sfShowResult();
+}
+
+function sfOpenAmilModal(){
+  document.getElementById('sfAmilSearch').value='';
+  sfFilterAmilList();
+  openModal('modalSfAmil');
+}
+
+function sfFilterAmilList(){
+  const q = document.getElementById('sfAmilSearch').value.trim();
+  const list = document.getElementById('sfAmilList');
+  const filtered = q ? STATE.customers.filter(c=>c.name.includes(q)) : STATE.customers;
+  list.innerHTML='';
+  filtered.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='modal-opt';
+    b.textContent=c.name;
+    b.onclick=()=>{ sfSelAmil(c.id); };
+    list.appendChild(b);
+  });
+}
+
+function sfSelAmil(id){
+  const c = STATE.customers.find(x=>x.id===id);
+  if(!c) return;
+  sfSelectedAmilId = id;
+  document.getElementById('sfAmilNm').value = c.name;
+  closeModal('modalSfAmil');
+  sfRefreshBal();
+  sfShowResult();
+}
+
 function sfRefreshBal(){
   const elD  =document.getElementById('sfBalD');
   const elDin=document.getElementById('sfBalDin');
+  if(sfMode==='ذمم عملاء'){
+    const c = STATE.customers.find(x=>x.id===sfSelectedAmilId);
+    if(elD)   elD.textContent   = c ? (c.dL-c.dA).toLocaleString()    : '—';
+    if(elDin) elDin.textContent = c ? (c.dinL-c.dinA).toLocaleString(): '—';
+    return;
+  }
   if(elD)   elD.textContent  = STATE.initBalD.toLocaleString();
   if(elDin) elDin.textContent= STATE.initBalDin.toLocaleString();
 }
@@ -2956,14 +3049,27 @@ function sfShowResult(){
     document.getElementById('sfResultCard').style.display='none';
     return;
   }
-  let afterD   = STATE.initBalD;
-  let afterDin = STATE.initBalDin;
-  if(type==='شراء'){
-    afterD   += mabD;    // نستلم دولار
-    afterDin -= mabDin;  // ندفع دينار
+
+  let afterD, afterDin;
+  if(sfMode==='ذمم عملاء'){
+    const c = STATE.customers.find(x=>x.id===sfSelectedAmilId);
+    if(!c){
+      document.getElementById('sfResultCard').style.display='none';
+      return;
+    }
+    afterD   = c.dL - c.dA;
+    afterDin = c.dinL - c.dinA;
   } else {
-    afterD   -= mabD;    // ندفع دولار
-    afterDin += mabDin;  // نستلم دينار
+    afterD   = STATE.initBalD;
+    afterDin = STATE.initBalDin;
+  }
+
+  if(type==='شراء'){
+    afterD   += mabD;    // يزيد الدولار
+    afterDin -= mabDin;  // ينقص الدينار
+  } else {
+    afterD   -= mabD;    // ينقص الدولار
+    afterDin += mabDin;  // يزيد الدينار
   }
   document.getElementById('sfAfterD').textContent   = afterD.toLocaleString();
   document.getElementById('sfAfterDin').textContent = afterDin.toLocaleString();
@@ -2983,6 +3089,11 @@ function sfSave(){
   if(!type)              { toast('⚠️ اختر نوع العملية'); return; }
   if(!mabD && !mabDin)   { toast('⚠️ أدخل المبلغ'); return; }
   if(!rate)              { toast('⚠️ أدخل سعر الصرف'); return; }
+
+  if(sfMode==='ذمم عملاء'){
+    sfSaveAmil(type, mabD, mabDin, rate, notes);
+    return;
+  }
 
   // تأثير على القاصة
   if(type==='شراء'){
@@ -3013,12 +3124,58 @@ function sfSave(){
   sfReset();
 }
 
+// صيرفة ذمم عملاء — تحويل عملة داخل رصيد عميل محدد (بدون أي تأثير على القاصة)
+// بيع دولار  = دولار العميل ينقص + دينار العميل يزيد
+// شراء دولار = دولار العميل يزيد + دينار العميل ينقص
+// تُسجَّل كحركتين (دولار/دينار) بربط amilId حتى تظهر بكشف حساب العميل
+async function sfSaveAmil(type, mabD, mabDin, rate, notes){
+  const c = STATE.customers.find(x=>x.id===sfSelectedAmilId);
+  if(!c){ toast('⚠️ اختر عميل أولاً'); return; }
+
+  const noaD   = type==='بيع' ? 'صرف' : 'قبض';
+  const noaDin = type==='بيع' ? 'قبض' : 'صرف';
+
+  applyToCustomer(c, noaD,   mabD, 0);
+  applyToCustomer(c, noaDin, 0,    mabDin);
+
+  const now = new Date();
+  const tarikh = now.toISOString().split('T')[0];
+  const noteBase = `تحويل عملة (صيرفة) — سعر ${rate.toLocaleString()}` + (notes ? ` — ${notes}` : '');
+
+  const legD = {
+    noa: noaD, tarikh, raqm: 'صيرفة', hesab: 'ذمم العملاء',
+    mabD, mabDin: 0, jiha: '', sak: '', notes: noteBase,
+    amilId: c.id, amilName: c.name,
+  };
+  const legDin = {
+    noa: noaDin, tarikh, raqm: 'صيرفة', hesab: 'ذمم العملاء',
+    mabD: 0, mabDin, jiha: '', sak: '', notes: noteBase,
+    amilId: c.id, amilName: c.name,
+  };
+  STATE.moves.push(legD, legDin);
+
+  toast(`✅ تم تحويل عملة حساب ${c.name}`);
+  sfRefreshBal();
+  sfShowResult();
+  sfReset();
+
+  await dbSaveCustomer(c);
+  await dbSaveMove(legD);
+  await dbSaveMove(legDin);
+
+  arRender();
+  if(typeof kaAmilId !== 'undefined' && kaAmilId === c.id) kaRender();
+}
+
 function sfReset(){
   document.getElementById('sfType').value='';
   document.getElementById('sfMabD').value='0';
   document.getElementById('sfMabDin').value='0';
   document.getElementById('sfNotes').value='';
   document.getElementById('sfResultCard').style.display='none';
+  sfSelectedAmilId = null;
+  const elAmilNm = document.getElementById('sfAmilNm');
+  if(elAmilNm) elAmilNm.value='';
   // أزرار النوع
   ['sfBtnBuy','sfBtnSell'].forEach(id=>{
     const b=document.getElementById(id);

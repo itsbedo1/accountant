@@ -3070,10 +3070,10 @@ function khRender(){
   const sandDin = STATE.initBalDin;
 
   // ── 5. المجموع ────────────────────────────────────────────
-  // رأس المال = الصندوق + ديون لنا عند العملاء/الشركات
-  // custNet/compNet موجب = لنا، سالب = علينا
-  const totD   = sandD   + compNetD   + custNetD;
-  const totDin = sandDin + compNetDin + custNetDin;
+  // رأس المال = الصندوق + ديون الشركات (أصل لنا) − صافي ديون العملاء
+  // custNetD/custNetDin = دولار/دينار له − عليه → موجب يعني علينا (نطرحه)، سالب يعني لنا (نضيف قيمته المطلقة)
+  const totD   = sandD   + compNetD   - custNetD;
+  const totDin = sandDin + compNetDin - custNetDin;
 
   // ── 6. الصافي ────────────────────────────────────────────
   const netDin = totDin + Math.round(totD * rate);

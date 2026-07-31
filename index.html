@@ -1585,6 +1585,19 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       <div id="stAmilList" style="max-height:200px;overflow-y:auto;"></div>
     </div>
 
+    <!-- ══ قسم: فحص تطابق أرصدة العملاء ══ -->
+    <div style="background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.25);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="color:var(--gold);font-size:13px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:6px;">🔍 فحص تطابق أرصدة العملاء</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-bottom:10px;text-align:right;">
+        يقارن رصيد كل عميل الحالي بمجموع كل حركاته المسجلة — لو فيه فرق، معناه رصيده تأثر بدون حركة توضحه (مثل خطأ تعديل قديم).
+      </div>
+      <button onclick="stCheckBalances()"
+        style="width:100%;padding:10px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(240,192,64,.2);border:1.5px solid rgba(240,192,64,.5);color:var(--gold);cursor:pointer;margin-bottom:8px;">
+        🔍 فحص الآن
+      </button>
+      <div id="stBalanceCheckResult"></div>
+    </div>
+
     <!-- ══ قسم 5: حذف البيانات ══ -->
     <div style="background:rgba(251,113,133,.06);border:1px solid rgba(251,113,133,.2);border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="color:#ff8080;font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;">⚠️ منطقة الخطر</div>
@@ -3408,6 +3421,54 @@ function stRenderAmilList(){
       </div>
     </div>
   `).join('');
+}
+
+// يقارن رصيد كل عميل الحالي (المخزّن) بالرصيد اللي المفروض ينتج من إعادة
+// حساب رصيده الافتتاحي + كل حركاته المسجلة — أي فرق معناه رصيده تغيّر
+// بدون حركة توضحه (مثل تأثير عكسي من تعديل خاطئ لسجل عميل ثاني)
+function stCheckBalances(){
+  const resultEl = document.getElementById('stBalanceCheckResult');
+  resultEl.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:8px;">⏳ جاري الفحص...</div>';
+
+  const mismatches = [];
+  STATE.customers.forEach(c=>{
+    let expD   = (c.initDL   != null ? c.initDL   : c.dL)   - (c.initDA   != null ? c.initDA   : c.dA);
+    let expDin = (c.initDinL != null ? c.initDinL : c.dinL) - (c.initDinA != null ? c.initDinA : c.dinA);
+
+    STATE.moves.forEach(r=>{
+      const isAmil = parseInt(r.amilId) === c.id;
+      const isJiha = r.jiha === c.name;
+      if(isAmil){
+        if(r.noa==='قبض'){ expD += r.mabD; expDin += r.mabDin; }
+        else              { expD -= r.mabD; expDin -= r.mabDin; }
+      } else if(isJiha){
+        if(r.noa==='قبض'){ expD -= r.mabD; expDin -= r.mabDin; }
+        else              { expD += r.mabD; expDin += r.mabDin; }
+      }
+    });
+
+    const curD = c.dL - c.dA, curDin = c.dinL - c.dinA;
+    const diffD   = Math.round((curD - expD) * 100) / 100;
+    const diffDin = Math.round(curDin - expDin);
+    if(Math.abs(diffD) >= 1 || Math.abs(diffDin) >= 1){
+      mismatches.push({ name: c.name, id: c.id, diffD, diffDin });
+    }
+  });
+
+  if(!mismatches.length){
+    resultEl.innerHTML = '<div style="text-align:center;color:#60ff90;font-size:12px;padding:10px;">✅ كل الأرصدة متطابقة — ما فيه أي فرق مشبوه</div>';
+    return;
+  }
+
+  resultEl.innerHTML =
+    `<div style="color:var(--red);font-size:12px;font-weight:900;margin-bottom:6px;text-align:center;">⚠️ لقينا ${mismatches.length} عميل عندهم فرق مشبوه:</div>` +
+    mismatches.map(m => `
+      <div style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.3);border-radius:8px;padding:10px;margin-bottom:6px;">
+        <div style="color:white;font-weight:900;font-size:13px;margin-bottom:4px;">${escapeHtml(m.name)} (#${m.id})</div>
+        ${m.diffD   ? `<div style="color:var(--gold);font-size:12px;">فرق دولار: ${m.diffD>0?'+':''}${m.diffD.toLocaleString()}$</div>` : ''}
+        ${m.diffDin ? `<div style="color:var(--accent);font-size:12px;">فرق دينار: ${m.diffDin>0?'+':''}${m.diffDin.toLocaleString()} د.ع</div>` : ''}
+      </div>
+    `).join('');
 }
 
 let _amilBalType = 'له'; // افتراضي: العميل يدين لنا

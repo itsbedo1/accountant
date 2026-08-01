@@ -2732,16 +2732,19 @@ tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;co
 ============================================================ */
 let arFiltered=[...STATE.customers];
 
+// ترتيب أبجدي عربي — بدل ترتيب الإضافة
+function byNameAr(a,b){ return a.name.localeCompare(b.name,'ar'); }
+
 function arFilter(){
   const q=document.getElementById('arSearch').value.trim();
-  arFiltered=q?STATE.customers.filter(c=>c.name.includes(q)):[...STATE.customers];
+  arFiltered=(q?STATE.customers.filter(c=>c.name.includes(q)):[...STATE.customers]).sort(byNameAr);
   arRender();
 }
 
 function arRender(){
   // دائماً حدّث arFiltered من STATE أولاً إذا ما في بحث
   const q = document.getElementById('arSearch')?.value?.trim() || '';
-  if(!q) arFiltered = [...STATE.customers];
+  if(!q) arFiltered = [...STATE.customers].sort(byNameAr);
   const body=document.getElementById('arBody');
   let html='', tDL=0, tDA=0, tDinL=0, tDinA=0;
   arFiltered.forEach((c,i)=>{

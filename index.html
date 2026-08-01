@@ -2832,6 +2832,27 @@ function fmtBalanceLine(curD, curDin){
   return `رصيدك الحالي:\n${lines.join('\n')}`;
 }
 
+// يجيب chat_id محدث مباشرة من قاعدة البيانات — العميل ممكن يكون ربط حسابه بتليجرام
+// بعد ما فتح المحاسب التطبيق بالمتصفح، فتضل نسخة الذاكرة المحلية قديمة (بدون ربط)
+async function getFreshChatId(c){
+  let chatId = c.tgChatId;
+  try {
+    const rows = await sbFetch(`customers?id=eq.${c.id}&select=telegram_chat_id`);
+    if(rows && rows[0]){
+      chatId = rows[0].telegram_chat_id || null;
+      c.tgChatId = chatId;
+    }
+  } catch(e){ /* فشل التحديث — نكمل بالقيمة المخزنة محلياً كحل احتياطي */ }
+  return chatId;
+}
+
+async function sendTgMessage(token, chatId, text){
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ chat_id: chatId, text })
+  });
+}
+
 async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0){
   try {
     const token = STATE.settings.tgBotToken;
@@ -2839,16 +2860,7 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
     const c = STATE.customers.find(x=>x.id===parseInt(customerId));
     if(!c) return;
 
-    // نجيب chat_id محدث مباشرة من قاعدة البيانات — العميل ممكن يكون ربط حسابه بتليجرام
-    // بعد ما فتح المحاسب التطبيق بالمتصفح، فتضل نسخة الذاكرة المحلية قديمة (بدون ربط)
-    let chatId = c.tgChatId;
-    try {
-      const rows = await sbFetch(`customers?id=eq.${c.id}&select=telegram_chat_id`);
-      if(rows && rows[0]){
-        chatId = rows[0].telegram_chat_id || null;
-        c.tgChatId = chatId;
-      }
-    } catch(e){ /* فشل التحديث — نكمل بالقيمة المخزنة محلياً كحل احتياطي */ }
+    const chatId = await getFreshChatId(c);
     if(!chatId) return;
 
     const curD  = c.dL - c.dA;
@@ -2867,12 +2879,27 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
     }
 
     const text = `${actionLine}.\n${fmtBalanceLine(curD, curDin)}`;
-
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ chat_id: chatId, text })
-    });
+    await sendTgMessage(token, chatId, text);
   } catch(e){ console.error('sendTelegramNotif:', e); }
+}
+
+// إشعار تليجرام لحركة صيرفة ذمم عملاء (تحويل عملة داخل حساب العميل)
+async function sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate){
+  try {
+    const token = STATE.settings.tgBotToken;
+    if(!token) return;
+    const chatId = await getFreshChatId(c);
+    if(!chatId) return;
+
+    const curD  = c.dL - c.dA;
+    const curDin= c.dinL - c.dinA;
+    const lines = [`🔄 تحويل عملة (صيرفة) على حسابك — ${type} دولار بسعر ${rate.toLocaleString()}`];
+    if(mabD)   lines.push(`💵 ${mabD.toLocaleString()}$`);
+    if(mabDin) lines.push(`💴 ${mabDin.toLocaleString()} د.ع`);
+
+    const text = `${lines.join('\n')}.\n${fmtBalanceLine(curD, curDin)}`;
+    await sendTgMessage(token, chatId, text);
+  } catch(e){ console.error('sendTelegramSayarfaNotif:', e); }
 }
 
 /* ============================================================
@@ -3559,6 +3586,9 @@ async function sfSaveAmil(type, mabD, mabDin, rate, notes){
   await dbSaveCustomer(c);
   await dbSaveMove(legD);
   await dbSaveMove(legDin);
+
+  // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
+  sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate);
 
   arRender();
   if(typeof kaAmilId !== 'undefined' && kaAmilId === c.id) kaRender();

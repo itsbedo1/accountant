@@ -2936,63 +2936,64 @@ function printKashfAmil(){
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>كشف حساب — ${escapeHtml(c.name)}</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Cairo',sans-serif;background:#f2f4f7;color:#1a2233;font-size:12px;padding:22px;font-variant-numeric:tabular-nums;line-height:1.4;}
-.sheet{max-width:900px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(20,30,50,.08);padding:26px 28px;}
-.print-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:900px;margin:0 auto 14px;padding:13px;background:#1a2233;color:#fff;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;cursor:pointer;}
+body{font-family:'Tahoma','Arial',sans-serif;background:#eef1f5;color:#1a2233;font-size:12px;padding:22px;font-variant-numeric:tabular-nums;line-height:1.4;}
+.sheet{max-width:900px;margin:0 auto;background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(20,30,50,.08);overflow:hidden;}
+.print-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:900px;margin:0 auto 14px;padding:13px;background:#0d3f7a;color:#fff;border:none;border-radius:10px;font-family:'Tahoma','Arial',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
 
-/* ── الهيدر ── */
-.header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:2px solid #eef0f4;margin-bottom:18px;}
-.header-side{font-size:11.5px;font-weight:600;color:#5b6472;line-height:2;min-width:120px;}
-.header-side b{color:#1a2233;font-weight:800;}
-.header-side.right{text-align:left;}
-.header-mid{text-align:center;flex:1;}
-.header-mid .comp{font-size:22px;font-weight:900;color:#1a2233;letter-spacing:.2px;}
-.header-mid .doctype{display:inline-block;margin:6px 0 10px;font-size:11px;font-weight:800;color:#6a7688;letter-spacing:2px;text-transform:uppercase;}
-.header-mid .cname-badge{display:inline-block;background:#eef2ff;border:1.5px solid #c7d2ff;color:#33408a;border-radius:8px;padding:6px 20px;font-size:14px;font-weight:800;}
+/* ── هيدر الشركة (بانر أزرق) ── */
+.doc-header{background:linear-gradient(135deg,#0d3f7a,#1a5fb0);color:#fff;padding:20px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
+.doc-header .comp-name{font-size:23px;font-weight:700;letter-spacing:.2px;}
+.doc-header .doc-title{margin-top:5px;font-size:12.5px;font-weight:700;color:#cfe1f7;letter-spacing:1px;}
+.doc-header .doc-meta{font-size:11px;font-weight:400;color:#d9e7f8;line-height:1.9;text-align:left;white-space:nowrap;}
+.doc-header .doc-meta b{color:#fff;font-weight:700;}
+
+/* ── صندوق معلومات العميل ── */
+.customer-box{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#f4f7fb;border-bottom:1px solid #e2e6ec;padding:14px 26px;}
+.customer-box .cust-name{font-size:15px;font-weight:700;color:#0d3f7a;}
+.customer-box .cust-id{font-size:11.5px;font-weight:700;color:#5b6472;background:#fff;border:1px solid #dbe2ea;border-radius:6px;padding:5px 12px;}
+
+.sheet-body{padding:20px 26px 26px;}
 
 /* ── الجدول ── */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px;}
 table{width:100%;min-width:640px;table-layout:fixed;border-collapse:collapse;margin-bottom:0;font-size:11px;}
-thead .grp-row th{padding:8px 4px;font-weight:800;font-size:11px;border-bottom:1px solid #e2e6ec;}
-thead .grp-row th.grp-din{background:#eaf6fb;color:#0f6e8c;}
-thead .grp-row th.grp-usd{background:#fdf4e3;color:#8a6a10;}
-thead .grp-row th.grp-meta{background:#f6f7f9;color:#3a4250;}
-thead .sub-row th{padding:6px 4px;font-weight:700;font-size:10px;color:#5b6472;background:#fbfbfc;border-bottom:2px solid #e2e6ec;}
+thead{display:table-header-group;}
+tr{break-inside:avoid;page-break-inside:avoid;}
+thead .grp-row th{padding:9px 4px;font-weight:700;font-size:11px;background:#0d3f7a;color:#fff;border-left:1px solid rgba(255,255,255,.15);}
+thead .sub-row th{padding:6px 4px;font-weight:700;font-size:10px;color:#0d3f7a;background:#dce8f6;border-left:1px solid #fff;border-bottom:2px solid #0d3f7a;}
 tbody td{padding:7px 4px;border-bottom:1px solid #eef0f4;text-align:center;vertical-align:middle;word-break:break-word;color:#28303e;}
-tbody tr:nth-child(even){background:#fafbfc;}
-tbody tr.row-sabiq{background:#f6f7f9;font-weight:800;}
-tbody tr.row-sabiq td{border-bottom:2px solid #e2e6ec;color:#3a4250;}
+tbody tr:nth-child(even){background:#f6f7f9;}
+tbody tr.row-sabiq{background:#eef2f7;font-weight:700;}
+tbody tr.row-sabiq td{border-bottom:2px solid #0d3f7a;color:#0d3f7a;}
 td.col-notes{text-align:right;color:#8a93a3;font-size:9.5px;}
-td.col-noa{font-weight:800;}
+td.col-noa{font-weight:700;}
 td.col-noa.noa-qabd{color:#1a7a44;}
 td.col-noa.noa-sarf{color:#b03030;}
-td.col-net{font-weight:900;color:#1a2233;background:#fbfbfc;}
-tfoot td{padding:9px 4px;text-align:center;font-weight:900;background:#1a2233;color:#fff;border-radius:0;}
-tfoot tr td:first-child{border-radius:8px 0 0 8px;}
-tfoot tr td:last-child{border-radius:0 8px 8px 0;}
+td.col-net{font-weight:700;color:#0d3f7a;background:#f2f6fb;}
+tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;color:#fff;}
 
 /* ── بطاقات المتبقي ── */
-.balances{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
-.bal-card{flex:1;min-width:180px;border-radius:10px;padding:14px 16px;text-align:center;border:1.5px solid;}
+.balances{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.bal-card{flex:1;min-width:180px;border-radius:8px;padding:14px 16px;text-align:center;border:1.5px solid;}
 .bal-card.owe{background:#fdeeee;border-color:#f3c6c6;}
 .bal-card.due{background:#eaf8ef;border-color:#bfe8cc;}
 .bal-card.even{background:#eef2ff;border-color:#c7d2ff;}
-.bal-amt{font-size:19px;font-weight:900;margin-bottom:4px;}
+.bal-amt{font-size:19px;font-weight:700;margin-bottom:4px;}
 .bal-card.owe .bal-amt{color:#b03030;}
 .bal-card.due .bal-amt{color:#1a7a44;}
-.bal-card.even .bal-amt{color:#33408a;}
+.bal-card.even .bal-amt{color:#0d3f7a;}
 .bal-cur{font-size:12px;font-weight:700;}
 .bal-lbl{font-size:11px;font-weight:700;color:#5b6472;}
 
 /* ── فوتر ── */
-.footer{display:flex;justify-content:space-between;font-size:10px;color:#9aa2b1;border-top:1px solid #eef0f4;padding-top:12px;margin-top:6px;}
+.e-note{text-align:center;font-size:10.5px;color:#5b6472;background:#f4f7fb;border:1px dashed #c9d2dd;border-radius:6px;padding:9px;margin-bottom:14px;}
+.footer{display:flex;justify-content:space-between;font-size:10px;color:#9aa2b1;border-top:1px solid #eef0f4;padding-top:10px;}
 
 @media print{
   body{background:#fff;padding:0;}
   .print-btn{display:none!important;}
-  .sheet{box-shadow:none;border-radius:0;padding:6mm 4mm;max-width:none;}
+  .sheet{box-shadow:none;border-radius:0;max-width:none;}
   .table-scroll{overflow-x:visible;}
   table{min-width:0;}
   @page{size:A4;margin:10mm;}
@@ -3003,23 +3004,23 @@ tfoot tr td:last-child{border-radius:0 8px 8px 0;}
 <button class="print-btn" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
 
 <div class="sheet">
-  <div class="header">
-    <div class="header-side">
-      <div>رقم العميل: <b>#${c.id}</b></div>
-      <div>من: <b>${fromStr}</b></div>
-      <div>الى: <b>${toStr}</b></div>
+  <div class="doc-header">
+    <div>
+      <div class="comp-name">${escapeHtml(compName)}</div>
+      <div class="doc-title">كشف حساب عميل</div>
     </div>
-    <div class="header-mid">
-      <div class="comp">${escapeHtml(compName)}</div>
-      <div class="doctype">كشف حساب</div>
-      <div class="cname-badge">${escapeHtml(c.name)}</div>
-    </div>
-    <div class="header-side right">
-      <div>تاريخ الإصدار</div>
-      <div><b>${today}</b></div>
+    <div class="doc-meta">
+      <div>تاريخ الإصدار: <b>${today}</b></div>
+      <div>الفترة: <b>${fromStr}</b> — <b>${toStr}</b></div>
     </div>
   </div>
 
+  <div class="customer-box">
+    <div class="cust-name">👤 ${escapeHtml(c.name)}</div>
+    <div class="cust-id">رقم العميل: #${c.id}</div>
+  </div>
+
+  <div class="sheet-body">
   <div class="table-scroll">
   <table>
     <colgroup>
@@ -3029,12 +3030,12 @@ tfoot tr td:last-child{border-radius:0 8px 8px 0;}
     </colgroup>
     <thead>
       <tr class="grp-row">
-        <th class="grp-meta" rowspan="2">الملاحظات</th>
-        <th class="grp-meta" rowspan="2">التاريخ</th>
-        <th class="grp-meta" rowspan="2">الرقم</th>
-        <th class="grp-meta" rowspan="2">النوع</th>
-        <th class="grp-din" colspan="3">دينار عراقي</th>
-        <th class="grp-usd" colspan="3">دولار أمريكي</th>
+        <th rowspan="2">الملاحظات</th>
+        <th rowspan="2">التاريخ</th>
+        <th rowspan="2">الرقم</th>
+        <th rowspan="2">النوع</th>
+        <th colspan="3">دينار عراقي (IQD)</th>
+        <th colspan="3">دولار أمريكي (USD)</th>
       </tr>
       <tr class="sub-row">
         <th>عليه</th><th>له</th><th>الرصيد</th>
@@ -3063,10 +3064,13 @@ tfoot tr td:last-child{border-radius:0 8px 8px 0;}
     ${balancesHtml}
   </div>
 
+  <div class="e-note">هذا المستند صادر إلكترونياً عبر نظام ${escapeHtml(compName)} المحاسبي ولا يحتاج توقيعاً أو ختماً يدوياً</div>
+
   <div class="footer">
     <span>${escapeHtml(compName)}</span>
     <span>صفحة 1 من 1</span>
     <span>${today}</span>
+  </div>
   </div>
 </div>
 </body></html>`;

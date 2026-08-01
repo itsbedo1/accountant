@@ -711,6 +711,10 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
   #arBody{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;align-content:start;}
   .kr-tbody{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-content:start;}
   #arBody .ar-card,.kr-tbody .kr-card{margin-bottom:0;}
+
+  /* صفحة الصندوق — عمودين لتقليل السكرول العمودي */
+  #sFormWrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+  #sColL,#sColR{min-width:0;}
 }
 
 /* ── Print Styles ── */
@@ -960,8 +964,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
     </div>
   </div>
 
-  <div style="padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;">
+  <div id="sFormWrap" style="padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;">
 
+  <div id="sColL">
     <!-- ── قسم 1: نوع الحركة + السند ── -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
 
@@ -1038,7 +1043,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
         </div>
       </div>
     </div>
+  </div>
 
+  <div id="sColR">
     <!-- ── قسم 4: المبالغ ── -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
       <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:8px;text-align:right;">المبالغ</div>
@@ -1088,6 +1095,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
         📊 كشف الصندوق
       </button>
     </div>
+  </div>
 
   </div>
 

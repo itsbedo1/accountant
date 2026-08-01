@@ -712,9 +712,10 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
   .kr-tbody{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-content:start;}
   #arBody .ar-card,.kr-tbody .kr-card{margin-bottom:0;}
 
-  /* صفحة الصندوق — عمودين لتقليل السكرول العمودي */
+  /* صفحة الصندوق — عمودين لتقليل السكرول العمودي، مع أقسام تمتد بعرض كامل حتى تبقى منظمة عند اختيار عميل */
   #sFormWrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
-  #sColL,#sColR{min-width:0;}
+  #sFormWrap > div{min-width:0;}
+  #sFormWrap > #sBalCard,#sFormWrap > #sQuickLinks{grid-column:1/-1;}
 }
 
 /* ── Print Styles ── */
@@ -966,7 +967,6 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 
   <div id="sFormWrap" style="padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;">
 
-  <div id="sColL">
     <!-- ── قسم 1: نوع الحركة + السند ── -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
 
@@ -1043,9 +1043,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="sColR">
     <!-- ── قسم 4: المبالغ ── -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
       <div style="color:var(--text2);font-size:11px;font-weight:700;margin-bottom:8px;text-align:right;">المبالغ</div>
@@ -1085,7 +1083,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
     </div>
 
     <!-- ── روابط سريعة ── -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+    <div id="sQuickLinks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <button onclick="goPage('pageArsada')"
         style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;">
         👥 أرصدة العملاء
@@ -1095,7 +1093,6 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
         📊 كشف الصندوق
       </button>
     </div>
-  </div>
 
   </div>
 

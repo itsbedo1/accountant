@@ -1097,9 +1097,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
     </div>
     <div class="kr-date-row">
       <span class="kr-date-lbl">من</span>
-      <input class="kr-date-in" type="date" id="krFrom" value="2026-03-01">
+      <input class="kr-date-in" type="date" id="krFrom" oninput="krRender()">
       <span class="kr-date-lbl">الى</span>
-      <input class="kr-date-in" type="date" id="krTo" value="2026-03-31">
+      <input class="kr-date-in" type="date" id="krTo" oninput="krRender()">
     </div>
     <div class="kr-btn-row">
       <button class="kr-fbtn dolar act" id="krBtnD" onclick="krCur('dolar')">دولار $</button>
@@ -1749,7 +1749,7 @@ const pageHistory = ['pageLogin'];
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(id==='pageKashf')    krRender();
+  if(id==='pageKashf')    krOpen();
   if(id==='pageArsada')   arRender();
   if(id==='pageSandooq')  sReset();
   if(id==='pageSayarfa')  sfOpen();
@@ -2395,53 +2395,33 @@ function krCur(cur){
   krRender();
 }
 
+// يفتح صفحة كشف الصندوق — الفترة الافتراضية دايماً "اليوم" لحد ما المستخدم
+// يغيّرها بنفسه (تبقى القيمة المختارة طول ما هو بالصفحة)
+function krOpen(){
+  const iso = new Date().toISOString().split('T')[0];
+  const elFrom = document.getElementById('krFrom');
+  const elTo   = document.getElementById('krTo');
+  if(elFrom) elFrom.value = iso;
+  if(elTo)   elTo.value   = iso;
+  krRender();
+}
+
 function krRender(){
   const isDolar=STATE.krCurrency==='dolar';
-  // ابدأ من الرصيد الافتتاحي فقط — الحركات تُضاف أدناه
   const initBal=isDolar ? STATE.settings.initBalD : STATE.settings.initBalDin;
-  let raseed=initBal, totW=0, totS=0;
+  const from = document.getElementById('krFrom')?.value || '';
+  const to   = document.getElementById('krTo')?.value   || '';
 
-  let html=`<div class="kr-card sabiq" onclick="krDetail({sand:'',date:'',name:'رصيد سابق',noa:'',wared:0,sader:0,raseed:${initBal},notes:''})">
-    <div class="kr-card-top">
-      <span class="kr-card-icon">📌</span>
-      <span class="kr-card-name">رصيد سابق</span>
-    </div>
-    <div class="kr-card-bottom">
-      <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">—</span></div>
-      <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">—</span></div>
-      <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${initBal<0?' neg':''}">${fmt(initBal)}</span></div>
-    </div>
-  </div>`;
-
+  // نجمع حركات الصندوق وحركات الصيرفة سوا ونرتبها بالتاريخ حتى يصير
+  // الرصيد التراكمي و"الرصيد السابق" (قبل تاريخ "من") صحيحين
+  const all=[];
   STATE.moves.forEach((r,i)=>{
-    // فقط الحركات اللي جهة صرفها الصندوق تظهر بكشف الصندوق
-    if(r.jiha !== 'الصندوق') return;
-
-    const wared = isDolar
-      ? (r.noa==='قبض'?r.mabD:0)
-      : (r.noa==='قبض'?r.mabDin:0);
-    const sader = isDolar
-      ? (r.noa==='صرف'?r.mabD:0)
-      : (r.noa==='صرف'?r.mabDin:0);
+    if(r.jiha !== 'الصندوق') return; // فقط الحركات اللي جهة صرفها الصندوق تظهر بكشف الصندوق
+    const wared = isDolar ? (r.noa==='قبض'?r.mabD:0) : (r.noa==='قبض'?r.mabDin:0);
+    const sader = isDolar ? (r.noa==='صرف'?r.mabD:0) : (r.noa==='صرف'?r.mabDin:0);
     if(!wared && !sader) return;
-    raseed+=wared-sader;
-    totW+=wared; totS+=sader;
-    const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'-';
-    const noaCls = r.noa==='قبض' ? 'qabdh' : 'sarf';
-    html+=`<div class="kr-card" onclick='krDetail(${escapeHtml(JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared,sader,raseed,notes:r.notes}))})'>
-      <div class="kr-card-top">
-        <span class="kr-card-noa ${noaCls}">${r.noa||'-'}</span>
-        <span class="kr-card-name">${escapeHtml(r.amilName||r.hesab||'-')}</span>
-        <span class="kr-card-raqm">#${escapeHtml(r.raqm||i+1)}</span>
-      </div>
-      <div class="kr-card-bottom">
-        <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(wared)}</span></div>
-        <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">${fmt(sader)}</span></div>
-        <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${raseed<0?' neg':''}">${fmt(raseed)}</span></div>
-      </div>
-    </div>`;
+    all.push({ tarikh:r.tarikh||'', wared, sader, kind:'move', r, i });
   });
-
   // حركات الصيرفة تظهر بكشف الصندوق لأنها تأثر على القاصة
   STATE.sayarfaMoves.forEach((r,i)=>{
     let wared=0, sader=0;
@@ -2453,22 +2433,65 @@ function krRender(){
       else                 wared=r.mabDin; // بعنا دولار   = دينار يدخل القاصة
     }
     if(!wared && !sader) return;
-    raseed+=wared-sader;
-    totW+=wared; totS+=sader;
+    all.push({ tarikh:r.tarikh||'', wared, sader, kind:'sayarfa', r, i });
+  });
+  all.sort((a,b)=> a.tarikh.localeCompare(b.tarikh));
+
+  // الرصيد السابق = الافتتاحي + كل حركة قبل تاريخ "من"
+  let prevBal = initBal;
+  all.forEach(m=>{ if(from && m.tarikh < from) prevBal += m.wared - m.sader; });
+
+  let raseed=prevBal, totW=0, totS=0;
+
+  let html=`<div class="kr-card sabiq" onclick="krDetail({sand:'',date:'',name:'رصيد سابق',noa:'',wared:0,sader:0,raseed:${prevBal},notes:''})">
+    <div class="kr-card-top">
+      <span class="kr-card-icon">📌</span>
+      <span class="kr-card-name">رصيد سابق</span>
+    </div>
+    <div class="kr-card-bottom">
+      <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">—</span></div>
+      <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">—</span></div>
+      <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${prevBal<0?' neg':''}">${fmt(prevBal)}</span></div>
+    </div>
+  </div>`;
+
+  all.forEach(m=>{
+    if(from && m.tarikh < from) return;
+    if(to   && m.tarikh > to)   return;
+    raseed += m.wared - m.sader;
+    totW += m.wared; totS += m.sader;
+    const r=m.r, i=m.i;
     const dateStr=r.tarikh?r.tarikh.split('-').reverse().join('/'):'-';
-    const label=`${r.type} دولار · ${r.rate} IQD/$`;
-    html+=`<div class="kr-card sayarfa" onclick='krDetail(${escapeHtml(JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared,sader,raseed,notes:r.notes||''}))})'>
-      <div class="kr-card-top">
-        <span class="kr-card-icon">💱</span>
-        <span class="kr-card-name">${label}</span>
-        <span class="kr-card-raqm">صيرفة</span>
-      </div>
-      <div class="kr-card-bottom">
-        <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(wared)}</span></div>
-        <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">${fmt(sader)}</span></div>
-        <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${raseed<0?' neg':''}">${fmt(raseed)}</span></div>
-      </div>
-    </div>`;
+
+    if(m.kind==='move'){
+      const noaCls = r.noa==='قبض' ? 'qabdh' : 'sarf';
+      html+=`<div class="kr-card" onclick='krDetail(${escapeHtml(JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared:m.wared,sader:m.sader,raseed,notes:r.notes}))})'>
+        <div class="kr-card-top">
+          <span class="kr-card-noa ${noaCls}">${r.noa||'-'}</span>
+          <span class="kr-card-name">${escapeHtml(r.amilName||r.hesab||'-')}</span>
+          <span class="kr-card-raqm">#${escapeHtml(r.raqm||i+1)}</span>
+        </div>
+        <div class="kr-card-bottom">
+          <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(m.wared)}</span></div>
+          <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">${fmt(m.sader)}</span></div>
+          <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${raseed<0?' neg':''}">${fmt(raseed)}</span></div>
+        </div>
+      </div>`;
+    } else {
+      const label=`${r.type} دولار · ${r.rate} IQD/$`;
+      html+=`<div class="kr-card sayarfa" onclick='krDetail(${escapeHtml(JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared:m.wared,sader:m.sader,raseed,notes:r.notes||''}))})'>
+        <div class="kr-card-top">
+          <span class="kr-card-icon">💱</span>
+          <span class="kr-card-name">${label}</span>
+          <span class="kr-card-raqm">صيرفة</span>
+        </div>
+        <div class="kr-card-bottom">
+          <div class="kr-card-amt wared"><span class="l">وارد</span><span class="v">${fmt(m.wared)}</span></div>
+          <div class="kr-card-amt sader"><span class="l">صادر</span><span class="v">${fmt(m.sader)}</span></div>
+          <div class="kr-card-amt raseed"><span class="l">الرصيد</span><span class="v${raseed<0?' neg':''}">${fmt(raseed)}</span></div>
+        </div>
+      </div>`;
+    }
   });
 
   document.getElementById('krBody').innerHTML=html;

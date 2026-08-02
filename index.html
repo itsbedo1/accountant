@@ -2239,13 +2239,19 @@ async function confirmAndSave(){
     return;
   }
 
-  // حدّث أرصدة العملاء المتأثرين في DB
-  if(r.amilId){
-    const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
-    if(c) await dbUpdateCustomerBal(c);
+  // حدّث أرصدة العملاء المتأثرين في DB — الحساب الحالي (عميل/جهة صرف)، وأيضاً
+  // القديم إذا التعديل غيّر العميل أو جهة الصرف عن حركة موجودة (wasEdit) — وإلا
+  // يضل رصيد الطرف القديم بقاعدة البيانات على حاله القديمة (غير معكوس) رغم إنه
+  // تصحح بالذاكرة المحلية بس هذا التصحيح ما ينحفظ ويضيع أول ما تنحمّل الصفحة من جديد
+  const balCustomers = new Map();
+  const addBal = (c) => { if(c) balCustomers.set(c.id, c); };
+  if(r.amilId) addBal(STATE.customers.find(x=>x.id===parseInt(r.amilId)));
+  addBal(STATE.customers.find(x=>x.name===r.jiha));
+  if(wasEdit){
+    if(old.amilId) addBal(STATE.customers.find(x=>x.id===parseInt(old.amilId)));
+    addBal(STATE.customers.find(x=>x.name===old.jiha));
   }
-  const jihaC = STATE.customers.find(x=>x.name===r.jiha);
-  if(jihaC) await dbUpdateCustomerBal(jihaC);
+  for(const c of balCustomers.values()) await dbUpdateCustomerBal(c);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
   if(r.amilId){
@@ -3801,7 +3807,8 @@ function stCheckBalances(){
         ${m.diffD   ? `<div style="color:var(--gold);font-size:12px;">فرق دولار: ${m.diffD>0?'+':''}${m.diffD.toLocaleString()}$</div>` : ''}
         ${m.diffDin ? `<div style="color:var(--accent);font-size:12px;">فرق دينار: ${m.diffDin>0?'+':''}${m.diffDin.toLocaleString()} د.ع</div>` : ''}
         ${m.hasMoves
-          ? `<div style="color:var(--red);font-size:11px;margin-top:6px;">⚠️ عنده حركات فعلية مسجلة — ما نصلحه تلقائياً، راجعه يدوياً</div>`
+          ? `<div style="color:var(--red);font-size:11px;margin-top:6px;">⚠️ عنده حركات فعلية مسجلة — ما نصلحه تلقائياً برجاع الرصيد الافتتاحي (ممكن يمسح حركاته الحقيقية الثانية). إذا متأكد إن الفرق سببه حركة حقيقية صارت فعلاً وأثرها موجود بالرصيد بس انفقد سجلها، تكدر توثقها كحركة بدون ما تغير الرصيد الحالي:</div>
+             <button onclick="stDocumentDiff(${m.id},${m.diffD},${m.diffDin})" style="margin-top:8px;width:100%;padding:8px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:900;background:rgba(96,180,255,.15);border:1.5px solid rgba(96,180,255,.5);color:#60b4ff;cursor:pointer;">📝 توثيق الفرق كحركة (بدون تغيير الرصيد)</button>`
           : `<div style="color:var(--gold);font-size:11px;margin-top:6px;">⚠️ ماكو حركة مسجلة بس هذا لا يعني الرصيد غلط بالضرورة — يمكن حركة حقيقية صارت وانفقد سجلها بس أثرها ضل بالرصيد. تأكد إنك ما سويت حركة حقيقية بهذا المبلغ لهذا العميل قبل ما تضغط استرجاع.</div>
              <button onclick="stFixBalance(${m.id})" style="margin-top:8px;width:100%;padding:8px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:900;background:rgba(96,255,144,.15);border:1.5px solid rgba(96,255,144,.5);color:#60ff90;cursor:pointer;">🔧 استرجاع الرصيد الافتتاحي</button>`}
       </div>
@@ -3819,6 +3826,35 @@ async function stFixBalance(id){
   await dbSaveCustomer(c);
   arRender();
   toast(`✅ تم استرجاع رصيد ${c.name}`);
+  stCheckBalances();
+}
+
+// يضيف حركة "توثيقية" بمبلغ الفرق المكتشف — بدون ما تغيّر رصيد العميل الحالي إطلاقاً
+// (الفرق أصلاً منعكس بالرصيد المخزون من حركة حقيقية سابقة، بس سجلها الأصلي انفقد)
+// تُستخدم فقط لعميل عنده حركات فعلية ثانية، حيث استرجاع الرصيد الافتتاحي خطر عليه
+async function stDocumentDiff(id, diffD, diffDin){
+  const c = STATE.customers.find(x=>x.id===id);
+  if(!c) return;
+  const parts = [];
+  if(diffD)   parts.push(`${Math.abs(diffD).toLocaleString()}$`);
+  if(diffDin) parts.push(`${Math.abs(diffDin).toLocaleString()} د.ع`);
+  if(!confirm(`إضافة حركة توثيقية لحساب ${c.name} بمبلغ ${parts.join(' + ')}\n\nهذي الحركة فقط توضح سبب الرصيد الحالي بكشف حسابه — ما راح تغيّر رصيده أبداً (الفرق أصلاً محسوب بالرصيد الحالي).\n\nتأكد إنك ما وثقت هذا الفرق مرة سابقة قبل ما تضغط تأكيد.`)) return;
+
+  const now = new Date();
+  const tarikh = now.toISOString().split('T')[0];
+  const notes = 'توثيق فرق رصيد سابق — حركة حقيقية صار أثرها بالرصيد لكن انفقد سجلها الأصلي (هذا السجل لا يؤثر على الرصيد الحالي)';
+
+  const moves = [];
+  if(diffD)   moves.push({ noa: diffD>0?'قبض':'صرف',   tarikh, raqm:'تسوية', hesab:'ذمم العملاء', mabD:Math.abs(diffD),   mabDin:0, jiha:'', sak:'', notes, amilId:c.id, amilName:c.name });
+  if(diffDin) moves.push({ noa: diffDin>0?'قبض':'صرف', tarikh, raqm:'تسوية', hesab:'ذمم العملاء', mabD:0, mabDin:Math.abs(diffDin), jiha:'', sak:'', notes, amilId:c.id, amilName:c.name });
+
+  for(const m of moves){
+    STATE.moves.push(m);
+    await dbSaveMove(m);
+  }
+  toast(`✅ تم توثيق الفرق بحساب ${c.name}`);
+  arRender();
+  if(typeof kaAmilId !== 'undefined' && kaAmilId === c.id) kaRender();
   stCheckBalances();
 }
 

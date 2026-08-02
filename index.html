@@ -2239,13 +2239,19 @@ async function confirmAndSave(){
     return;
   }
 
-  // حدّث أرصدة العملاء المتأثرين في DB
-  if(r.amilId){
-    const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
-    if(c) await dbUpdateCustomerBal(c);
+  // حدّث أرصدة العملاء المتأثرين في DB — الحساب الحالي (عميل/جهة صرف)، وأيضاً
+  // القديم إذا التعديل غيّر العميل أو جهة الصرف عن حركة موجودة (wasEdit) — وإلا
+  // يضل رصيد الطرف القديم بقاعدة البيانات على حاله القديمة (غير معكوس) رغم إنه
+  // تصحح بالذاكرة المحلية بس هذا التصحيح ما ينحفظ ويضيع أول ما تنحمّل الصفحة من جديد
+  const balCustomers = new Map();
+  const addBal = (c) => { if(c) balCustomers.set(c.id, c); };
+  if(r.amilId) addBal(STATE.customers.find(x=>x.id===parseInt(r.amilId)));
+  addBal(STATE.customers.find(x=>x.name===r.jiha));
+  if(wasEdit){
+    if(old.amilId) addBal(STATE.customers.find(x=>x.id===parseInt(old.amilId)));
+    addBal(STATE.customers.find(x=>x.name===old.jiha));
   }
-  const jihaC = STATE.customers.find(x=>x.name===r.jiha);
-  if(jihaC) await dbUpdateCustomerBal(jihaC);
+  for(const c of balCustomers.values()) await dbUpdateCustomerBal(c);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
   if(r.amilId){

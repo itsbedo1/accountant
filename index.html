@@ -392,6 +392,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 .kr-card-noa.sarf{background:rgba(251,113,133,.14);color:var(--red);}
 .kr-card-noa.upd{background:rgba(240,192,64,.14);color:var(--gold);}
 .kr-card-noa.del{background:rgba(251,113,133,.14);color:var(--red);}
+.kr-card-noa.add{background:rgba(74,222,128,.14);color:var(--accent);}
 .al-card-meta{font-size:11px;color:var(--text-dim);margin-top:2px;text-align:right;}
 .al-diff-row .mv.changed{color:var(--gold);}
 /* الموظف (إدخال بس) — نخفي كل عنصر معلّم owner-only؛ الحماية الفعلية بصلاحيات القاعدة (RLS) */
@@ -1689,7 +1690,7 @@ body:not(.role-employee) .employee-only{display:none!important;}
   </div>
 
   <div class="kr-filter">
-    <div style="color:var(--text-dim);font-size:11px;margin-bottom:8px;text-align:center;">كل تعديل أو حذف على حركات الصندوق — بالترتيب الأحدث أولاً</div>
+    <div style="color:var(--text-dim);font-size:11px;margin-bottom:8px;text-align:center;">كل إضافة أو تعديل أو حذف على حركات الصندوق والصيرفة — بيبيّن منو سواها (مالك أو موظف)، بالترتيب الأحدث أولاً</div>
     <div class="kr-date-row">
       <span class="kr-date-lbl">من</span>
       <input class="kr-date-in" type="date" id="alFrom" oninput="alRender()">
@@ -2324,8 +2325,8 @@ async function confirmAndSave(){
     return;
   }
 
-  // سجّل التعديل بسجل التدقيق (فقط لو هذا تعديل على حركة موجودة، مو حركة جديدة)
-  if(wasEdit) dbLogAudit('moves', r.dbId, 'update', old, r);
+  // سجّل الإضافة أو التعديل بسجل التدقيق — يبين منو (مالك أو موظف) سوّى الحركة
+  dbLogAudit('moves', r.dbId, wasEdit ? 'update' : 'create', wasEdit ? old : null, r);
 
   // حدّث أرصدة العملاء المتأثرين في DB — الحساب الحالي (عميل/جهة صرف)، وأيضاً
   // القديم إذا التعديل غيّر العميل أو جهة الصرف عن حركة موجودة (wasEdit) — وإلا
@@ -2830,6 +2831,13 @@ const AL_FIELD_LABELS = {
   noa:'النوع', tarikh:'التاريخ', raqm:'رقم السند', hesab:'الحساب',
   mabD:'المبلغ $', mabDin:'المبلغ IQD', jiha:'الجهة', sak:'الصك',
   notes:'الملاحظات', amilName:'العميل',
+  type:'نوع الصيرفة', rate:'سعر الصرف', time:'الوقت',
+  balDAfter:'رصيد $ بعدها', balDinAfter:'رصيد IQD بعدها',
+};
+const AL_ACTION_META = {
+  create: { icon:'➕', label:'إضافة', cls:'add' },
+  update: { icon:'✏️', label:'تعديل', cls:'upd' },
+  delete: { icon:'🗑',  label:'حذف',   cls:'del' },
 };
 let AL_ENTRIES = [];
 
@@ -2850,7 +2858,7 @@ async function alRender(){
   const from = document.getElementById('alFrom')?.value || '';
   const to   = document.getElementById('alTo')?.value   || '';
   try {
-    let path = `audit_log?table_name=eq.moves&order=created_at.desc`;
+    let path = `audit_log?table_name=in.(moves,sayarfa_moves)&order=created_at.desc`;
     if(from) path += `&created_at=gte.${from}T00:00:00`;
     if(to)   path += `&created_at=lte.${to}T23:59:59`;
     AL_ENTRIES = await sbFetchAll(path);
@@ -2860,18 +2868,18 @@ async function alRender(){
     return;
   }
   if(!AL_ENTRIES.length){
-    body.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:20px;">لا يوجد تعديل أو حذف مسجّل بهذه الفترة</div>';
+    body.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:20px;">لا يوجد نشاط مسجّل بهذه الفترة</div>';
     return;
   }
   body.innerHTML = AL_ENTRIES.map((e,i)=>{
-    const isDel = e.action === 'delete';
+    const meta = AL_ACTION_META[e.action] || AL_ACTION_META.update;
     const data = e.new_data || e.old_data || {};
-    const name = data.amilName || data.hesab || '-';
-    const raqm = data.raqm || '—';
+    const name = data.amilName || data.hesab || data.type || '-';
+    const raqm = data.raqm || (e.table_name==='sayarfa_moves' ? 'صيرفة' : '—');
     const when = new Date(e.created_at).toLocaleString('ar-IQ', { dateStyle:'short', timeStyle:'short' });
     return `<div class="kr-card" onclick="alDetail(${i})">
       <div class="kr-card-top">
-        <span class="kr-card-noa ${isDel?'del':'upd'}">${isDel?'🗑 حذف':'✏️ تعديل'}</span>
+        <span class="kr-card-noa ${meta.cls}">${meta.icon} ${meta.label}</span>
         <span class="kr-card-name">${escapeHtml(name)}</span>
         <span class="kr-card-raqm">#${escapeHtml(raqm)}</span>
       </div>
@@ -2883,8 +2891,9 @@ async function alRender(){
 function alDetail(i){
   const e = AL_ENTRIES[i];
   if(!e) return;
-  document.getElementById('al-detail-title').textContent =
-    e.action === 'delete' ? '🗑 بيانات الحركة المحذوفة' : '✏️ تعديل على حركة';
+  const meta = AL_ACTION_META[e.action] || AL_ACTION_META.update;
+  const tableLabel = e.table_name === 'sayarfa_moves' ? 'حركة صيرفة' : 'حركة صندوق';
+  document.getElementById('al-detail-title').textContent = `${meta.icon} ${meta.label} — ${tableLabel}`;
   const oldD = e.old_data || {};
   const newD = e.new_data || {};
   const fields = Object.keys(AL_FIELD_LABELS);
@@ -2892,10 +2901,11 @@ function alDetail(i){
       <span class="ml">بواسطة</span><span class="mv">${escapeHtml(e.changed_by_email||'—')}</span>
     </div>
     <div class="mrow"><span class="ml">التاريخ والوقت</span><span class="mv">${new Date(e.created_at).toLocaleString('ar-IQ')}</span></div>`;
-  if(e.action === 'delete'){
+  if(e.action === 'delete' || e.action === 'create'){
+    const src = e.action === 'delete' ? oldD : newD;
     fields.forEach(f=>{
-      if(oldD[f]==null || oldD[f]==='') return;
-      html += `<div class="mrow al-diff-row"><span class="ml">${AL_FIELD_LABELS[f]}</span><span class="mv">${escapeHtml(String(oldD[f]))}</span></div>`;
+      if(src[f]==null || src[f]==='') return;
+      html += `<div class="mrow al-diff-row"><span class="ml">${AL_FIELD_LABELS[f]}</span><span class="mv">${escapeHtml(String(src[f]))}</span></div>`;
     });
   } else {
     fields.forEach(f=>{
@@ -4550,6 +4560,7 @@ async function dbSaveSayarfa(r){
     const res = await sbFetch('sayarfa_moves', 'POST', row);
     if(res && res[0]) r.dbId = res[0].id;
     await dbSaveSettings();
+    dbLogAudit('sayarfa_moves', r.dbId, 'create', null, r);
   } catch(e){ console.error('dbSaveSayarfa:', e); }
 }
 

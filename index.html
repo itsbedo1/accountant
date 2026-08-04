@@ -877,6 +877,7 @@ body:not(.role-employee) .employee-only{display:none!important;}
     <div class="mrow"><span class="ml">الوارد</span><span class="mv" id="kd-wared"></span></div>
     <div class="mrow"><span class="ml">الصادر</span><span class="mv" id="kd-sader"></span></div>
     <div class="mrow"><span class="ml">الرصيد</span><span class="mv" id="kd-raseed"></span></div>
+    <div class="mrow" id="kd-by-row" style="display:none;"><span class="ml">أضافها</span><span class="mv" id="kd-by"></span></div>
     <div class="mrow" style="border:none;"><span class="ml">الملاحظات</span><span class="mv" id="kd-notes"></span></div>
     <button class="modal-close-btn" style="background:#1a3060;color:#80e8ff;margin-top:8px;" onclick="closeModal('modalKashfDetail')">إغلاق</button>
   </div>
@@ -972,6 +973,10 @@ body:not(.role-employee) .employee-only{display:none!important;}
       <div id="sTbDate" style="font-size:10px;color:rgba(255,255,255,0.8);font-weight:600;"></div>
       <div id="sTbTime" style="font-size:11px;color:white;font-weight:700;"></div>
     </div>
+  </div>
+
+  <div id="sCreatedByBar" style="display:none;background:rgba(255,255,255,0.05);padding:5px 14px;text-align:center;font-size:11px;color:rgba(255,255,255,0.55);">
+    👤 أضافها: <b id="sCreatedByEmail" style="color:white;direction:ltr;display:inline-block;"></b>
   </div>
 
   <div id="sFormWrap" style="padding:12px 14px;max-width:480px;margin:0 auto;padding-bottom:90px;">
@@ -1949,6 +1954,16 @@ function sLoad(r){
   STATE.selectedAmilId=r.amilId||null;
   if(r.noa) setNoa(r.noa); else checkAmilVisibility();
   if(r.amilId) showAmilBal(r.amilId, r.noa, r.mabD||0, r.mabDin||0);
+
+  const byBar = document.getElementById('sCreatedByBar');
+  if(byBar){
+    if(r.createdByEmail){
+      byBar.style.display = 'block';
+      document.getElementById('sCreatedByEmail').textContent = r.createdByEmail;
+    } else {
+      byBar.style.display = 'none';
+    }
+  }
 }
 
 function sGet(){
@@ -2175,6 +2190,8 @@ function sReset(){
     const el=document.getElementById(id);
     if(el) el.value='';
   });
+  const byBar = document.getElementById('sCreatedByBar');
+  if(byBar) byBar.style.display = 'none';
   // جهة الصرف الافتراضية = الصندوق
   const elJiha=document.getElementById('sJiha');
   if(elJiha){
@@ -2580,7 +2597,7 @@ function krRender(){
 
     if(m.kind==='move'){
       const noaCls = r.noa==='قبض' ? 'qabdh' : 'sarf';
-      html+=`<div class="kr-card" onclick='krDetail(${escapeHtml(JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared:m.wared,sader:m.sader,raseed,notes:r.notes}))})'>
+      html+=`<div class="kr-card" onclick='krDetail(${escapeHtml(JSON.stringify({sand:r.raqm,date:dateStr,name:r.amilName||r.hesab||'-',noa:r.noa,wared:m.wared,sader:m.sader,raseed,notes:r.notes,by:r.createdByEmail||''}))})'>
         <div class="kr-card-top">
           <span class="kr-card-noa ${noaCls}">${r.noa||'-'}</span>
           <span class="kr-card-name">${escapeHtml(r.amilName||r.hesab||'-')}</span>
@@ -2594,7 +2611,7 @@ function krRender(){
       </div>`;
     } else {
       const label=`${r.type} دولار · ${r.rate} IQD/$`;
-      html+=`<div class="kr-card sayarfa" onclick='krDetail(${escapeHtml(JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared:m.wared,sader:m.sader,raseed,notes:r.notes||''}))})'>
+      html+=`<div class="kr-card sayarfa" onclick='krDetail(${escapeHtml(JSON.stringify({sand:'صيرفة',date:dateStr,name:label,noa:r.type,wared:m.wared,sader:m.sader,raseed,notes:r.notes||'',by:r.createdByEmail||''}))})'>
         <div class="kr-card-top">
           <span class="kr-card-icon">💱</span>
           <span class="kr-card-name">${label}</span>
@@ -2623,6 +2640,13 @@ function krDetail(r){
   document.getElementById('kd-wared').textContent =fmt(r.wared);
   document.getElementById('kd-sader').textContent =fmt(r.sader);
   document.getElementById('kd-raseed').textContent=fmt(r.raseed);
+  const byRow = document.getElementById('kd-by-row');
+  if(r.by){
+    byRow.style.display = 'flex';
+    document.getElementById('kd-by').textContent = r.by;
+  } else {
+    byRow.style.display = 'none';
+  }
   document.getElementById('kd-notes').textContent =r.notes||'-';
   openModal('modalKashfDetail');
 }
@@ -4470,6 +4494,7 @@ async function dbLoad(){
         mabD: m.mab_d||0, mabDin: m.mab_din||0,
         jiha: m.jiha, sak: m.sak, notes: m.notes,
         amilId: m.amil_id, amilName: m.amil_name,
+        createdByEmail: m.created_by_email,
       }));
 
       // احسب رصيد الصندوق من الحركات — بدون ما نعتمد على init_bal_d_current
@@ -4489,6 +4514,7 @@ async function dbLoad(){
         type: m.type, mabD: m.mab_d||0, mabDin: m.mab_din||0,
         rate: m.rate||1480, notes: m.notes, tarikh: m.tarikh,
         time: m.time_str, balDAfter: m.bal_d_after||0, balDinAfter: m.bal_din_after||0,
+        createdByEmail: m.created_by_email,
       }));
 
       // احسب تأثير الصيرفة على الصندوق
@@ -4528,7 +4554,10 @@ async function dbSaveMove(r){
     if(r.dbId){
       await sbFetch(`moves?id=eq.${r.dbId}`, 'PATCH', row);
     } else {
-      const res = await sbFetch('moves', 'POST', row);
+      // نسجّل مين أضاف الحركة وقت الإنشاء بس — التعديل (PATCH فوق) ما يغيّرها،
+      // حتى يضل واضح منو الأصل سجّلها حتى لو عدّلها المالك بعدين
+      const { data: { session } } = await sbClient.auth.getSession();
+      const res = await sbFetch('moves', 'POST', { ...row, created_by_email: session?.user?.email || null });
       if(res && res[0]) r.dbId = res[0].id;
     }
     await dbSaveSettings();
@@ -4557,7 +4586,8 @@ async function dbSaveSayarfa(r){
       time_str: r.time,
       bal_d_after: r.balDAfter, bal_din_after: r.balDinAfter,
     };
-    const res = await sbFetch('sayarfa_moves', 'POST', row);
+    const { data: { session } } = await sbClient.auth.getSession();
+    const res = await sbFetch('sayarfa_moves', 'POST', { ...row, created_by_email: session?.user?.email || null });
     if(res && res[0]) r.dbId = res[0].id;
     await dbSaveSettings();
     dbLogAudit('sayarfa_moves', r.dbId, 'create', null, r);

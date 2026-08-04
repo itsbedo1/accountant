@@ -390,6 +390,10 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 .kr-card-noa{font-size:11px;font-weight:900;padding:3px 9px;border-radius:20px;flex-shrink:0;white-space:nowrap;}
 .kr-card-noa.qabdh{background:rgba(34,211,238,.14);color:var(--accent);}
 .kr-card-noa.sarf{background:rgba(251,113,133,.14);color:var(--red);}
+.kr-card-noa.upd{background:rgba(240,192,64,.14);color:var(--gold);}
+.kr-card-noa.del{background:rgba(251,113,133,.14);color:var(--red);}
+.al-card-meta{font-size:11px;color:var(--text-dim);margin-top:2px;text-align:right;}
+.al-diff-row .mv.changed{color:var(--gold);}
 .kr-card-name{flex:1;font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;}
 .kr-card-raqm{font-size:11px;font-weight:700;color:var(--text-dim);flex-shrink:0;direction:ltr;}
 .kr-card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
@@ -1463,6 +1467,10 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       <button id="btnGoAdmin" onclick="goPage('pageAdmin')" style="display:none;width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:#2a5aa0;border:1.5px solid #4a80d0;color:white;cursor:pointer;margin-bottom:8px;">
         ➕ إدارة حسابات الشركات
       </button>
+      <button onclick="goPage('pageAuditLog')"
+        style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:white;cursor:pointer;margin-bottom:8px;">
+        📜 سجل التعديلات والحذف
+      </button>
       <button onclick="doLogout()"
         style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(251,113,133,.15);border:1.5px solid rgba(251,113,133,.4);color:#fb7185;cursor:pointer;">
         🚪 تسجيل الخروج
@@ -1639,6 +1647,42 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 </div>
 
 <!-- ======================================================
+     PAGE — سجل التعديلات والحذف (audit log لحركات الصندوق)
+====================================================== -->
+<div id="pageAuditLog" class="page">
+  <div style="background:linear-gradient(135deg,#040d1a,#071e38);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+    <button onclick="goPage('pageSettings')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;">↩ رجوع</button>
+    <div style="font-size:16px;font-weight:900;color:var(--accent);">📜 سجل التعديلات والحذف</div>
+    <div style="width:50px;"></div>
+  </div>
+
+  <div class="kr-filter">
+    <div style="color:var(--text-dim);font-size:11px;margin-bottom:8px;text-align:center;">كل تعديل أو حذف على حركات الصندوق — بالترتيب الأحدث أولاً</div>
+    <div class="kr-date-row">
+      <span class="kr-date-lbl">من</span>
+      <input class="kr-date-in" type="date" id="alFrom" oninput="alRender()">
+      <span class="kr-date-lbl">الى</span>
+      <input class="kr-date-in" type="date" id="alTo" oninput="alRender()">
+    </div>
+  </div>
+
+  <div class="kr-tbody" id="alBody"></div>
+
+  <div class="kr-toolbar">
+    <button class="kr-tbtn" onclick="goPage('pageMain')">🏠 الرئيسية</button>
+  </div>
+</div>
+
+<!-- MODAL — تفاصيل سجل تدقيق (قبل/بعد التعديل أو الحذف) -->
+<div class="modal-ov" id="modalAuditDetail">
+  <div class="modal-box dark">
+    <h3 class="modal-h3 dark" id="al-detail-title">تفاصيل السجل</h3>
+    <div id="al-detail-body"></div>
+    <button class="modal-close-btn" style="background:#1a3060;color:#80e8ff;margin-top:8px;" onclick="closeModal('modalAuditDetail')">إغلاق</button>
+  </div>
+</div>
+
+<!-- ======================================================
      PAGE — ADMIN (إدارة حسابات الشركات) — للمالك فقط
 ====================================================== -->
 <div id="pageAdmin" class="page">
@@ -1773,6 +1817,7 @@ function goPage(id) {
   if(id==='pageSayarfa')  sfOpen();
   if(id==='pageKhulasa')  khOpen();
   if(id==='pageSettings') stOpen();
+  if(id==='pageAuditLog') alOpen();
   // أضف للتاريخ
   if(id !== pageHistory[pageHistory.length-1]){
     pageHistory.push(id);
@@ -2239,6 +2284,9 @@ async function confirmAndSave(){
     return;
   }
 
+  // سجّل التعديل بسجل التدقيق (فقط لو هذا تعديل على حركة موجودة، مو حركة جديدة)
+  if(wasEdit) dbLogAudit('moves', r.dbId, 'update', old, r);
+
   // حدّث أرصدة العملاء المتأثرين في DB — الحساب الحالي (عميل/جهة صرف)، وأيضاً
   // القديم إذا التعديل غيّر العميل أو جهة الصرف عن حركة موجودة (wasEdit) — وإلا
   // يضل رصيد الطرف القديم بقاعدة البيانات على حاله القديمة (غير معكوس) رغم إنه
@@ -2370,6 +2418,7 @@ function sDel(){
     if(rowId){
       try {
         await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+        dbLogAudit('moves', rowId, 'delete', r, null);
       } catch(e){
         toast('❌ فشل الحذف من قاعدة البيانات: ' + e.message);
         console.error('sDel DB error:', e);
@@ -2731,6 +2780,93 @@ tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;co
     const w=window.open('','_blank');
     if(w){ w.document.write(html); w.document.close(); }
   }
+}
+
+/* ============================================================
+   PAGE — سجل التعديلات والحذف (audit log لحركات الصندوق)
+============================================================ */
+const AL_FIELD_LABELS = {
+  noa:'النوع', tarikh:'التاريخ', raqm:'رقم السند', hesab:'الحساب',
+  mabD:'المبلغ $', mabDin:'المبلغ IQD', jiha:'الجهة', sak:'الصك',
+  notes:'الملاحظات', amilName:'العميل',
+};
+let AL_ENTRIES = [];
+
+function alOpen(){
+  const iso = new Date().toISOString().split('T')[0];
+  const from = new Date(); from.setDate(from.getDate()-30);
+  const elFrom = document.getElementById('alFrom');
+  const elTo   = document.getElementById('alTo');
+  if(elFrom && !elFrom.value) elFrom.value = from.toISOString().split('T')[0];
+  if(elTo   && !elTo.value)   elTo.value   = iso;
+  alRender();
+}
+
+async function alRender(){
+  const body = document.getElementById('alBody');
+  if(!body) return;
+  body.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:20px;">⏳ جاري التحميل...</div>';
+  const from = document.getElementById('alFrom')?.value || '';
+  const to   = document.getElementById('alTo')?.value   || '';
+  try {
+    let path = `audit_log?table_name=eq.moves&order=created_at.desc`;
+    if(from) path += `&created_at=gte.${from}T00:00:00`;
+    if(to)   path += `&created_at=lte.${to}T23:59:59`;
+    AL_ENTRIES = await sbFetchAll(path);
+  } catch(e){
+    console.error('alRender:', e);
+    body.innerHTML = '<div style="text-align:center;color:var(--red);font-size:12px;padding:20px;">❌ فشل تحميل السجل</div>';
+    return;
+  }
+  if(!AL_ENTRIES.length){
+    body.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:20px;">لا يوجد تعديل أو حذف مسجّل بهذه الفترة</div>';
+    return;
+  }
+  body.innerHTML = AL_ENTRIES.map((e,i)=>{
+    const isDel = e.action === 'delete';
+    const data = e.new_data || e.old_data || {};
+    const name = data.amilName || data.hesab || '-';
+    const raqm = data.raqm || '—';
+    const when = new Date(e.created_at).toLocaleString('ar-IQ', { dateStyle:'short', timeStyle:'short' });
+    return `<div class="kr-card" onclick="alDetail(${i})">
+      <div class="kr-card-top">
+        <span class="kr-card-noa ${isDel?'del':'upd'}">${isDel?'🗑 حذف':'✏️ تعديل'}</span>
+        <span class="kr-card-name">${escapeHtml(name)}</span>
+        <span class="kr-card-raqm">#${escapeHtml(raqm)}</span>
+      </div>
+      <div class="al-card-meta">${when} — ${escapeHtml(e.changed_by_email||'—')}</div>
+    </div>`;
+  }).join('');
+}
+
+function alDetail(i){
+  const e = AL_ENTRIES[i];
+  if(!e) return;
+  document.getElementById('al-detail-title').textContent =
+    e.action === 'delete' ? '🗑 بيانات الحركة المحذوفة' : '✏️ تعديل على حركة';
+  const oldD = e.old_data || {};
+  const newD = e.new_data || {};
+  const fields = Object.keys(AL_FIELD_LABELS);
+  let html = `<div class="mrow" style="border-bottom:2px solid var(--border2);">
+      <span class="ml">بواسطة</span><span class="mv">${escapeHtml(e.changed_by_email||'—')}</span>
+    </div>
+    <div class="mrow"><span class="ml">التاريخ والوقت</span><span class="mv">${new Date(e.created_at).toLocaleString('ar-IQ')}</span></div>`;
+  if(e.action === 'delete'){
+    fields.forEach(f=>{
+      if(oldD[f]==null || oldD[f]==='') return;
+      html += `<div class="mrow al-diff-row"><span class="ml">${AL_FIELD_LABELS[f]}</span><span class="mv">${escapeHtml(String(oldD[f]))}</span></div>`;
+    });
+  } else {
+    fields.forEach(f=>{
+      const ov = oldD[f], nv = newD[f];
+      if((ov==null||ov==='') && (nv==null||nv==='')) return;
+      const changed = String(ov??'') !== String(nv??'');
+      html += `<div class="mrow al-diff-row"><span class="ml">${AL_FIELD_LABELS[f]}</span>
+        <span class="mv">${escapeHtml(String(ov??'—'))} ← <span class="${changed?'changed':''}">${escapeHtml(String(nv??'—'))}</span></span></div>`;
+    });
+  }
+  document.getElementById('al-detail-body').innerHTML = html;
+  openModal('modalAuditDetail');
 }
 
 /* ============================================================
@@ -4133,6 +4269,22 @@ async function sbFetchAll(path){
 async function myId(){
   const { data: { session } } = await sbClient.auth.getSession();
   return session?.user?.id;
+}
+
+// يسجّل تعديل أو حذف على حركة موجودة بسجل تدقيق (audit_log) — لا يوقف
+// العملية الأساسية لو فشل التسجيل، فقط يسجّل الخطأ بالـ console
+async function dbLogAudit(tableName, recordId, action, oldData, newData){
+  try {
+    const { data: { session } } = await sbClient.auth.getSession();
+    await sbFetch('audit_log', 'POST', {
+      table_name: tableName,
+      record_id:  recordId,
+      action,
+      old_data: oldData || null,
+      new_data: newData || null,
+      changed_by_email: session?.user?.email || null,
+    });
+  } catch(e){ console.error('dbLogAudit:', e); }
 }
 
 /* ============================================================

@@ -394,6 +394,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 .kr-card-noa.del{background:rgba(251,113,133,.14);color:var(--red);}
 .al-card-meta{font-size:11px;color:var(--text-dim);margin-top:2px;text-align:right;}
 .al-diff-row .mv.changed{color:var(--gold);}
+/* الموظف (إدخال بس) — نخفي كل عنصر معلّم owner-only؛ الحماية الفعلية بصلاحيات القاعدة (RLS) */
+body.role-employee .owner-only{display:none!important;}
+body:not(.role-employee) .employee-only{display:none!important;}
 .kr-card-name{flex:1;font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;}
 .kr-card-raqm{font-size:11px;font-weight:700;color:var(--text-dim);flex-shrink:0;direction:ltr;}
 .kr-card-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
@@ -949,8 +952,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
     <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">📥</span>الامانات الواردة</button>
     <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">📤</span>الامانات الصادرة</button>
     <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">🏢</span>ارصدة الشركات</button>
-    <button class="menu-btn highlight" onclick="goPage('pageKhulasa')"><span class="icon">📊</span>الخلاصة</button>
-    <button class="menu-btn highlight" onclick="goPage('pageSettings')" style="grid-column:1/-1;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);"><span class="icon">⚙️</span>الإعدادات</button>
+    <button class="menu-btn highlight owner-only" onclick="goPage('pageKhulasa')"><span class="icon">📊</span>الخلاصة</button>
+    <button class="menu-btn highlight owner-only" onclick="goPage('pageSettings')" style="grid-column:1/-1;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);"><span class="icon">⚙️</span>الإعدادات</button>
+    <button class="menu-btn employee-only" onclick="doLogout()" style="grid-column:1/-1;background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.3);color:#fb7185;"><span class="icon">🚪</span>تسجيل الخروج</button>
   </div>
 </div>
 
@@ -1104,7 +1108,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
   <div class="s-toolbar">
     <button class="tbtn tbtn-lbl search-btn" onclick="openSearchModal()">🔍<span>بحث</span></button>
     <button class="tbtn tbtn-lbl save-btn"   onclick="sSave()">💾<span>حفظ</span></button>
-    <button class="tbtn tbtn-lbl del-btn"    onclick="sDel()">🗑<span>حذف</span></button>
+    <button class="tbtn tbtn-lbl del-btn owner-only" onclick="sDel()">🗑<span>حذف</span></button>
     <button class="tbtn tbtn-lbl home-btn"   onclick="goPage('pageMain')">🏠<span>رئيسية</span></button>
   </div>
 </div>
@@ -1467,7 +1471,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       <button id="btnGoAdmin" onclick="goPage('pageAdmin')" style="display:none;width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:#2a5aa0;border:1.5px solid #4a80d0;color:white;cursor:pointer;margin-bottom:8px;">
         ➕ إدارة حسابات الشركات
       </button>
-      <button onclick="goPage('pageAuditLog')"
+      <button class="owner-only" onclick="goPage('pageAuditLog')"
         style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:white;cursor:pointer;margin-bottom:8px;">
         📜 سجل التعديلات والحذف
       </button>
@@ -1476,6 +1480,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
         🚪 تسجيل الخروج
       </button>
     </div>
+
+    <!-- الأقسام التالية (بيانات الشركة، الموظفين، المنطقة الخطرة...) للمالك بس -->
+    <div class="owner-only">
 
     <!-- ══ قسم 1: معلومات الشركة ══ -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
@@ -1611,6 +1618,28 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       <div id="stAmilList" style="max-height:200px;overflow-y:auto;"></div>
     </div>
 
+    <!-- ══ قسم: الموظفين (دخول بس — إضافة حركات بدون تعديل/حذف) ══ -->
+    <div style="background:rgba(96,160,255,0.06);border:1px solid rgba(96,160,255,0.25);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:6px;">👥 الموظفين</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-bottom:10px;text-align:right;">
+        حساب الموظف يقدر يضيف حركات صندوق وصيرفة جديدة بس — ما يقدر يعدّل أو يحذف حركة موجودة، ولا يفتح الإعدادات أو الخلاصة.
+      </div>
+      <div id="emList" style="margin-bottom:10px;"></div>
+      <div style="display:flex;gap:6px;">
+        <input type="email" id="emNewEmail" placeholder="إيميل الموظف الجديد"
+          style="flex:1;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:ltr;text-align:right;">
+        <button onclick="emCreate()"
+          style="padding:9px 16px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(96,160,255,.2);border:1.5px solid rgba(96,160,255,.5);color:var(--accent);cursor:pointer;white-space:nowrap;">
+          ➕ إضافة
+        </button>
+      </div>
+      <div id="emResultBox" style="display:none;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.35);border-radius:8px;padding:10px;margin-top:10px;font-size:12px;">
+        <div style="color:var(--text-dim);margin-bottom:4px;">أعطِ الموظف بيانات الدخول هذي (تظهر مرة واحدة بس):</div>
+        <div>الإيميل: <b id="emResultEmail" style="direction:ltr;"></b></div>
+        <div>كلمة المرور: <b id="emResultPassword" style="direction:ltr;"></b></div>
+      </div>
+    </div>
+
     <!-- ══ قسم: فحص تطابق أرصدة العملاء ══ -->
     <div style="background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.25);border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="color:var(--gold);font-size:13px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:6px;">🔍 فحص تطابق أرصدة العملاء</div>
@@ -1642,6 +1671,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
       style="width:100%;padding:14px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:900;background:linear-gradient(135deg,#2a7a3a,#1a5a28);border:2px solid #40c060;color:white;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.3);">
       💾 حفظ الإعدادات
     </button>
+
+    </div>
+    <!-- /owner-only -->
 
   </div>
 </div>
@@ -1800,6 +1832,7 @@ const STATE = {
   selectedAmilId: null,
   krCurrency: 'dolar',
   lastSand: 1000,
+  myRole: 'owner', // owner أو employee — يتحدد من whoami() وقت الدخول
 };
 
 /* ============================================================
@@ -2189,12 +2222,19 @@ function sSave(){
   if(!r.noa)              { toast('⚠️ اختر نوع الحركة'); return; }
   if(!r.mabD && !r.mabDin){ toast('⚠️ أدخل مبلغ');      return; }
 
-  // احفظ الحركة مؤقتاً
-  _pendingMove = r;
-
   // نبّه المستخدم لو هذا تعديل على سجل موجود بدل سجل جديد
   // (يصير مثلاً لو بحث عن سجل قديم وبعدين غيّر المبلغ بدون ما يرجع للرئيسية أول)
   const wasEdit = sCurIdx>=0 && sCurIdx < STATE.moves.length;
+
+  // الموظف (إدخال بس) ما يقدر يعدّل حركة موجودة — قاعدة البيانات ترفضها
+  // برضو (RLS)، بس نوقفها هنا بدري حتى تصير رسالة الخطأ واضحة فوراً
+  if(wasEdit && STATE.myRole === 'employee'){
+    toast('⚠️ ماكو صلاحية لتعديل حركة موجودة — تواصل مع المالك');
+    return;
+  }
+
+  // احفظ الحركة مؤقتاً
+  _pendingMove = r;
   const editWarn = document.getElementById('cfEditWarn');
   if(editWarn){
     editWarn.style.display = wasEdit ? 'block' : 'none';
@@ -2406,6 +2446,7 @@ function applyMove(c,r)  { applyToCustomer(c, r.noa, r.mabD, r.mabDin); }
 function reverseMove(c,r){ applyToCustomer(c, r.noa==='قبض'?'صرف':'قبض', r.mabD, r.mabDin); }
 
 function sDel(){
+  if(STATE.myRole === 'employee'){ toast('⚠️ ماكو صلاحية حذف — تواصل مع المالك'); return; }
   if(!STATE.dataReady){ toast('⏳ البيانات لسا تتحمل — انتظر لحظة وحاول مرة ثانية'); return; }
   if(!STATE.moves.length){ toast('⚠️ لا يوجد سجل'); return; }
   if(sCurIdx<0 || sCurIdx>=STATE.moves.length){ toast('⚠️ ماكو سجل محمّل للحذف — دوّر عليه أولاً من البحث'); return; }
@@ -3870,6 +3911,7 @@ function stOpen(){
   el('stNewAmilName').value = '';
 
   stRenderAmilList();
+  if(STATE.myRole === 'owner') emLoad();
 }
 
 function stRenderAmilList(){
@@ -3894,6 +3936,82 @@ function stRenderAmilList(){
       </div>
     </div>
   `).join('');
+}
+
+/* ============================================================
+   الموظفين — حساب دخول بس، إضافة حركات بدون تعديل/حذف (RLS يفرضها فعلياً)
+============================================================ */
+async function emLoad(){
+  const list = document.getElementById('emList');
+  if(!list) return;
+  try {
+    const members = await sbFetch(`company_members?role=eq.employee&order=created_at.asc`);
+    if(!members || !members.length){
+      list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:8px;font-size:12px;">لا يوجد موظفين بعد</div>';
+      return;
+    }
+    list.innerHTML = members.map(m=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;margin-bottom:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:7px;">
+        <button onclick="emRemove('${m.user_id}')"
+          style="background:rgba(200,50,50,0.3);border:1px solid #cc4444;border-radius:5px;color:#ffaaaa;font-size:11px;font-weight:700;padding:3px 8px;cursor:pointer;font-family:'Cairo',sans-serif;">
+          حذف
+        </button>
+        <div style="flex:1;text-align:right;margin-right:8px;color:white;font-size:13px;font-weight:700;direction:ltr;">${escapeHtml(m.email||'—')}</div>
+      </div>
+    `).join('');
+  } catch(e){
+    console.error('emLoad:', e);
+    list.innerHTML = '<div style="text-align:center;color:var(--red);padding:8px;font-size:12px;">❌ فشل تحميل قائمة الموظفين</div>';
+  }
+}
+
+async function emCreate(){
+  const emailEl = document.getElementById('emNewEmail');
+  const email = emailEl.value.trim();
+  if(!email){ toast('⚠️ أدخل إيميل الموظف'); return; }
+  try {
+    const { data, error } = await sbClient.functions.invoke('manage-employees', {
+      body: { action: 'create', email }
+    });
+    if(error){
+      let msg = error.message;
+      if(error.context && typeof error.context.json === 'function'){
+        try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
+      }
+      throw new Error(msg);
+    }
+    if(data?.error) throw new Error(data.error);
+
+    document.getElementById('emResultEmail').textContent    = data.email;
+    document.getElementById('emResultPassword').textContent = data.password;
+    document.getElementById('emResultBox').style.display = 'block';
+    emailEl.value = '';
+    toast('✅ تم إنشاء حساب الموظف');
+    emLoad();
+  } catch(e){
+    toast('❌ ' + e.message);
+  }
+}
+
+async function emRemove(userId){
+  if(!confirm('تأكيد حذف حساب هذا الموظف؟ ما يقدر يسجل دخول بعدها.')) return;
+  try {
+    const { data, error } = await sbClient.functions.invoke('manage-employees', {
+      body: { action: 'remove', user_id: userId }
+    });
+    if(error){
+      let msg = error.message;
+      if(error.context && typeof error.context.json === 'function'){
+        try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
+      }
+      throw new Error(msg);
+    }
+    if(data?.error) throw new Error(data.error);
+    toast('🗑 تم حذف الموظف');
+    emLoad();
+  } catch(e){
+    toast('❌ ' + e.message);
+  }
 }
 
 // يقارن رصيد كل عميل الحالي (المخزّن) بالرصيد اللي المفروض ينتج من إعادة
@@ -4751,6 +4869,14 @@ async function enterApp(session){
   const adminBtn = document.getElementById('btnGoAdmin');
   if(adminBtn) adminBtn.style.display = session.user.app_metadata?.is_owner ? 'block' : 'none';
 
+  // نحدد دور المستخدم (مالك/موظف) حتى نظبط الواجهة حسبه — الحماية الحقيقية
+  // بقاعدة البيانات (RLS)، هذا فقط لتحسين تجربة الاستخدام
+  try {
+    const who = await sbFetch('rpc/whoami', 'POST', {});
+    STATE.myRole = who?.[0]?.role || 'owner';
+  } catch(e){ console.error('whoami:', e); STATE.myRole = 'owner'; }
+  applyRolePermissions();
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pageMain').classList.add('active');
   pageHistory.length = 0; pageHistory.push('pageMain');
@@ -4759,6 +4885,13 @@ async function enterApp(session){
     _loadedForUserId = session.user.id;
     await dbLoad();
   }
+}
+
+// يخفي الأزرار والأقسام اللي ما يحتاجها الموظف (إدخال بس) — الحماية الفعلية
+// بصلاحيات قاعدة البيانات (RLS)، هذا فقط لتبسيط الواجهة له
+function applyRolePermissions(){
+  const isEmployee = STATE.myRole === 'employee';
+  document.body.classList.toggle('role-employee', isEmployee);
 }
 
 function showLogin(){

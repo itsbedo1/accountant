@@ -89,6 +89,9 @@ Deno.serve(async (req) => {
     // ── تعليق أو تفعيل اشتراك شركة ──
     if (action === 'toggle_suspension') {
       const suspended = Boolean(body.suspended)
+      // السبب يُحفظ بس وقت التعليق — التفعيل يمسحه حتى ما يبقى سبب قديم معلّق بدون داعي
+      const reason = suspended ? String(body.reason || '').trim() : null
+
       const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers()
       if (listErr) {
         return jsonResponse({ error: 'خطأ بجلب الحسابات: ' + listErr.message }, 500)
@@ -108,12 +111,12 @@ Deno.serve(async (req) => {
 
       const { error: updErr } = await supabaseAdmin
         .from('settings')
-        .update({ suspended })
+        .update({ suspended, suspend_reason: reason })
         .eq('company_id', companyId)
       if (updErr) {
         return jsonResponse({ error: 'فشل تحديث حالة الاشتراك: ' + updErr.message }, 500)
       }
-      return jsonResponse({ ok: true, email, suspended })
+      return jsonResponse({ ok: true, email, suspended, reason })
     }
 
     // ── إنشاء شركة جديدة (الافتراضي) ──

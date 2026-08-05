@@ -935,8 +935,12 @@ body:not(.role-employee) .employee-only{display:none!important;}
   <div class="login-card">
     <div style="font-size:44px;text-align:center;margin-bottom:6px;">⏸️</div>
     <div class="login-logo" style="color:#ff8080;">الخدمة موقوفة مؤقتاً</div>
-    <div style="color:rgba(255,255,255,0.75);font-size:14px;text-align:center;line-height:1.8;margin:14px 0 22px;">
+    <div style="color:rgba(255,255,255,0.75);font-size:14px;text-align:center;line-height:1.8;margin:14px 0 10px;">
       يرجى تسديد الاشتراك لتفعيل الخدمة مرة أخرى.
+    </div>
+    <div id="suspendedReasonBox" style="display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,128,128,0.3);border-radius:8px;padding:10px 12px;margin-bottom:20px;text-align:center;">
+      <div style="color:rgba(255,255,255,0.4);font-size:10px;margin-bottom:4px;">السبب</div>
+      <div id="suspendedReasonText" style="color:#ffaaaa;font-size:13px;font-weight:700;"></div>
     </div>
     <button class="login-btn" style="background:rgba(255,255,255,0.1);" onclick="doLogout()">🚪 تسجيل الخروج</button>
   </div>
@@ -1782,7 +1786,11 @@ body:not(.role-employee) .employee-only{display:none!important;}
 
       <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">إيميل الشركة</div>
       <input type="email" id="adminSuspendEmail" placeholder="owner@example.com"
-        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:14px;">
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:10px;">
+
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">سبب التعليق (يظهر للشركة، اختياري للتفعيل)</div>
+      <input type="text" id="adminSuspendReason" placeholder="مثال: لم يتم تسديد اشتراك هذا الشهر"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;margin-bottom:14px;">
 
       <div style="display:flex;gap:8px;">
         <button id="btnSuspendTenant" onclick="adminToggleSuspension(true)"
@@ -4497,6 +4505,7 @@ async function dbLoad(){
         tgBotToken:  s.telegram_bot_token    || '',
         tgBotUser:   s.telegram_bot_username || '',
         suspended:   !!s.suspended,
+        suspendReason: s.suspend_reason || '',
       };
       // ابدأ من الرصيد الافتتاحي فقط — نحسب الباقي من الحركات
       STATE.initBalD   = s.init_bal_d   || 0;
@@ -4506,7 +4515,7 @@ async function dbLoad(){
 
       // الشركة موقوفة (اشتراك منتهي) — نوقف هنا ونعرض شاشة القفل بدل التطبيق
       if(STATE.settings.suspended){
-        showSuspendedScreen();
+        showSuspendedScreen(STATE.settings.suspendReason);
         STATE.dataReady = true;
         if(loadingOverlay) loadingOverlay.style.display = 'none';
         return;
@@ -4945,7 +4954,8 @@ async function adminResetPassword(){
 }
 
 async function adminToggleSuspension(suspended){
-  const email = document.getElementById('adminSuspendEmail').value.trim();
+  const email  = document.getElementById('adminSuspendEmail').value.trim();
+  const reason = document.getElementById('adminSuspendReason').value.trim();
   const msgEl = document.getElementById('adminSuspendMsg');
   const btnS  = document.getElementById('btnSuspendTenant');
   const btnR  = document.getElementById('btnReactivateTenant');
@@ -4955,7 +4965,7 @@ async function adminToggleSuspension(suspended){
   btnS.disabled = true; btnR.disabled = true;
   try {
     const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
-      body: { action: 'toggle_suspension', email, suspended }
+      body: { action: 'toggle_suspension', email, suspended, reason }
     });
     if(error){
       let msg = error.message;
@@ -4969,6 +4979,7 @@ async function adminToggleSuspension(suspended){
     msgEl.style.color = 'var(--accent)';
     msgEl.textContent = suspended ? '⏸️ تم تعليق الاشتراك' : '✅ تم تفعيل الاشتراك';
     toast(suspended ? '⏸️ تم تعليق الشركة' : '✅ تم تفعيل الشركة');
+    document.getElementById('adminSuspendReason').value = '';
   } catch(e){
     msgEl.style.color = 'var(--red)';
     msgEl.textContent = '❌ ' + e.message;
@@ -5020,10 +5031,18 @@ function showLogin(){
   if(pwEl) pwEl.value = '';
 }
 
-function showSuspendedScreen(){
+function showSuspendedScreen(reason){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pageSuspended').classList.add('active');
   pageHistory.length = 0; pageHistory.push('pageSuspended');
+
+  const box = document.getElementById('suspendedReasonBox');
+  if(reason){
+    box.style.display = 'block';
+    document.getElementById('suspendedReasonText').textContent = reason;
+  } else {
+    box.style.display = 'none';
+  }
 }
 
 sbClient.auth.onAuthStateChange((event, session) => {

@@ -86,6 +86,36 @@ Deno.serve(async (req) => {
       return jsonResponse({ email, password: newPassword })
     }
 
+    // ── تعليق أو تفعيل اشتراك شركة ──
+    if (action === 'toggle_suspension') {
+      const suspended = Boolean(body.suspended)
+      const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers()
+      if (listErr) {
+        return jsonResponse({ error: 'خطأ بجلب الحسابات: ' + listErr.message }, 500)
+      }
+      const target = listData.users.find((u) => u.email?.toLowerCase() === email)
+      if (!target) {
+        return jsonResponse({ error: 'ما لقيت حساب بهذا الإيميل' }, 404)
+      }
+
+      // لو الحساب موظف نرجع لشركة صاحب العمل نفسها، مو حساب الموظف
+      const { data: member } = await supabaseAdmin
+        .from('company_members')
+        .select('company_id')
+        .eq('user_id', target.id)
+        .maybeSingle()
+      const companyId = member?.company_id || target.id
+
+      const { error: updErr } = await supabaseAdmin
+        .from('settings')
+        .update({ suspended })
+        .eq('company_id', companyId)
+      if (updErr) {
+        return jsonResponse({ error: 'فشل تحديث حالة الاشتراك: ' + updErr.message }, 500)
+      }
+      return jsonResponse({ ok: true, email, suspended })
+    }
+
     // ── إنشاء شركة جديدة (الافتراضي) ──
     const businessName = String(body.business_name || '').trim()
     if (!businessName) {

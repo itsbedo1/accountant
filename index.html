@@ -929,6 +929,20 @@ body:not(.role-employee) .employee-only{display:none!important;}
 </div>
 
 <!-- ======================================================
+     PAGE — الاشتراك موقوف
+====================================================== -->
+<div id="pageSuspended" class="page">
+  <div class="login-card">
+    <div style="font-size:44px;text-align:center;margin-bottom:6px;">⏸️</div>
+    <div class="login-logo" style="color:#ff8080;">الخدمة موقوفة مؤقتاً</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:14px;text-align:center;line-height:1.8;margin:14px 0 22px;">
+      يرجى تسديد الاشتراك لتفعيل الخدمة مرة أخرى.
+    </div>
+    <button class="login-btn" style="background:rgba(255,255,255,0.1);" onclick="doLogout()">🚪 تسجيل الخروج</button>
+  </div>
+</div>
+
+<!-- ======================================================
      PAGE 1 — MAIN MENU
 ====================================================== -->
 <div id="pageMain" class="page">
@@ -1761,6 +1775,26 @@ body:not(.role-employee) .employee-only{display:none!important;}
         🔑 توليد كلمة مرور جديدة
       </button>
       <div id="adminResetErr" style="color:var(--red);font-size:12px;text-align:center;margin-top:8px;"></div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="color:#ff8080;font-size:13px;font-weight:900;margin-bottom:12px;">⏸️ تعليق / تفعيل اشتراك شركة</div>
+
+      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">إيميل الشركة</div>
+      <input type="email" id="adminSuspendEmail" placeholder="owner@example.com"
+        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:14px;">
+
+      <div style="display:flex;gap:8px;">
+        <button id="btnSuspendTenant" onclick="adminToggleSuspension(true)"
+          style="flex:1;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(200,50,50,0.35);border:1.5px solid #cc4444;color:#ffaaaa;cursor:pointer;">
+          ⏸️ تعليق
+        </button>
+        <button id="btnReactivateTenant" onclick="adminToggleSuspension(false)"
+          style="flex:1;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:rgba(74,222,128,.25);border:1.5px solid #40c060;color:#a0f0b0;cursor:pointer;">
+          ✅ تفعيل
+        </button>
+      </div>
+      <div id="adminSuspendMsg" style="font-size:12px;text-align:center;margin-top:8px;"></div>
     </div>
 
     <div id="adminResultBox" style="display:none;background:rgba(34,211,238,.08);border:1.5px solid rgba(34,211,238,.35);border-radius:var(--radius-md);padding:14px;">
@@ -4462,12 +4496,21 @@ async function dbLoad(){
         initBalDin:  s.init_bal_din|| 0,
         tgBotToken:  s.telegram_bot_token    || '',
         tgBotUser:   s.telegram_bot_username || '',
+        suspended:   !!s.suspended,
       };
       // ابدأ من الرصيد الافتتاحي فقط — نحسب الباقي من الحركات
       STATE.initBalD   = s.init_bal_d   || 0;
       STATE.initBalDin = s.init_bal_din || 0;
       const logo = document.querySelector('.main-logo');
       if(logo && s.comp_name) logo.textContent = s.comp_name;
+
+      // الشركة موقوفة (اشتراك منتهي) — نوقف هنا ونعرض شاشة القفل بدل التطبيق
+      if(STATE.settings.suspended){
+        showSuspendedScreen();
+        STATE.dataReady = true;
+        if(loadingOverlay) loadingOverlay.style.display = 'none';
+        return;
+      }
     }
 
     // 2) العملاء
@@ -4901,6 +4944,39 @@ async function adminResetPassword(){
   }
 }
 
+async function adminToggleSuspension(suspended){
+  const email = document.getElementById('adminSuspendEmail').value.trim();
+  const msgEl = document.getElementById('adminSuspendMsg');
+  const btnS  = document.getElementById('btnSuspendTenant');
+  const btnR  = document.getElementById('btnReactivateTenant');
+  msgEl.textContent = '';
+  if(!email){ msgEl.style.color = 'var(--red)'; msgEl.textContent = 'أدخل إيميل الشركة'; return; }
+
+  btnS.disabled = true; btnR.disabled = true;
+  try {
+    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
+      body: { action: 'toggle_suspension', email, suspended }
+    });
+    if(error){
+      let msg = error.message;
+      if(error.context && typeof error.context.json === 'function'){
+        try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
+      }
+      throw new Error(msg);
+    }
+    if(data?.error) throw new Error(data.error);
+
+    msgEl.style.color = 'var(--accent)';
+    msgEl.textContent = suspended ? '⏸️ تم تعليق الاشتراك' : '✅ تم تفعيل الاشتراك';
+    toast(suspended ? '⏸️ تم تعليق الشركة' : '✅ تم تفعيل الشركة');
+  } catch(e){
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = '❌ ' + e.message;
+  } finally {
+    btnS.disabled = false; btnR.disabled = false;
+  }
+}
+
 // نتتبع آخر مستخدم حمّلنا بياناته — لو تغيّر (تسجيل دخول بحساب ثاني بنفس التبويب
 // أو تزامن جلسة من تبويب ثاني) لازم نعيد التحميل، حتى لو الصفحة نفسها ما انسوى لها reload
 let _loadedForUserId = null;
@@ -4942,6 +5018,12 @@ function showLogin(){
   pageHistory.length = 0; pageHistory.push('pageLogin');
   const pwEl = document.getElementById('loginPassword');
   if(pwEl) pwEl.value = '';
+}
+
+function showSuspendedScreen(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageSuspended').classList.add('active');
+  pageHistory.length = 0; pageHistory.push('pageSuspended');
 }
 
 sbClient.auth.onAuthStateChange((event, session) => {

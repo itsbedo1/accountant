@@ -160,7 +160,7 @@ body{
 }
 h1,h2,h3{
   font-family:'Cairo Display','Tajawal',sans-serif;
-  font-weight:400;
+  font-weight:800;
   margin:0;
   text-wrap:balance;
 }
@@ -194,6 +194,7 @@ img,svg{display:block;max-width:100%;}
 }
 .brand{
   font-family:'Cairo Display','Tajawal',sans-serif;
+  font-weight:800;
   font-size:22px;
   letter-spacing:.5px;
 }
@@ -288,7 +289,7 @@ img,svg{display:block;max-width:100%;}
   display:flex;justify-content:space-between;align-items:baseline;
   border-bottom:1px dashed var(--line);padding-bottom:10px;margin-bottom:12px;
 }
-.receipt-head b{font-family:'Cairo Display';font-weight:400;font-size:16px;}
+.receipt-head b{font-family:'Cairo Display';font-weight:800;font-size:16px;}
 .receipt-head span{color:var(--ink-soft);font-size:12px;}
 .receipt-row{display:flex;justify-content:space-between;padding:6px 0;color:var(--ink-soft);}
 .receipt-row b{color:var(--ink);font-weight:700;}
@@ -301,7 +302,7 @@ img,svg{display:block;max-width:100%;}
   width:56px;height:56px;border-radius:50%;
   border:2px solid var(--teal);color:var(--teal);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Cairo Display';font-size:11px;text-align:center;
+  font-family:'Cairo Display';font-weight:800;font-size:11px;text-align:center;
   transform:rotate(8deg);opacity:.85;
 }
 @keyframes receipt-in{
@@ -328,7 +329,11 @@ hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
   display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
   background:var(--line);border:1px solid var(--line);
 }
-@media (max-width:760px){.audience-grid{grid-template-columns:1fr;}}
+@media (max-width:980px){
+  .audience-grid{grid-template-columns:repeat(2,1fr);}
+  .audience-card:last-child{grid-column:1 / -1;}
+}
+@media (max-width:640px){.audience-grid{grid-template-columns:1fr;}}
 .audience-card{
   background:var(--bg-elevated);
   padding:30px 26px;
@@ -339,7 +344,7 @@ hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
   width:42px;height:42px;border-radius:50%;
   border:1.5px solid var(--gold);color:var(--gold-strong);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Cairo Display';font-size:17px;margin-bottom:18px;
+  font-family:'Cairo Display';font-weight:800;font-size:17px;margin-bottom:18px;
 }
 .audience-card h3{font-size:19px;margin-bottom:10px;color:var(--ink);}
 .audience-card p{font-size:14.5px;color:var(--ink-soft);}
@@ -368,7 +373,7 @@ hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
 @media (max-width:760px){.steps{grid-template-columns:1fr;}}
 .step{position:relative;padding-inline-start:0;}
 .step .num{
-  font-family:'Cairo Display';font-size:15px;
+  font-family:'Cairo Display';font-weight:800;font-size:15px;
   color:var(--teal);
   border:1px solid var(--teal);border-radius:50%;
   width:34px;height:34px;display:flex;align-items:center;justify-content:center;
@@ -400,7 +405,7 @@ hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
 .price-head .eyebrow{justify-content:center;}
 .price-head .eyebrow::before{display:none;}
 .price-amount{
-  font-family:'Cairo Display';font-size:46px;color:var(--gold-strong);
+  font-family:'Cairo Display';font-weight:800;font-size:46px;color:var(--gold-strong);
   margin:8px 0 2px;
 }
 .price-amount sup{font-size:16px;font-family:'Tajawal';font-weight:700;margin-inline-end:6px;}
@@ -421,7 +426,7 @@ hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
   list-style:none;
 }
 .faq-item summary::-webkit-details-marker{display:none;}
-.faq-item summary::after{content:"+";font-size:20px;color:var(--gold);font-family:'Cairo Display';}
+.faq-item summary::after{content:"+";font-size:20px;color:var(--gold);font-family:'Cairo Display';font-weight:800;}
 .faq-item[open] summary::after{content:"–";}
 .faq-item p{margin-top:12px;color:var(--ink-soft);font-size:14.5px;max-width:60ch;}
 
@@ -475,7 +480,7 @@ footer{padding:36px 0;}
         </a>
         <a class="btn-ghost" href="#pricing">شوف السعر</a>
       </div>
-      <div class="hero-note"><span class="dot"></span> يشتغل من الموبايل، حتى بدون نت</div>
+      <div class="hero-note"><span class="dot"></span> يفتح من موبايلك بضغطة وحدة، بدون تنصيب معقد</div>
     </div>
 
     <div class="receipt">
@@ -549,7 +554,7 @@ footer{padding:36px 0;}
       </div>
       <div class="ledger-row">
         <h4>يشتغل من موبايلك</h4>
-        <p>يفتح كتطبيق بضغطة من شاشة موبايلك، ويستمر يشتغل حتى إذا انقطع النت، ويتزامن أول ما يرجع الاتصال.</p>
+        <p>يفتح كتطبيق بضغطة من شاشة موبايلك مثل أي تطبيق ثاني، وتقدر تستعرض آخر بياناتك حتى بدون نت.</p>
       </div>
       <div class="ledger-row">
         <h4>بياناتك بمكان معزول وآمن</h4>
@@ -633,7 +638,7 @@ footer{padding:36px 0;}
     </details>
     <details class="faq-item">
       <summary>لازم انترنت طول الوقت؟</summary>
-      <p>لا. البرنامج يفتح ويشتغل من موبايلك حتى بدون نت، وأي حركة تسجلها تتزامن تلقائياً أول ما يرجع الاتصال.</p>
+      <p>البرنامج يفتح من موبايلك وتقدر تستعرض آخر بياناتك حتى بدون نت. بس حفظ أي حركة جديدة (قبض/صرف/صيرفة) يحتاج اتصال إنترنت فعلي وقت الحفظ.</p>
     </details>
     <details class="faq-item">
       <summary>شلون أدفع الاشتراك؟</summary>

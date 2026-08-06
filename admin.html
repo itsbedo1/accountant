@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة إدارة الشركات — حساباتي</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#040d1a; --bg2:#071428; --bg3:#0d1f3c; --bg4:#122a50;
+  --accent:#22d3ee; --accent2:#0891b2;
+  --gold:#fbbf24;
+  --text:#e0f2fe; --text2:#7dd3fc; --text-dim:rgba(186,230,253,.4);
+  --border:rgba(34,211,238,.15); --border2:rgba(34,211,238,.32);
+  --red:#fb7185; --green:#4ade80;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Cairo',sans-serif;direction:rtl;min-height:100vh;}
+input{font-family:'Cairo',sans-serif;}
+.wrap{max-width:560px;margin:0 auto;padding:16px;padding-bottom:60px;}
+
+/* ── تسجيل الدخول ── */
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{width:100%;max-width:360px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:26px 22px;text-align:center;}
+.login-logo{font-size:20px;font-weight:900;color:var(--accent);margin-bottom:4px;}
+.login-sub{color:var(--text-dim);font-size:13px;margin-bottom:20px;}
+.login-lbl{color:var(--text-dim);font-size:11px;font-weight:700;text-align:right;margin-bottom:5px;}
+.login-input{width:100%;background:var(--bg3);border:1.5px solid var(--border2);border-radius:8px;padding:11px 12px;color:var(--text);font-size:14px;direction:ltr;text-align:left;margin-bottom:12px;}
+.login-btn{width:100%;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;background:var(--accent2);border:none;color:white;cursor:pointer;}
+.login-btn:disabled{opacity:.6;}
+.login-err{color:var(--red);font-size:12px;margin-top:10px;min-height:14px;}
+
+/* ── الداشبورد ── */
+#dashView{display:none;}
+.dash-header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#040d1a,#071e38);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.dash-title{font-size:16px;font-weight:900;color:var(--accent);}
+.btn-sm{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:var(--text);padding:6px 12px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;}
+
+.stats-row{display:flex;gap:8px;margin-bottom:14px;}
+.stat-box{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.stat-num{font-size:20px;font-weight:900;}
+.stat-lbl{font-size:10.5px;color:var(--text-dim);margin-top:2px;}
+
+.search-input{width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:9px;padding:10px 14px;color:var(--text);font-size:13px;margin-bottom:14px;}
+
+.co-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.co-card.overdue{border-color:rgba(251,113,133,.4);}
+.co-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.co-name{font-size:15px;font-weight:900;color:var(--text);}
+.co-badge{font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.co-badge.on{background:rgba(74,222,128,.15);color:var(--green);}
+.co-badge.off{background:rgba(251,113,133,.15);color:var(--red);}
+.co-email{font-size:12px;color:var(--text-dim);direction:ltr;text-align:right;margin-bottom:10px;}
+.co-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.co-date-box{background:var(--bg3);border-radius:7px;padding:7px 9px;}
+.co-date-lbl{font-size:9.5px;color:var(--text-dim);margin-bottom:2px;}
+.co-date-val{font-size:12.5px;font-weight:700;direction:ltr;text-align:right;}
+.co-date-val.due{color:var(--red);}
+.co-reason{font-size:11.5px;color:var(--red);background:rgba(251,113,133,.08);border-radius:6px;padding:7px 9px;margin-bottom:10px;}
+.co-actions{display:flex;gap:6px;}
+.co-btn{flex:1;padding:9px 4px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:11.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);}
+.co-btn.pay{background:rgba(74,222,128,.18);border-color:#40c060;color:var(--green);}
+.co-btn.danger{background:rgba(251,113,133,.15);border-color:#cc4444;color:var(--red);}
+
+.empty{text-align:center;color:var(--text-dim);font-size:13px;padding:30px 10px;}
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <div class="login-card">
+    <div class="login-logo">لوحة إدارة الشركات</div>
+    <div class="login-sub">دخول مالك النظام فقط</div>
+    <div class="login-lbl">البريد الإلكتروني</div>
+    <input type="email" id="loginEmail" class="login-input" autocomplete="username" placeholder="you@example.com">
+    <div class="login-lbl">كلمة المرور</div>
+    <input type="password" id="loginPassword" class="login-input" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();">
+    <button id="btnLogin" class="login-btn" onclick="doLogin()">دخول</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<div id="dashView">
+  <div class="dash-header">
+    <button class="btn-sm" onclick="doLogout()">🚪 خروج</button>
+    <div class="dash-title">🏢 إدارة الشركات</div>
+    <button class="btn-sm" onclick="loadCompanies()">🔄</button>
+  </div>
+  <div class="wrap">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num" id="statTotal" style="color:var(--accent);">—</div><div class="stat-lbl">الكل</div></div>
+      <div class="stat-box"><div class="stat-num" id="statActive" style="color:var(--green);">—</div><div class="stat-lbl">فعّالة</div></div>
+      <div class="stat-box"><div class="stat-num" id="statSuspended" style="color:var(--red);">—</div><div class="stat-lbl">موقوفة</div></div>
+      <div class="stat-box"><div class="stat-num" id="statDue" style="color:var(--gold);">—</div><div class="stat-lbl">دفعتها مستحقة</div></div>
+    </div>
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 دوّر باسم الشركة أو الإيميل..." oninput="renderCompanies()">
+    <div id="companyList"><div class="empty">⏳ جاري التحميل...</div></div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://qycglhyqjzztzjiilsku.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5Y2dsaHlxanp6dHpqaWlsc2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDg3MTEsImV4cCI6MjA5MDUyNDcxMX0.fIvwt6zus0am_KjgMZC-JpwVB_5YkNRZN7qs6HDicPk';
+const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ar-IQ', { year:'numeric', month:'2-digit', day:'2-digit' });
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  const btn = document.getElementById('btnLogin');
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'أدخل الإيميل وكلمة المرور'; return; }
+  btn.disabled = true; btn.textContent = '⏳ جاري الدخول...';
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) throw new Error('❌ بيانات الدخول غير صحيحة');
+  } catch(e){
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'دخول';
+  }
+}
+
+function doLogout(){ sb.auth.signOut(); }
+
+async function checkOwnerAndEnter(session){
+  if(session.user.app_metadata?.is_owner !== true){
+    document.getElementById('loginErr').textContent = '❌ هذا الحساب ما عنده صلاحية دخول لوحة الإدارة';
+    await sb.auth.signOut();
+    return;
+  }
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashView').style.display = 'block';
+  loadCompanies();
+}
+
+function showLogin(){
+  document.getElementById('dashView').style.display = 'none';
+  document.getElementById('loginView').style.display = 'flex';
+  document.getElementById('loginPassword').value = '';
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if(session) checkOwnerAndEnter(session); else showLogin();
+});
+
+// ── الشركات ──
+let COMPANIES = [];
+const DUE_DAYS = 90; // كل 3 أشهر تقريباً
+
+function dueDateOf(c){
+  const d = new Date(c.last_payment_at || c.created_at);
+  d.setMonth(d.getMonth() + 3);
+  return d;
+}
+
+async function extractErr(error){
+  let msg = error.message;
+  if(error.context && typeof error.context.json === 'function'){
+    try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
+  }
+  return msg;
+}
+
+async function loadCompanies(){
+  const listEl = document.getElementById('companyList');
+  listEl.innerHTML = '<div class="empty">⏳ جاري التحميل...</div>';
+  try {
+    const { data, error } = await sb.functions.invoke('admin-create-tenant', { body: { action: 'list' } });
+    if(error) throw new Error(await extractErr(error));
+    if(data?.error) throw new Error(data.error);
+    COMPANIES = data.companies || [];
+    renderStats();
+    renderCompanies();
+  } catch(e){
+    listEl.innerHTML = `<div class="empty" style="color:var(--red);">❌ ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderStats(){
+  const now = new Date();
+  const active = COMPANIES.filter(c => !c.suspended).length;
+  const suspended = COMPANIES.filter(c => c.suspended).length;
+  const due = COMPANIES.filter(c => !c.suspended && dueDateOf(c) <= now).length;
+  document.getElementById('statTotal').textContent = COMPANIES.length;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statSuspended').textContent = suspended;
+  document.getElementById('statDue').textContent = due;
+}
+
+function renderCompanies(){
+  const listEl = document.getElementById('companyList');
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  const now = new Date();
+  const filtered = COMPANIES.filter(c =>
+    !q || (c.name||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)
+  );
+  if(!filtered.length){
+    listEl.innerHTML = '<div class="empty">لا يوجد نتائج</div>';
+    return;
+  }
+  listEl.innerHTML = filtered.map(c => {
+    const due = dueDateOf(c);
+    const isOverdue = !c.suspended && due <= now;
+    return `
+    <div class="co-card ${isOverdue?'overdue':''}">
+      <div class="co-top">
+        <span class="co-badge ${c.suspended?'off':'on'}">${c.suspended?'🔴 موقوفة':(isOverdue?'🟡 دفعتها مستحقة':'🟢 فعّالة')}</span>
+        <span class="co-name">${escapeHtml(c.name||'—')}</span>
+      </div>
+      <div class="co-email">${escapeHtml(c.email||'—')}</div>
+      <div class="co-dates">
+        <div class="co-date-box"><div class="co-date-lbl">تاريخ التسجيل</div><div class="co-date-val">${fmtDate(c.created_at)}</div></div>
+        <div class="co-date-box"><div class="co-date-lbl">الدفعة القادمة</div><div class="co-date-val ${isOverdue?'due':''}">${fmtDate(due.toISOString())}</div></div>
+      </div>
+      ${c.suspended && c.suspend_reason ? `<div class="co-reason">السبب: ${escapeHtml(c.suspend_reason)}</div>` : ''}
+      <div class="co-actions">
+        <button class="co-btn pay" onclick="markPaid('${escapeHtml(c.email)}')">✅ تسديد الدفعة</button>
+        ${!c.suspended ? `<button class="co-btn danger" onclick="suspendCompany('${escapeHtml(c.email)}')">⏸️ تعليق</button>` : ''}
+        <button class="co-btn" onclick="resetPassword('${escapeHtml(c.email)}')">🔑 كلمة مرور</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markPaid(email){
+  if(!confirm(`تأكيد تسديد دفعة ${email}؟ يجدد الاشتراك 3 أشهر ويفعّل الشركة تلقائياً.`)) return;
+  try {
+    const { data, error } = await sb.functions.invoke('admin-create-tenant', { body: { action: 'mark_paid', email } });
+    if(error) throw new Error(await extractErr(error));
+    if(data?.error) throw new Error(data.error);
+    loadCompanies();
+  } catch(e){
+    alert('❌ ' + e.message);
+  }
+}
+
+async function suspendCompany(email){
+  const reason = prompt(`سبب تعليق اشتراك ${email}؟ (يظهر لهم عند الدخول)`, '');
+  if(reason === null) return;
+  try {
+    const { data, error } = await sb.functions.invoke('admin-create-tenant', { body: { action: 'toggle_suspension', email, suspended: true, reason } });
+    if(error) throw new Error(await extractErr(error));
+    if(data?.error) throw new Error(data.error);
+    loadCompanies();
+  } catch(e){
+    alert('❌ ' + e.message);
+  }
+}
+
+async function resetPassword(email){
+  if(!confirm(`تأكيد توليد كلمة مرور جديدة لـ ${email}؟`)) return;
+  try {
+    const { data, error } = await sb.functions.invoke('admin-create-tenant', { body: { action: 'reset_password', email } });
+    if(error) throw new Error(await extractErr(error));
+    if(data?.error) throw new Error(data.error);
+    alert(`✅ كلمة المرور الجديدة لـ ${data.email}:\n\n${data.password}\n\nانسخها وأرسلها للزبون الآن — ما راح تظهر مرة ثانية.`);
+  } catch(e){
+    alert('❌ ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

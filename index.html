@@ -395,20 +395,6 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);}
 .kr-card-noa.add{background:rgba(74,222,128,.14);color:var(--accent);}
 .al-card-meta{font-size:11px;color:var(--text-dim);margin-top:2px;text-align:right;}
 .al-diff-row .mv.changed{color:var(--gold);}
-/* لوحة إدارة الشركات المشتركة (للمالك النظامي) */
-.adm-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:10px;}
-.adm-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}
-.adm-name{font-size:14px;font-weight:900;color:var(--text);}
-.adm-badge{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap;}
-.adm-badge.on{background:rgba(74,222,128,.14);color:var(--accent);}
-.adm-badge.off{background:rgba(251,113,133,.14);color:var(--red);}
-.adm-badge.trial{background:rgba(251,191,36,.14);color:var(--gold);}
-.adm-email{font-size:12px;color:var(--text-dim);direction:ltr;text-align:right;margin-bottom:6px;}
-.adm-reason{font-size:11.5px;color:var(--red);background:rgba(251,113,133,.08);border-radius:6px;padding:6px 8px;margin-bottom:8px;}
-.adm-actions{display:flex;gap:8px;}
-.adm-btn{flex:1;padding:9px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);}
-.adm-btn.danger{background:rgba(200,50,50,0.25);border-color:#cc4444;color:#ffaaaa;}
-.adm-btn.ok{background:rgba(74,222,128,.2);border-color:#40c060;color:#a0f0b0;}
 /* الموظف (إدخال بس) — نخفي كل عنصر معلّم owner-only؛ الحماية الفعلية بصلاحيات القاعدة (RLS) */
 body.role-employee .owner-only{display:none!important;}
 body:not(.role-employee) .employee-only{display:none!important;}
@@ -1506,9 +1492,6 @@ body:not(.role-employee) .employee-only{display:none!important;}
         style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:white;cursor:pointer;margin-bottom:8px;">
         🔄 تحميل البيانات من السحابة
       </button>
-      <button id="btnGoAdmin" onclick="goPage('pageAdmin')" style="display:none;width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:900;background:#2a5aa0;border:1.5px solid #4a80d0;color:white;cursor:pointer;margin-bottom:8px;">
-        ➕ إدارة حسابات الشركات
-      </button>
       <button class="owner-only" onclick="goPage('pageAuditLog')"
         style="width:100%;padding:11px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:white;cursor:pointer;margin-bottom:8px;">
         📜 سجل التعديلات والحذف
@@ -1753,71 +1736,6 @@ body:not(.role-employee) .employee-only{display:none!important;}
 </div>
 
 <!-- ======================================================
-     PAGE — ADMIN (إدارة حسابات الشركات) — للمالك فقط
-====================================================== -->
-<div id="pageAdmin" class="page">
-  <div style="background:linear-gradient(135deg,#040d1a,#071e38);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
-    <button onclick="goPage('pageSettings')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;">↩ رجوع</button>
-    <div style="font-size:16px;font-weight:900;color:var(--accent);">إدارة حسابات الشركات</div>
-    <div style="width:50px;"></div>
-  </div>
-
-  <div style="padding:14px;max-width:480px;margin:0 auto;padding-bottom:30px;">
-
-    <!-- ══ لوحة الشركات المشتركة ══ -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div style="color:var(--accent);font-size:13px;font-weight:900;">🏢 الشركات المشتركة</div>
-      <div id="adminCompanyCount" style="color:var(--text-dim);font-size:11px;"></div>
-    </div>
-    <input type="text" id="adminCompanySearch" placeholder="🔍 دوّر باسم الشركة أو الإيميل..." oninput="adminRenderCompanies()"
-      style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;margin-bottom:12px;">
-    <div id="adminCompanyList" style="margin-bottom:20px;"></div>
-
-    <!-- ══ إنشاء شركة جديدة ══ -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
-      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:12px;">➕ إنشاء حساب شركة جديد</div>
-
-      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">اسم الشركة</div>
-      <input type="text" id="adminBizName" placeholder="مثال: صيرفة الأمانة"
-        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:rtl;margin-bottom:10px;">
-
-      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">إيميل صاحب الحساب</div>
-      <input type="email" id="adminBizEmail" placeholder="owner@example.com"
-        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:10px;">
-
-      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">كلمة المرور (تختارها أنت — 6 أحرف على الأقل)</div>
-      <input type="text" id="adminBizPassword" placeholder="كلمة المرور"
-        style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);direction:ltr;margin-bottom:10px;">
-
-      <div style="color:var(--text-dim);font-size:11px;font-weight:700;margin-bottom:5px;text-align:right;">نوع الاشتراك</div>
-      <select id="adminBizPlan" style="width:100%;background:#071e38;border:1.5px solid var(--border2);border-radius:7px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);direction:rtl;margin-bottom:14px;">
-        <option value="trial">🟡 تجريبي (7 أيام مجاناً)</option>
-        <option value="paid">💳 مدفوع (3 أشهر)</option>
-      </select>
-
-      <button id="btnCreateTenant" onclick="adminCreateTenant()"
-        style="width:100%;padding:12px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:900;background:var(--accent2);border:none;color:white;cursor:pointer;">
-        ➕ إنشاء الحساب
-      </button>
-      <div id="adminCreateErr" style="color:var(--red);font-size:12px;text-align:center;margin-top:8px;"></div>
-    </div>
-
-    <div id="adminResultBox" style="display:none;background:rgba(34,211,238,.08);border:1.5px solid rgba(34,211,238,.35);border-radius:var(--radius-md);padding:14px;">
-      <div style="color:var(--accent);font-size:13px;font-weight:900;margin-bottom:10px;">✅ تم إنشاء الحساب — انسخ وأرسل هذي البيانات للزبون</div>
-      <div style="background:var(--bg3);border-radius:7px;padding:10px;margin-bottom:8px;">
-        <div style="color:var(--text-dim);font-size:10px;">الإيميل</div>
-        <div id="adminResultEmail" style="color:var(--text);font-size:13px;font-weight:700;direction:ltr;text-align:left;"></div>
-      </div>
-      <div style="background:var(--bg3);border-radius:7px;padding:10px;margin-bottom:10px;">
-        <div style="color:var(--text-dim);font-size:10px;">كلمة المرور المؤقتة</div>
-        <div id="adminResultPassword" style="color:var(--gold);font-size:15px;font-weight:900;direction:ltr;text-align:left;"></div>
-      </div>
-      <button onclick="adminCopyResult()" style="width:100%;padding:10px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);cursor:pointer;">📋 نسخ البيانات</button>
-    </div>
-  </div>
-</div>
-
-<!-- ======================================================
      MODAL — رمز الحماية
 ====================================================== -->
 <div class="modal-ov" id="modalPin">
@@ -1896,7 +1814,6 @@ function goPage(id) {
   if(id==='pageKhulasa')  khOpen();
   if(id==='pageSettings') stOpen();
   if(id==='pageAuditLog') alOpen();
-  if(id==='pageAdmin')    adminLoadCompanies();
   // أضف للتاريخ
   if(id !== pageHistory[pageHistory.length-1]){
     pageHistory.push(id);
@@ -4878,193 +4795,12 @@ async function doLogin(){
   if(error) errEl.textContent = 'خطأ: بيانات الدخول غير صحيحة';
 }
 
-/* ============================================================
-   ADMIN — إنشاء حسابات شركات جديدة (يظهر بس للمالك)
-   يستدعي دالة خادمة (Edge Function) بدل ما يستخدم صلاحية service_role
-   بالمتصفح — حتى لو حد قرأ كود الموقع ما يقدر ينشئ حساب لنفسه
-============================================================ */
-async function adminCreateTenant(){
-  const bizName  = document.getElementById('adminBizName').value.trim();
-  const email    = document.getElementById('adminBizEmail').value.trim();
-  const password = document.getElementById('adminBizPassword').value;
-  const plan     = document.getElementById('adminBizPlan').value;
-  const errEl    = document.getElementById('adminCreateErr');
-  const btn      = document.getElementById('btnCreateTenant');
-  errEl.textContent = '';
-  if(!bizName || !email || !password){ errEl.textContent = 'أدخل اسم الشركة والإيميل وكلمة المرور'; return; }
-  if(password.length < 6){ errEl.textContent = 'كلمة المرور لازم 6 أحرف على الأقل'; return; }
-
-  btn.disabled = true; btn.textContent = '⏳ جاري الإنشاء...';
-  try {
-    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
-      body: { email, business_name: bizName, password, plan }
-    });
-    if(error) throw new Error(await adminExtractErr(error));
-    if(data?.error) throw new Error(data.error);
-
-    document.getElementById('adminResultEmail').textContent    = data.email;
-    document.getElementById('adminResultPassword').textContent = data.password;
-    document.getElementById('adminResultBox').style.display = 'block';
-    document.getElementById('adminBizName').value     = '';
-    document.getElementById('adminBizEmail').value    = '';
-    document.getElementById('adminBizPassword').value = '';
-    toast('✅ تم إنشاء الحساب');
-    adminLoadCompanies();
-  } catch(e){
-    errEl.textContent = '❌ ' + e.message;
-  } finally {
-    btn.disabled = false; btn.textContent = '➕ إنشاء الحساب';
-  }
-}
-
-function adminCopyResult(){
-  const email = document.getElementById('adminResultEmail').textContent;
-  const pass  = document.getElementById('adminResultPassword').textContent;
-  navigator.clipboard.writeText(`الإيميل: ${email}\nكلمة المرور: ${pass}`);
-  toast('📋 تم النسخ');
-}
-
-// استخراج رسالة الخطأ الحقيقية من رد edge function بدل الرسالة العامة
-async function adminExtractErr(error){
-  let msg = error.message;
-  if(error.context && typeof error.context.json === 'function'){
-    try { const body = await error.context.json(); if(body?.error) msg = body.error; } catch(_){}
-  }
-  return msg;
-}
-
-/* ============================================================
-   لوحة الشركات المشتركة (للمالك النظامي)
-============================================================ */
-let ADMIN_COMPANIES = [];
-
-async function adminLoadCompanies(){
-  const listEl = document.getElementById('adminCompanyList');
-  if(!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:16px;">⏳ جاري التحميل...</div>';
-  try {
-    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
-      body: { action: 'list' }
-    });
-    if(error) throw new Error(await adminExtractErr(error));
-    if(data?.error) throw new Error(data.error);
-    ADMIN_COMPANIES = data.companies || [];
-    adminRenderCompanies();
-  } catch(e){
-    listEl.innerHTML = `<div style="text-align:center;color:var(--red);font-size:12px;padding:16px;">❌ ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-function adminRenderCompanies(){
-  const listEl = document.getElementById('adminCompanyList');
-  const countEl = document.getElementById('adminCompanyCount');
-  if(!listEl) return;
-  const q = (document.getElementById('adminCompanySearch')?.value || '').trim().toLowerCase();
-  const filtered = ADMIN_COMPANIES.filter(c =>
-    !q || (c.name||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)
-  );
-  if(countEl) countEl.textContent = `${filtered.length} من ${ADMIN_COMPANIES.length}`;
-
-  if(!filtered.length){
-    listEl.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:16px;">لا يوجد نتائج</div>';
-    return;
-  }
-  listEl.innerHTML = filtered.map(c => {
-    const st = adminStatusOf(c);
-    return `
-    <div class="adm-card">
-      <div class="adm-card-top">
-        <span class="adm-badge ${st.cls}">${st.label}</span>
-        <span class="adm-name">${escapeHtml(c.name||'—')}</span>
-      </div>
-      <div class="adm-email">${escapeHtml(c.email||'—')}</div>
-      <div class="adm-email">الدفعة القادمة: ${c.next_due_at ? new Date(c.next_due_at).toLocaleDateString('ar-IQ') : '—'}</div>
-      ${c.suspended && c.suspend_reason ? `<div class="adm-reason">السبب: ${escapeHtml(c.suspend_reason)}</div>` : ''}
-      <div class="adm-actions">
-        <button class="adm-btn ok" onclick="adminMarkPaid('${escapeHtml(c.email)}')">✅ تسديد دفعة</button>
-        <button class="adm-btn" onclick="adminCardResetPassword('${escapeHtml(c.email)}')">🔑 كلمة مرور</button>
-        ${!c.suspended ? `<button class="adm-btn danger" onclick="adminCardToggleSuspension('${escapeHtml(c.email)}', true)">⏸️ تعليق</button>` : ''}
-      </div>
-    </div>
-  `;
-  }).join('');
-}
-
-function adminStatusOf(c){
-  const now = new Date();
-  const due = c.next_due_at ? new Date(c.next_due_at) : null;
-  if(c.suspended) return { cls:'off', label:'⛔ موقوفة' };
-  if(due && due < now) return { cls:'off', label: c.plan==='trial' ? '🔴 انتهت التجربة' : '🔴 متأخرة الدفع' };
-  if(c.plan==='trial') return { cls:'trial', label:'🟡 تجريبي' };
-  return { cls:'on', label:'🟢 فعّالة' };
-}
-
-async function adminMarkPaid(email){
-  if(!confirm(`تأكيد تسديد دفعة ${email}؟ يجدد الاشتراك 3 أشهر ويفعّل الشركة تلقائياً.`)) return;
-  try {
-    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
-      body: { action: 'mark_paid', email }
-    });
-    if(error) throw new Error(await adminExtractErr(error));
-    if(data?.error) throw new Error(data.error);
-    toast('✅ تم تسجيل الدفعة');
-    adminLoadCompanies();
-  } catch(e){
-    toast('❌ ' + e.message);
-  }
-}
-
-async function adminCardResetPassword(email){
-  const pw = prompt(`كلمة المرور الجديدة لـ ${email}؟ (6 أحرف على الأقل)`, '');
-  if(pw === null) return;
-  if(pw.length < 6){ toast('❌ كلمة المرور لازم 6 أحرف على الأقل'); return; }
-  try {
-    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
-      body: { action: 'reset_password', email, password: pw }
-    });
-    if(error) throw new Error(await adminExtractErr(error));
-    if(data?.error) throw new Error(data.error);
-
-    document.getElementById('adminResultEmail').textContent    = data.email;
-    document.getElementById('adminResultPassword').textContent = data.password;
-    document.getElementById('adminResultBox').style.display = 'block';
-    document.getElementById('adminResultBox').scrollIntoView({ behavior:'smooth' });
-    toast('✅ تم تغيير كلمة المرور');
-  } catch(e){
-    toast('❌ ' + e.message);
-  }
-}
-
-async function adminCardToggleSuspension(email, suspended){
-  let reason = '';
-  if(suspended){
-    reason = prompt(`سبب تعليق اشتراك ${email}؟ (يظهر لهم عند الدخول)`, '') || '';
-    if(reason === null) return;
-  } else {
-    if(!confirm(`تأكيد تفعيل اشتراك ${email}؟`)) return;
-  }
-  try {
-    const { data, error } = await sbClient.functions.invoke('admin-create-tenant', {
-      body: { action: 'toggle_suspension', email, suspended, reason }
-    });
-    if(error) throw new Error(await adminExtractErr(error));
-    if(data?.error) throw new Error(data.error);
-
-    toast(suspended ? '⏸️ تم تعليق الشركة' : '✅ تم تفعيل الشركة');
-    adminLoadCompanies();
-  } catch(e){
-    toast('❌ ' + e.message);
-  }
-}
-
 // نتتبع آخر مستخدم حمّلنا بياناته — لو تغيّر (تسجيل دخول بحساب ثاني بنفس التبويب
 // أو تزامن جلسة من تبويب ثاني) لازم نعيد التحميل، حتى لو الصفحة نفسها ما انسوى لها reload
 let _loadedForUserId = null;
 async function enterApp(session){
   const emailEl = document.getElementById('stAccountEmail');
   if(emailEl) emailEl.textContent = session.user.email || '';
-  const adminBtn = document.getElementById('btnGoAdmin');
-  if(adminBtn) adminBtn.style.display = session.user.app_metadata?.is_owner ? 'block' : 'none';
 
   // نحدد دور المستخدم (مالك/موظف) حتى نظبط الواجهة حسبه — الحماية الحقيقية
   // بقاعدة البيانات (RLS)، هذا فقط لتحسين تجربة الاستخدام

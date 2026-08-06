@@ -2666,7 +2666,7 @@ function printKashf(){
     rowsHtml += `<tr>
       <td>${dateStr}</td>
       <td style="color:#9aa2b1;">${escapeHtml(String(raqm))}</td>
-      <td style="text-align:right;">${escapeHtml(name)}</td>
+      <td class="col-name">${escapeHtml(name)}</td>
       <td class="col-noa ${noaCls}">${escapeHtml(noa)}</td>
       <td>${fN(m.wared)}</td>
       <td>${fN(m.sader)}</td>
@@ -2699,7 +2699,7 @@ table{width:100%;min-width:520px;table-layout:fixed;border-collapse:collapse;mar
 thead{display:table-header-group;}
 tr{break-inside:avoid;page-break-inside:avoid;}
 thead th{padding:9px 4px;font-weight:700;font-size:11px;background:#0d3f7a;color:#fff;border-left:1px solid rgba(255,255,255,.15);}
-tbody td{padding:7px 4px;border-bottom:1px solid #eef0f4;text-align:center;vertical-align:middle;word-break:break-word;color:#28303e;}
+tbody td{padding:7px 4px;border-bottom:1px solid #eef0f4;text-align:center;vertical-align:middle;white-space:nowrap;color:#28303e;}
 tbody tr:nth-child(even){background:#f6f7f9;}
 tbody tr.row-sabiq{background:#eef2f7;font-weight:700;}
 tbody tr.row-sabiq td{border-bottom:2px solid #0d3f7a;color:#0d3f7a;}
@@ -2707,7 +2707,8 @@ td.col-noa{font-weight:700;}
 td.col-noa.noa-qabd{color:#1a7a44;}
 td.col-noa.noa-sarf{color:#b03030;}
 td.col-net{font-weight:700;color:#0d3f7a;background:#f2f6fb;}
-tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;color:#fff;}
+td.col-name{text-align:right;white-space:normal;word-break:break-word;}
+tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;color:#fff;white-space:nowrap;}
 .balances{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
 .bal-card{flex:1;min-width:180px;border-radius:8px;padding:14px 16px;text-align:center;border:1.5px solid;background:#eef2ff;border-color:#c7d2ff;}
 .bal-amt{font-size:19px;font-weight:700;margin-bottom:4px;color:#0d3f7a;}
@@ -2720,7 +2721,7 @@ tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;co
   .sheet{box-shadow:none;border-radius:0;max-width:none;}
   .table-scroll{overflow-x:visible;}
   table{min-width:0;}
-  @page{size:A4;margin:10mm;}
+  @page{size:A4 landscape;margin:10mm;}
 }
 </style>
 </head>
@@ -3393,16 +3394,16 @@ thead{display:table-header-group;}
 tr{break-inside:avoid;page-break-inside:avoid;}
 thead .grp-row th{padding:9px 4px;font-weight:700;font-size:11px;background:#0d3f7a;color:#fff;border-left:1px solid rgba(255,255,255,.15);}
 thead .sub-row th{padding:6px 4px;font-weight:700;font-size:10px;color:#0d3f7a;background:#dce8f6;border-left:1px solid #fff;border-bottom:2px solid #0d3f7a;}
-tbody td{padding:7px 4px;border-bottom:1px solid #eef0f4;text-align:center;vertical-align:middle;word-break:break-word;color:#28303e;}
+tbody td{padding:7px 4px;border-bottom:1px solid #eef0f4;text-align:center;vertical-align:middle;white-space:nowrap;color:#28303e;}
 tbody tr:nth-child(even){background:#f6f7f9;}
 tbody tr.row-sabiq{background:#eef2f7;font-weight:700;}
 tbody tr.row-sabiq td{border-bottom:2px solid #0d3f7a;color:#0d3f7a;}
-td.col-notes{text-align:right;color:#8a93a3;font-size:9.5px;}
+td.col-notes{text-align:right;color:#8a93a3;font-size:9.5px;white-space:normal;word-break:break-word;}
 td.col-noa{font-weight:700;}
 td.col-noa.noa-qabd{color:#1a7a44;}
 td.col-noa.noa-sarf{color:#b03030;}
 td.col-net{font-weight:700;color:#0d3f7a;background:#f2f6fb;}
-tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;color:#fff;}
+tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;color:#fff;white-space:nowrap;}
 
 /* ── بطاقات المتبقي ── */
 .balances{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
@@ -3427,7 +3428,7 @@ tfoot td{padding:9px 4px;text-align:center;font-weight:700;background:#0d3f7a;co
   .sheet{box-shadow:none;border-radius:0;max-width:none;}
   .table-scroll{overflow-x:visible;}
   table{min-width:0;}
-  @page{size:A4;margin:10mm;}
+  @page{size:A4 landscape;margin:10mm;}
 }
 </style>
 </head>

@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     if (action === 'list') {
       const { data: settingsRows, error: settingsListErr } = await supabaseAdmin
         .from('settings')
-        .select('company_id, comp_name, suspended, suspend_reason, default_rate')
+        .select('company_id, comp_name, suspended, suspend_reason, default_rate, last_payment_at')
         .order('comp_name', { ascending: true })
       if (settingsListErr) {
         return jsonResponse({ error: 'خطأ بجلب الشركات: ' + settingsListErr.message }, 500)
@@ -74,17 +74,53 @@ Deno.serve(async (req) => {
       if (listErr) {
         return jsonResponse({ error: 'خطأ بجلب الحسابات: ' + listErr.message }, 500)
       }
-      const emailById = new Map(listData.users.map((u) => [u.id, u.email || '']))
+      const userById = new Map(listData.users.map((u) => [u.id, u]))
 
-      const companies = (settingsRows || []).map((s) => ({
-        company_id: s.company_id,
-        name: s.comp_name,
-        email: emailById.get(s.company_id) || '',
-        suspended: s.suspended,
-        suspend_reason: s.suspend_reason,
-        rate: s.default_rate,
-      }))
+      const companies = (settingsRows || []).map((s) => {
+        const u = userById.get(s.company_id)
+        return {
+          company_id: s.company_id,
+          name: s.comp_name,
+          email: u?.email || '',
+          created_at: u?.created_at || null,
+          last_payment_at: s.last_payment_at,
+          suspended: s.suspended,
+          suspend_reason: s.suspend_reason,
+          rate: s.default_rate,
+        }
+      })
       return jsonResponse({ companies })
+    }
+
+    // ── تسجيل دفعة اشتراك (يجدد دورة الـ 3 أشهر ويفعّل الشركة تلقائياً) ──
+    if (action === 'mark_paid') {
+      const payEmail = String(body.email || '').trim().toLowerCase()
+      if (!payEmail) {
+        return jsonResponse({ error: 'أدخل الإيميل' }, 400)
+      }
+      const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers()
+      if (listErr) {
+        return jsonResponse({ error: 'خطأ بجلب الحسابات: ' + listErr.message }, 500)
+      }
+      const target = listData.users.find((u) => u.email?.toLowerCase() === payEmail)
+      if (!target) {
+        return jsonResponse({ error: 'ما لقيت حساب بهذا الإيميل' }, 404)
+      }
+      const { data: member } = await supabaseAdmin
+        .from('company_members')
+        .select('company_id')
+        .eq('user_id', target.id)
+        .maybeSingle()
+      const companyId = member?.company_id || target.id
+
+      const { error: updErr } = await supabaseAdmin
+        .from('settings')
+        .update({ last_payment_at: new Date().toISOString(), suspended: false, suspend_reason: null })
+        .eq('company_id', companyId)
+      if (updErr) {
+        return jsonResponse({ error: 'فشل تسجيل الدفعة: ' + updErr.message }, 500)
+      }
+      return jsonResponse({ ok: true })
     }
 
     const email = String(body.email || '').trim().toLowerCase()

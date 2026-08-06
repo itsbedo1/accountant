@@ -2317,9 +2317,14 @@ async function confirmAndSave(){
   for(const c of balCustomers.values()) await dbUpdateCustomerBal(c);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  if(r.amilId){
-    if(wasEdit) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin);
-    else        sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, 'new');
+  // لازم يشتغل سواء انسجلت الحركة كـ"عميل" (ذمم العملاء، r.amilId) أو كـ"جهة
+  // صرف" باسم العميل (r.jiha) — الاثنين يأثرون على رصيده فعلياً (شفت addBal فوق)
+  const notifyCust = r.amilId
+    ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
+    : STATE.customers.find(x=>x.name===r.jiha);
+  if(notifyCust){
+    if(wasEdit) sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin);
+    else        sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new');
   }
 
   toast('✅ تم الحفظ وتحديث الأرصدة');
@@ -2453,8 +2458,12 @@ function sDel(){
     const jihaC2 = STATE.customers.find(x=>x.name===r.jiha);
     if(jihaC2) dbUpdateCustomerBal(jihaC2);
 
-    // إشعار تليجرام للعميل بإلغاء الحركة
-    if(r.amilId) sendTelegramNotif(r.amilId, r.noa, r.mabD, r.mabDin, 'delete');
+    // إشعار تليجرام للعميل بإلغاء الحركة — نفس الشي، لازم يشتغل حتى لو انسجلت
+    // الحركة كـ"جهة صرف" باسم العميل مو عن طريق ذمم العملاء
+    const delNotifyCust = r.amilId
+      ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
+      : STATE.customers.find(x=>x.name===r.jiha);
+    if(delNotifyCust) sendTelegramNotif(delNotifyCust.id, r.noa, r.mabD, r.mabDin, 'delete');
 
     // رابعاً: احفظ رصيد القاصة الجديد
     await dbSaveSettings();
@@ -3022,10 +3031,14 @@ async function getFreshChatId(c){
 }
 
 async function sendTgMessage(token, chatId, text){
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ chat_id: chatId, text })
   });
+  if(!res.ok){
+    const body = await res.text().catch(()=>'');
+    throw new Error(`Telegram API ${res.status}: ${body}`);
+  }
 }
 
 async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0){
@@ -3055,7 +3068,10 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
 
     const text = `${actionLine}.\n${fmtBalanceLine(curD, curDin)}`;
     await sendTgMessage(token, chatId, text);
-  } catch(e){ console.error('sendTelegramNotif:', e); }
+  } catch(e){
+    console.error('sendTelegramNotif:', e);
+    toast('⚠️ الحركة انحفظت، بس فشل إشعار العميل بتليجرام — بلّغه يدوياً');
+  }
 }
 
 // إشعار تليجرام لحركة صيرفة ذمم عملاء (تحويل عملة داخل حساب العميل)
@@ -3074,7 +3090,10 @@ async function sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate){
 
     const text = `${lines.join('\n')}.\n${fmtBalanceLine(curD, curDin)}`;
     await sendTgMessage(token, chatId, text);
-  } catch(e){ console.error('sendTelegramSayarfaNotif:', e); }
+  } catch(e){
+    console.error('sendTelegramSayarfaNotif:', e);
+    toast('⚠️ الحركة انحفظت، بس فشل إشعار العميل بتليجرام — بلّغه يدوياً');
+  }
 }
 
 /* ============================================================

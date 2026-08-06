@@ -56,6 +56,37 @@ Deno.serve(async (req) => {
     // ٣) تحقق المدخلات
     const body = await req.json().catch(() => ({}))
     const action = String(body.action || 'create')
+
+    // ── قائمة كل الشركات المشتركة (لوحة الإدارة) — ما تحتاج إيميل ──
+    if (action === 'list') {
+      const { data: settingsRows, error: settingsListErr } = await supabaseAdmin
+        .from('settings')
+        .select('company_id, comp_name, suspended, suspend_reason, default_rate')
+        .order('comp_name', { ascending: true })
+      if (settingsListErr) {
+        return jsonResponse({ error: 'خطأ بجلب الشركات: ' + settingsListErr.message }, 500)
+      }
+
+      const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      })
+      if (listErr) {
+        return jsonResponse({ error: 'خطأ بجلب الحسابات: ' + listErr.message }, 500)
+      }
+      const emailById = new Map(listData.users.map((u) => [u.id, u.email || '']))
+
+      const companies = (settingsRows || []).map((s) => ({
+        company_id: s.company_id,
+        name: s.comp_name,
+        email: emailById.get(s.company_id) || '',
+        suspended: s.suspended,
+        suspend_reason: s.suspend_reason,
+        rate: s.default_rate,
+      }))
+      return jsonResponse({ companies })
+    }
+
     const email = String(body.email || '').trim().toLowerCase()
 
     if (!email) {

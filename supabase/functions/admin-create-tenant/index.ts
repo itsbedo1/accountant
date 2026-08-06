@@ -17,11 +17,10 @@ function jsonResponse(body: unknown, status = 200) {
   })
 }
 
-function generatePassword(length = 12): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-  const bytes = new Uint8Array(length)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => chars[b % chars.length]).join('')
+function addMonths(date: Date, n: number): Date {
+  const d = new Date(date)
+  d.setMonth(d.getMonth() + n)
+  return d
 }
 
 Deno.serve(async (req) => {
@@ -61,7 +60,7 @@ Deno.serve(async (req) => {
     if (action === 'list') {
       const { data: settingsRows, error: settingsListErr } = await supabaseAdmin
         .from('settings')
-        .select('company_id, comp_name, suspended, suspend_reason, default_rate, last_payment_at')
+        .select('company_id, comp_name, suspended, suspend_reason, default_rate, last_payment_at, next_due_at, plan')
         .order('comp_name', { ascending: true })
       if (settingsListErr) {
         return jsonResponse({ error: 'خطأ بجلب الشركات: ' + settingsListErr.message }, 500)
@@ -84,6 +83,8 @@ Deno.serve(async (req) => {
           email: u?.email || '',
           created_at: u?.created_at || null,
           last_payment_at: s.last_payment_at,
+          next_due_at: s.next_due_at,
+          plan: s.plan,
           suspended: s.suspended,
           suspend_reason: s.suspend_reason,
           rate: s.default_rate,
@@ -113,9 +114,16 @@ Deno.serve(async (req) => {
         .maybeSingle()
       const companyId = member?.company_id || target.id
 
+      const now = new Date()
       const { error: updErr } = await supabaseAdmin
         .from('settings')
-        .update({ last_payment_at: new Date().toISOString(), suspended: false, suspend_reason: null })
+        .update({
+          last_payment_at: now.toISOString(),
+          next_due_at: addMonths(now, 3).toISOString(),
+          plan: 'paid',
+          suspended: false,
+          suspend_reason: null,
+        })
         .eq('company_id', companyId)
       if (updErr) {
         return jsonResponse({ error: 'فشل تسجيل الدفعة: ' + updErr.message }, 500)
@@ -133,8 +141,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'صيغة الإيميل غير صحيحة' }, 400)
     }
 
-    // ── إعادة تعيين كلمة مرور لشركة موجودة ──
+    // ── إعادة تعيين كلمة مرور لشركة موجودة (كلمة مرور يدوية — ما نولّدها) ──
     if (action === 'reset_password') {
+      const newPassword = String(body.password || '')
+      if (newPassword.length < 6) {
+        return jsonResponse({ error: 'كلمة المرور لازم 6 أحرف على الأقل' }, 400)
+      }
       const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers()
       if (listErr) {
         return jsonResponse({ error: 'خطأ بجلب الحسابات: ' + listErr.message }, 500)
@@ -143,7 +155,6 @@ Deno.serve(async (req) => {
       if (!target) {
         return jsonResponse({ error: 'ما لقيت حساب بهذا الإيميل' }, 404)
       }
-      const newPassword = generatePassword()
       const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(target.id, {
         password: newPassword,
       })
@@ -186,14 +197,18 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, email, suspended, reason })
     }
 
-    // ── إنشاء شركة جديدة (الافتراضي) ──
+    // ── إنشاء شركة جديدة (الافتراضي) — كلمة مرور يدوية + نوع اشتراك ──
     const businessName = String(body.business_name || '').trim()
     if (!businessName) {
       return jsonResponse({ error: 'أدخل اسم الشركة' }, 400)
     }
+    const password = String(body.password || '')
+    if (password.length < 6) {
+      return jsonResponse({ error: 'كلمة المرور لازم 6 أحرف على الأقل' }, 400)
+    }
+    const plan = body.plan === 'trial' ? 'trial' : 'paid'
 
     // ٤) أنشئ المستخدم الجديد
-    const password = generatePassword()
     const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -206,6 +221,8 @@ Deno.serve(async (req) => {
 
     // ٥) أنشئ صف إعدادات ابتدائي للشركة الجديدة
     //    (service_role يتجاوز RLS، فلازم نحدد company_id يدوياً)
+    const now = new Date()
+    const nextDueAt = plan === 'trial' ? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) : addMonths(now, 3)
     const { error: settingsErr } = await supabaseAdmin.from('settings').insert({
       company_id: newUser.user.id,
       comp_name: businessName,
@@ -214,6 +231,9 @@ Deno.serve(async (req) => {
       init_bal_din: 0,
       init_bal_d_current: 0,
       init_bal_din_current: 0,
+      plan,
+      last_payment_at: plan === 'trial' ? null : now.toISOString(),
+      next_due_at: nextDueAt.toISOString(),
     })
     if (settingsErr) {
       // نظّف الحساب اللي انشأ حتى ما يضل معلّق بدون بيانات

@@ -973,6 +973,7 @@ body:not(.role-employee) .employee-only{display:none!important;}
     <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">📤</span>الامانات الصادرة</button>
     <button class="menu-btn" onclick="toast('قريباً')"><span class="icon">🏢</span>ارصدة الشركات</button>
     <button class="menu-btn highlight owner-only" onclick="goPage('pageKhulasa')"><span class="icon">📊</span>الخلاصة</button>
+    <button class="menu-btn owner-only" onclick="goPage('pageNotifFails')"><span class="icon">🔔</span>إشعارات فشلت<span id="notifFailBadge" style="color:#ff6060;font-weight:900;"></span></button>
     <button class="menu-btn highlight owner-only" onclick="goPage('pageSettings')" style="grid-column:1/-1;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);"><span class="icon">⚙️</span>الإعدادات</button>
     <button class="menu-btn employee-only" onclick="doLogout()" style="grid-column:1/-1;background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.3);color:#fb7185;"><span class="icon">🚪</span>تسجيل الخروج</button>
   </div>
@@ -1726,6 +1727,27 @@ body:not(.role-employee) .employee-only{display:none!important;}
   </div>
 </div>
 
+<!-- ======================================================
+     PAGE — إشعارات تليجرام فشلت
+====================================================== -->
+<div id="pageNotifFails" class="page">
+  <div style="background:linear-gradient(135deg,#040d1a,#071e38);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+    <button onclick="goPage('pageMain')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;">↩ رجوع</button>
+    <div style="font-size:16px;font-weight:900;color:var(--accent);">🔔 إشعارات فشلت</div>
+    <div style="width:50px;"></div>
+  </div>
+
+  <div class="kr-filter">
+    <div style="color:var(--text-dim);font-size:11px;text-align:center;">حركات ما وصل إشعارها للعميل بتليجرام — اضغط "إعادة إرسال" بعد ما تتأكد إن سبب الفشل انحل (مثلاً العميل فتح البوت من جديد لو كان قافله)</div>
+  </div>
+
+  <div class="kr-tbody" id="nfBody"></div>
+
+  <div class="kr-toolbar">
+    <button class="kr-tbtn" onclick="goPage('pageMain')">🏠 الرئيسية</button>
+  </div>
+</div>
+
 <!-- MODAL — تفاصيل سجل تدقيق (قبل/بعد التعديل أو الحذف) -->
 <div class="modal-ov" id="modalAuditDetail">
   <div class="modal-box dark">
@@ -1814,6 +1836,7 @@ function goPage(id) {
   if(id==='pageKhulasa')  khOpen();
   if(id==='pageSettings') stOpen();
   if(id==='pageAuditLog') alOpen();
+  if(id==='pageNotifFails') nfRender();
   // أضف للتاريخ
   if(id !== pageHistory[pageHistory.length-1]){
     pageHistory.push(id);
@@ -2278,6 +2301,24 @@ async function confirmAndSave(){
   }
   sUpdateUI();
 
+  // نلتقط كل العملاء المتأثرين فعلياً بهذي الحركة ورصيد كل وحد منهم هنا
+  // مباشرة — بشكل متزامن، قبل أي انتظار async (نفس سبب الحماية أعلاه). ممكن
+  // يصير عميلين مو وحد: لو حركة تحويل بين عميلين (الحساب الرئيسي وجهة الصرف
+  // كلاهما عملاء)، الاثنين تأثر رصيدهم فعلياً ولازم الاثنين يوصلهم إشعار —
+  // مو بس صاحب الحساب الرئيسي. نوع الحركة بالنسبة لجهة الصرف معكوس دائماً
+  // (نفس منطق applyAllEffects: قبض من الرئيسي = صرف لجهة الصرف والعكس)
+  const notifyList = [];
+  const amilCust = r.amilId ? STATE.customers.find(x=>x.id===parseInt(r.amilId)) : null;
+  if(amilCust) notifyList.push({ cust: amilCust, noa: r.noa, primary: true });
+  const jihaCust = STATE.customers.find(x=>x.name===r.jiha);
+  if(jihaCust && (!amilCust || jihaCust.id !== amilCust.id)){
+    notifyList.push({ cust: jihaCust, noa: r.noa==='قبض' ? 'صرف' : 'قبض', primary: false });
+  }
+  notifyList.forEach(n=>{
+    n.curD   = n.cust.dL   - n.cust.dA;
+    n.curDin = n.cust.dinL - n.cust.dinA;
+  });
+
   // احفظ فعلياً بقاعدة البيانات وانتظر النتيجة
   const ok = await dbSaveMove(r);
 
@@ -2316,16 +2357,15 @@ async function confirmAndSave(){
   }
   for(const c of balCustomers.values()) await dbUpdateCustomerBal(c);
 
-  // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  // لازم يشتغل سواء انسجلت الحركة كـ"عميل" (ذمم العملاء، r.amilId) أو كـ"جهة
-  // صرف" باسم العميل (r.jiha) — الاثنين يأثرون على رصيده فعلياً (شفت addBal فوق)
-  const notifyCust = r.amilId
-    ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
-    : STATE.customers.find(x=>x.name===r.jiha);
-  if(notifyCust){
-    if(wasEdit) sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin);
-    else        sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new');
-  }
+  // إشعار تليجرام لكل عميل تأثر فعلياً — الحساب الرئيسي وجهة الصرف كلاهما لو
+  // كانت حركة تحويل بين عميلين. نستخدم رصيد الـ snapshot الملتقط فوق قبل
+  // الحفظ — مو قراءة حية ممكن تكون تلوّثت بحركة ثانية صارت أثناء الانتظار.
+  // تتبع "فشل الإشعار" لإعادة الإرسال يشتغل بس عالطرف الرئيسي (moveRow) —
+  // الطرف الثاني (جهة الصرف) يرسل بأفضل جهد، وإذا فشل يطلع تحذير بس بالشاشة
+  notifyList.forEach(n=>{
+    if(wasEdit) sendTelegramNotif(n.cust.id, n.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin, n.primary?r:null, n.curD, n.curDin);
+    else        sendTelegramNotif(n.cust.id, n.noa, r.mabD, r.mabDin, 'new', 0, 0, n.primary?r:null, n.curD, n.curDin);
+  });
 
   toast('✅ تم الحفظ وتحديث الأرصدة');
   _pendingMove = null;
@@ -2438,7 +2478,17 @@ function sDel(){
     // أولاً: احذف من Supabase وانتظر
     if(rowId){
       try {
-        await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+        const deleted = await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+        // Supabase ما يرمي خطأ لو طلب الحذف ما طابق أي صف فعلياً (مثلاً id غلط
+        // أو تعارض صلاحيات) — يرجع نجاح فاضي بصمت! لازم نتأكد فعلاً إنه انحذف
+        // صف حقيقي، وإلا الحركة تضل بقاعدة البيانات بينما التطبيق يتصرف وكأنها
+        // انمسحت (يرجع الأرصدة محلياً، يرسل إشعار إلغاء) — فيصير عندنا صف
+        // "شبح" يضل يُحسب بأي تقرير يجمع من صفوف الحركات مباشرة متل كشف الصندوق
+        if(!deleted || !deleted.length){
+          toast('❌ فشل الحذف — الحركة ما انمسحت فعلياً بقاعدة البيانات (تحقق من الاتصال وحاول ثانية)');
+          console.error('sDel: DELETE matched 0 rows for id', rowId);
+          return;
+        }
         dbLogAudit('moves', rowId, 'delete', r, null);
       } catch(e){
         toast('❌ فشل الحذف من قاعدة البيانات: ' + e.message);
@@ -2450,6 +2500,21 @@ function sDel(){
     // ثانياً: أرجع الأرصدة محلياً
     reverseAllEffects(r);
 
+    // نلتقط كل العملاء المتأثرين ورصيد كل وحد منهم هنا مباشرة (متزامن، فور
+    // الإرجاع) — نفس سبب الحماية المشروحة بدالة confirmAndSave. ممكن يصير
+    // عميلين مو وحد لو كانت حركة تحويل بين عميلين (نفس منطق confirmAndSave)
+    const delNotifyList = [];
+    const delAmilCust = r.amilId ? STATE.customers.find(x=>x.id===parseInt(r.amilId)) : null;
+    if(delAmilCust) delNotifyList.push({ cust: delAmilCust, noa: r.noa });
+    const delJihaCust = STATE.customers.find(x=>x.name===r.jiha);
+    if(delJihaCust && (!delAmilCust || delJihaCust.id !== delAmilCust.id)){
+      delNotifyList.push({ cust: delJihaCust, noa: r.noa==='قبض' ? 'صرف' : 'قبض' });
+    }
+    delNotifyList.forEach(n=>{
+      n.curD   = n.cust.dL   - n.cust.dA;
+      n.curDin = n.cust.dinL - n.cust.dinA;
+    });
+
     // ثالثاً: حدّث أرصدة العملاء في DB
     if(r.amilId){
       const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
@@ -2458,12 +2523,11 @@ function sDel(){
     const jihaC2 = STATE.customers.find(x=>x.name===r.jiha);
     if(jihaC2) dbUpdateCustomerBal(jihaC2);
 
-    // إشعار تليجرام للعميل بإلغاء الحركة — نفس الشي، لازم يشتغل حتى لو انسجلت
-    // الحركة كـ"جهة صرف" باسم العميل مو عن طريق ذمم العملاء
-    const delNotifyCust = r.amilId
-      ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
-      : STATE.customers.find(x=>x.name===r.jiha);
-    if(delNotifyCust) sendTelegramNotif(delNotifyCust.id, r.noa, r.mabD, r.mabDin, 'delete');
+    // إشعار تليجرام لكل عميل تأثر بإلغاء الحركة — الحساب الرئيسي وجهة الصرف
+    // كلاهما لو كانت حركة تحويل بين عميلين
+    delNotifyList.forEach(n=>{
+      sendTelegramNotif(n.cust.id, n.noa, r.mabD, r.mabDin, 'delete', 0, 0, null, n.curD, n.curDin);
+    });
 
     // رابعاً: احفظ رصيد القاصة الجديد
     await dbSaveSettings();
@@ -2912,6 +2976,61 @@ function alDetail(i){
 }
 
 /* ============================================================
+   PAGE — إشعارات تليجرام فشلت
+============================================================ */
+function updateNotifFailBadge(){
+  const badge = document.getElementById('notifFailBadge');
+  if(!badge) return;
+  const n = STATE.moves.filter(r=>r.notifFailed).length;
+  badge.textContent = n>0 ? ` (${n})` : '';
+}
+
+function nfRender(){
+  const body = document.getElementById('nfBody');
+  if(!body) return;
+  const rows = STATE.moves.filter(r=>r.notifFailed).sort((a,b)=>(b.tarikh||'').localeCompare(a.tarikh||''));
+  if(!rows.length){
+    body.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;padding:20px;">✅ ماكو إشعارات فشلت — كلشي وصل</div>';
+    return;
+  }
+  body.innerHTML = rows.map(r=>{
+    const name = r.amilName || r.jiha || '-';
+    const dateStr = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '-';
+    const amountStr = fmtAmount(r.mabD, r.mabDin);
+    const noaCls = r.noa==='قبض' ? 'qabdh' : 'sarf';
+    return `<div class="kr-card">
+      <div class="kr-card-top">
+        <span class="kr-card-noa ${noaCls}">${r.noa==='قبض'?'⬇️ قبض':'⬆️ صرف'}</span>
+        <span class="kr-card-name">${escapeHtml(name)}</span>
+        <span class="kr-card-raqm">#${escapeHtml(r.raqm||'')}</span>
+      </div>
+      <div class="al-card-meta">${dateStr} — ${amountStr}</div>
+      <button class="kr-tbtn" style="margin-top:8px;width:100%;" onclick="nfResend(${r.dbId})">🔄 إعادة إرسال</button>
+    </div>`;
+  }).join('');
+}
+
+async function nfResend(dbId){
+  const r = STATE.moves.find(x=>x.dbId===dbId);
+  if(!r) return;
+  const notifyCust = r.amilId
+    ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
+    : STATE.customers.find(x=>x.name===r.jiha);
+  if(!notifyCust){ toast('⚠️ ما لقيت العميل المرتبط بهذه الحركة'); return; }
+  if(!STATE.settings.tgBotToken){ toast('⚠️ ماكو بوت تليجرام مربوط بالإعدادات'); return; }
+  const chatId = await getFreshChatId(notifyCust);
+  if(!chatId){ toast('⚠️ العميل ماكو رابط حسابه بتليجرام بعد'); return; }
+  toast('⏳ جاري إعادة الإرسال...');
+  // هذا إرسال يدوي متأخر — نستخدم رصيد العميل الحالي فعلاً (مو snapshot وقت
+  // الحركة الأصلية)، لأنه رصيده الحقيقي الحين هو الأصح نعرضه له
+  const curD   = notifyCust.dL   - notifyCust.dA;
+  const curDin = notifyCust.dinL - notifyCust.dinA;
+  await sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new', 0, 0, r, curD, curDin);
+  if(!r.notifFailed) toast('✅ وصل الإشعار هذي المرة');
+  nfRender();
+}
+
+/* ============================================================
    PAGE 4 — ARSADA OMALAA
 ============================================================ */
 let arFiltered=[...STATE.customers];
@@ -3041,7 +3160,12 @@ async function sendTgMessage(token, chatId, text){
   }
 }
 
-async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0){
+// moveRow: سجل الحركة نفسه (اختياري) — لو انطى، نسجل عليه نجاح/فشل الإرسال
+// حتى يقدر المالك يشوف قائمة "إشعارات فشلت" ويعيد الإرسال بزر لاحقاً
+// snapCurD/snapCurDin: رصيد العميل الملتقط وقت هذي الحركة بالضبط (snapshot) —
+// لازم ينطى من المتصل مو نقرأه هنا حي من كائن العميل المشترك، لأن هذا الكائن
+// ممكن ينتغيّر بحركة ثانية أسرع منّا أثناء انتظارنا (شوف getFreshChatId تحت)
+async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0, moveRow=null, snapCurD=0, snapCurDin=0){
   try {
     const token = STATE.settings.tgBotToken;
     if(!token) return;
@@ -3051,8 +3175,8 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
     const chatId = await getFreshChatId(c);
     if(!chatId) return;
 
-    const curD  = c.dL - c.dA;
-    const curDin= c.dinL - c.dinA;
+    const curD  = snapCurD;
+    const curDin= snapCurDin;
     const amountStr = fmtAmount(mabD, mabDin);
     const dir = noa==='قبض' ? 'من' : 'الى';
 
@@ -3068,22 +3192,36 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
 
     const text = `${actionLine}.\n${fmtBalanceLine(curD, curDin)}`;
     await sendTgMessage(token, chatId, text);
+    if(moveRow) await markNotifResult(moveRow, false);
   } catch(e){
     console.error('sendTelegramNotif:', e);
     toast('⚠️ الحركة انحفظت، بس فشل إشعار العميل بتليجرام — بلّغه يدوياً');
+    if(moveRow) await markNotifResult(moveRow, true);
   }
 }
 
+// يسجل نتيجة إرسال إشعار تليجرام على الحركة نفسها بقاعدة البيانات — يتيح
+// لصفحة "إشعارات فشلت" تعرض قائمة محدثة وزر إعادة إرسال
+async function markNotifResult(r, failed){
+  r.notifFailed = failed;
+  updateNotifFailBadge();
+  if(!r.dbId) return;
+  try { await sbFetch(`moves?id=eq.${r.dbId}`, 'PATCH', { tg_notif_failed: failed }); }
+  catch(e){ console.error('markNotifResult:', e); }
+}
+
 // إشعار تليجرام لحركة صيرفة ذمم عملاء (تحويل عملة داخل حساب العميل)
-async function sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate){
+// snapCurD/snapCurDin: رصيد العميل الملتقط وقت هذي الحركة بالضبط — نفس سبب
+// الحماية بدالة sendTelegramNotif (تجنب قراءة حية ممكن تتلوث بحركة ثانية)
+async function sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate, snapCurD=0, snapCurDin=0){
   try {
     const token = STATE.settings.tgBotToken;
     if(!token) return;
     const chatId = await getFreshChatId(c);
     if(!chatId) return;
 
-    const curD  = c.dL - c.dA;
-    const curDin= c.dinL - c.dinA;
+    const curD  = snapCurD;
+    const curDin= snapCurDin;
     const lines = [`🔄 تحويل عملة (صيرفة) على حسابك — ${type} دولار بسعر ${rate.toLocaleString()}`];
     if(mabD)   lines.push(`💵 ${mabD.toLocaleString()}$`);
     if(mabDin) lines.push(`💴 ${mabDin.toLocaleString()} د.ع`);
@@ -3756,6 +3894,12 @@ async function sfSaveAmil(type, mabD, mabDin, rate, notes){
   applyToCustomer(c, noaD,   mabD, 0);
   applyToCustomer(c, noaDin, 0,    mabDin);
 
+  // نلتقط رصيد العميل هنا مباشرة (متزامن، فور تطبيق أثر الحركة) — نفس حماية
+  // sendTelegramNotif، حتى ما تختلط الأرصدة لو صارت حركة ثانية بسرعة أثناء
+  // انتظار الحفظ اللاحق (dbSaveCustomer/dbSaveMove)
+  const sfCurD   = c.dL   - c.dA;
+  const sfCurDin = c.dinL - c.dinA;
+
   const now = new Date();
   const tarikh = now.toISOString().split('T')[0];
   const noteBase = `تحويل عملة (صيرفة) — سعر ${rate.toLocaleString()}` + (notes ? ` — ${notes}` : '');
@@ -3782,7 +3926,7 @@ async function sfSaveAmil(type, mabD, mabDin, rate, notes){
   await dbSaveMove(legDin);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate);
+  sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate, sfCurD, sfCurDin);
 
   arRender();
   if(typeof kaAmilId !== 'undefined' && kaAmilId === c.id) kaRender();
@@ -4490,6 +4634,7 @@ async function dbLoad(){
         jiha: m.jiha, sak: m.sak, notes: m.notes,
         amilId: m.amil_id, amilName: m.amil_name,
         createdByEmail: m.created_by_email,
+        notifFailed: !!m.tg_notif_failed,
       }));
 
       // احسب رصيد الصندوق من الحركات — بدون ما نعتمد على init_bal_d_current
@@ -4522,6 +4667,7 @@ async function dbLoad(){
     dbSetStatus('✅ متصل بقاعدة البيانات', '#60ff90');
     arRender();
     krRender();
+    updateNotifFailBadge();
     toast('✅ تم تحميل البيانات');
   } catch(e){
     dbSetStatus('❌ ' + e.message, '#ff6060');

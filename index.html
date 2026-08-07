@@ -2301,16 +2301,23 @@ async function confirmAndSave(){
   }
   sUpdateUI();
 
-  // نلتقط العميل المستهدف للإشعار ورصيده الحالي هنا مباشرة — بشكل متزامن،
-  // قبل أي انتظار async. لو ما التقطناه هسه وانتظرنا لين نوصل لإرسال الإشعار
-  // بالأسفل، ممكن المحاسب يسوي حركة ثانية بسرعة عالعميل نفسه أثناء انتظار
-  // الحفظ، فيتغيّر رصيد العميل المشترك بالذاكرة قبل ما تقرأ رسالة هذي الحركة
-  // رصيدها — فتوصل برصيد غلط، أو حتى تضيع الرسالة بسبب تضارب التوقيت
-  const notifyCust = r.amilId
-    ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
-    : STATE.customers.find(x=>x.name===r.jiha);
-  const notifCurD   = notifyCust ? notifyCust.dL   - notifyCust.dA   : 0;
-  const notifCurDin = notifyCust ? notifyCust.dinL - notifyCust.dinA : 0;
+  // نلتقط كل العملاء المتأثرين فعلياً بهذي الحركة ورصيد كل وحد منهم هنا
+  // مباشرة — بشكل متزامن، قبل أي انتظار async (نفس سبب الحماية أعلاه). ممكن
+  // يصير عميلين مو وحد: لو حركة تحويل بين عميلين (الحساب الرئيسي وجهة الصرف
+  // كلاهما عملاء)، الاثنين تأثر رصيدهم فعلياً ولازم الاثنين يوصلهم إشعار —
+  // مو بس صاحب الحساب الرئيسي. نوع الحركة بالنسبة لجهة الصرف معكوس دائماً
+  // (نفس منطق applyAllEffects: قبض من الرئيسي = صرف لجهة الصرف والعكس)
+  const notifyList = [];
+  const amilCust = r.amilId ? STATE.customers.find(x=>x.id===parseInt(r.amilId)) : null;
+  if(amilCust) notifyList.push({ cust: amilCust, noa: r.noa, primary: true });
+  const jihaCust = STATE.customers.find(x=>x.name===r.jiha);
+  if(jihaCust && (!amilCust || jihaCust.id !== amilCust.id)){
+    notifyList.push({ cust: jihaCust, noa: r.noa==='قبض' ? 'صرف' : 'قبض', primary: false });
+  }
+  notifyList.forEach(n=>{
+    n.curD   = n.cust.dL   - n.cust.dA;
+    n.curDin = n.cust.dinL - n.cust.dinA;
+  });
 
   // احفظ فعلياً بقاعدة البيانات وانتظر النتيجة
   const ok = await dbSaveMove(r);
@@ -2350,15 +2357,15 @@ async function confirmAndSave(){
   }
   for(const c of balCustomers.values()) await dbUpdateCustomerBal(c);
 
-  // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل. لازم يشتغل سواء
-  // انسجلت الحركة كـ"عميل" (ذمم العملاء، r.amilId) أو كـ"جهة صرف" باسم العميل
-  // (r.jiha) — الاثنين يأثرون على رصيده فعلياً (شفت addBal فوق). نستخدم رصيد
-  // الـ snapshot الملتقط فوق قبل الحفظ — مو قراءة حية ممكن تكون تلوّثت بحركة
-  // ثانية صارت أثناء الانتظار
-  if(notifyCust){
-    if(wasEdit) sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin, r, notifCurD, notifCurDin);
-    else        sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new', 0, 0, r, notifCurD, notifCurDin);
-  }
+  // إشعار تليجرام لكل عميل تأثر فعلياً — الحساب الرئيسي وجهة الصرف كلاهما لو
+  // كانت حركة تحويل بين عميلين. نستخدم رصيد الـ snapshot الملتقط فوق قبل
+  // الحفظ — مو قراءة حية ممكن تكون تلوّثت بحركة ثانية صارت أثناء الانتظار.
+  // تتبع "فشل الإشعار" لإعادة الإرسال يشتغل بس عالطرف الرئيسي (moveRow) —
+  // الطرف الثاني (جهة الصرف) يرسل بأفضل جهد، وإذا فشل يطلع تحذير بس بالشاشة
+  notifyList.forEach(n=>{
+    if(wasEdit) sendTelegramNotif(n.cust.id, n.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin, n.primary?r:null, n.curD, n.curDin);
+    else        sendTelegramNotif(n.cust.id, n.noa, r.mabD, r.mabDin, 'new', 0, 0, n.primary?r:null, n.curD, n.curDin);
+  });
 
   toast('✅ تم الحفظ وتحديث الأرصدة');
   _pendingMove = null;
@@ -2493,14 +2500,20 @@ function sDel(){
     // ثانياً: أرجع الأرصدة محلياً
     reverseAllEffects(r);
 
-    // نلتقط رصيد العميل هنا مباشرة (متزامن، فور الإرجاع) — نفس سبب الحماية
-    // المشروحة بدالة confirmAndSave، حتى ما تختلط الأرصدة لو صارت حركة ثانية
-    // بسرعة أثناء انتظار الحفظ اللاحق
-    const delNotifyCust = r.amilId
-      ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
-      : STATE.customers.find(x=>x.name===r.jiha);
-    const delCurD   = delNotifyCust ? delNotifyCust.dL   - delNotifyCust.dA   : 0;
-    const delCurDin = delNotifyCust ? delNotifyCust.dinL - delNotifyCust.dinA : 0;
+    // نلتقط كل العملاء المتأثرين ورصيد كل وحد منهم هنا مباشرة (متزامن، فور
+    // الإرجاع) — نفس سبب الحماية المشروحة بدالة confirmAndSave. ممكن يصير
+    // عميلين مو وحد لو كانت حركة تحويل بين عميلين (نفس منطق confirmAndSave)
+    const delNotifyList = [];
+    const delAmilCust = r.amilId ? STATE.customers.find(x=>x.id===parseInt(r.amilId)) : null;
+    if(delAmilCust) delNotifyList.push({ cust: delAmilCust, noa: r.noa });
+    const delJihaCust = STATE.customers.find(x=>x.name===r.jiha);
+    if(delJihaCust && (!delAmilCust || delJihaCust.id !== delAmilCust.id)){
+      delNotifyList.push({ cust: delJihaCust, noa: r.noa==='قبض' ? 'صرف' : 'قبض' });
+    }
+    delNotifyList.forEach(n=>{
+      n.curD   = n.cust.dL   - n.cust.dA;
+      n.curDin = n.cust.dinL - n.cust.dinA;
+    });
 
     // ثالثاً: حدّث أرصدة العملاء في DB
     if(r.amilId){
@@ -2510,9 +2523,11 @@ function sDel(){
     const jihaC2 = STATE.customers.find(x=>x.name===r.jiha);
     if(jihaC2) dbUpdateCustomerBal(jihaC2);
 
-    // إشعار تليجرام للعميل بإلغاء الحركة — نفس الشي، لازم يشتغل حتى لو انسجلت
-    // الحركة كـ"جهة صرف" باسم العميل مو عن طريق ذمم العملاء
-    if(delNotifyCust) sendTelegramNotif(delNotifyCust.id, r.noa, r.mabD, r.mabDin, 'delete', 0, 0, null, delCurD, delCurDin);
+    // إشعار تليجرام لكل عميل تأثر بإلغاء الحركة — الحساب الرئيسي وجهة الصرف
+    // كلاهما لو كانت حركة تحويل بين عميلين
+    delNotifyList.forEach(n=>{
+      sendTelegramNotif(n.cust.id, n.noa, r.mabD, r.mabDin, 'delete', 0, 0, null, n.curD, n.curDin);
+    });
 
     // رابعاً: احفظ رصيد القاصة الجديد
     await dbSaveSettings();

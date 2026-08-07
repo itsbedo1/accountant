@@ -2301,6 +2301,17 @@ async function confirmAndSave(){
   }
   sUpdateUI();
 
+  // نلتقط العميل المستهدف للإشعار ورصيده الحالي هنا مباشرة — بشكل متزامن،
+  // قبل أي انتظار async. لو ما التقطناه هسه وانتظرنا لين نوصل لإرسال الإشعار
+  // بالأسفل، ممكن المحاسب يسوي حركة ثانية بسرعة عالعميل نفسه أثناء انتظار
+  // الحفظ، فيتغيّر رصيد العميل المشترك بالذاكرة قبل ما تقرأ رسالة هذي الحركة
+  // رصيدها — فتوصل برصيد غلط، أو حتى تضيع الرسالة بسبب تضارب التوقيت
+  const notifyCust = r.amilId
+    ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
+    : STATE.customers.find(x=>x.name===r.jiha);
+  const notifCurD   = notifyCust ? notifyCust.dL   - notifyCust.dA   : 0;
+  const notifCurDin = notifyCust ? notifyCust.dinL - notifyCust.dinA : 0;
+
   // احفظ فعلياً بقاعدة البيانات وانتظر النتيجة
   const ok = await dbSaveMove(r);
 
@@ -2339,15 +2350,14 @@ async function confirmAndSave(){
   }
   for(const c of balCustomers.values()) await dbUpdateCustomerBal(c);
 
-  // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  // لازم يشتغل سواء انسجلت الحركة كـ"عميل" (ذمم العملاء، r.amilId) أو كـ"جهة
-  // صرف" باسم العميل (r.jiha) — الاثنين يأثرون على رصيده فعلياً (شفت addBal فوق)
-  const notifyCust = r.amilId
-    ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
-    : STATE.customers.find(x=>x.name===r.jiha);
+  // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل. لازم يشتغل سواء
+  // انسجلت الحركة كـ"عميل" (ذمم العملاء، r.amilId) أو كـ"جهة صرف" باسم العميل
+  // (r.jiha) — الاثنين يأثرون على رصيده فعلياً (شفت addBal فوق). نستخدم رصيد
+  // الـ snapshot الملتقط فوق قبل الحفظ — مو قراءة حية ممكن تكون تلوّثت بحركة
+  // ثانية صارت أثناء الانتظار
   if(notifyCust){
-    if(wasEdit) sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin, r);
-    else        sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new', 0, 0, r);
+    if(wasEdit) sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'edit', old.mabD, old.mabDin, r, notifCurD, notifCurDin);
+    else        sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new', 0, 0, r, notifCurD, notifCurDin);
   }
 
   toast('✅ تم الحفظ وتحديث الأرصدة');
@@ -2473,6 +2483,15 @@ function sDel(){
     // ثانياً: أرجع الأرصدة محلياً
     reverseAllEffects(r);
 
+    // نلتقط رصيد العميل هنا مباشرة (متزامن، فور الإرجاع) — نفس سبب الحماية
+    // المشروحة بدالة confirmAndSave، حتى ما تختلط الأرصدة لو صارت حركة ثانية
+    // بسرعة أثناء انتظار الحفظ اللاحق
+    const delNotifyCust = r.amilId
+      ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
+      : STATE.customers.find(x=>x.name===r.jiha);
+    const delCurD   = delNotifyCust ? delNotifyCust.dL   - delNotifyCust.dA   : 0;
+    const delCurDin = delNotifyCust ? delNotifyCust.dinL - delNotifyCust.dinA : 0;
+
     // ثالثاً: حدّث أرصدة العملاء في DB
     if(r.amilId){
       const c = STATE.customers.find(x=>x.id===parseInt(r.amilId));
@@ -2483,10 +2502,7 @@ function sDel(){
 
     // إشعار تليجرام للعميل بإلغاء الحركة — نفس الشي، لازم يشتغل حتى لو انسجلت
     // الحركة كـ"جهة صرف" باسم العميل مو عن طريق ذمم العملاء
-    const delNotifyCust = r.amilId
-      ? STATE.customers.find(x=>x.id===parseInt(r.amilId))
-      : STATE.customers.find(x=>x.name===r.jiha);
-    if(delNotifyCust) sendTelegramNotif(delNotifyCust.id, r.noa, r.mabD, r.mabDin, 'delete');
+    if(delNotifyCust) sendTelegramNotif(delNotifyCust.id, r.noa, r.mabD, r.mabDin, 'delete', 0, 0, null, delCurD, delCurDin);
 
     // رابعاً: احفظ رصيد القاصة الجديد
     await dbSaveSettings();
@@ -2980,7 +2996,11 @@ async function nfResend(dbId){
   const chatId = await getFreshChatId(notifyCust);
   if(!chatId){ toast('⚠️ العميل ماكو رابط حسابه بتليجرام بعد'); return; }
   toast('⏳ جاري إعادة الإرسال...');
-  await sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new', 0, 0, r);
+  // هذا إرسال يدوي متأخر — نستخدم رصيد العميل الحالي فعلاً (مو snapshot وقت
+  // الحركة الأصلية)، لأنه رصيده الحقيقي الحين هو الأصح نعرضه له
+  const curD   = notifyCust.dL   - notifyCust.dA;
+  const curDin = notifyCust.dinL - notifyCust.dinA;
+  await sendTelegramNotif(notifyCust.id, r.noa, r.mabD, r.mabDin, 'new', 0, 0, r, curD, curDin);
   if(!r.notifFailed) toast('✅ وصل الإشعار هذي المرة');
   nfRender();
 }
@@ -3117,7 +3137,10 @@ async function sendTgMessage(token, chatId, text){
 
 // moveRow: سجل الحركة نفسه (اختياري) — لو انطى، نسجل عليه نجاح/فشل الإرسال
 // حتى يقدر المالك يشوف قائمة "إشعارات فشلت" ويعيد الإرسال بزر لاحقاً
-async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0, moveRow=null){
+// snapCurD/snapCurDin: رصيد العميل الملتقط وقت هذي الحركة بالضبط (snapshot) —
+// لازم ينطى من المتصل مو نقرأه هنا حي من كائن العميل المشترك، لأن هذا الكائن
+// ممكن ينتغيّر بحركة ثانية أسرع منّا أثناء انتظارنا (شوف getFreshChatId تحت)
+async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldMabD=0, oldMabDin=0, moveRow=null, snapCurD=0, snapCurDin=0){
   try {
     const token = STATE.settings.tgBotToken;
     if(!token) return;
@@ -3127,8 +3150,8 @@ async function sendTelegramNotif(customerId, noa, mabD, mabDin, kind='new', oldM
     const chatId = await getFreshChatId(c);
     if(!chatId) return;
 
-    const curD  = c.dL - c.dA;
-    const curDin= c.dinL - c.dinA;
+    const curD  = snapCurD;
+    const curDin= snapCurDin;
     const amountStr = fmtAmount(mabD, mabDin);
     const dir = noa==='قبض' ? 'من' : 'الى';
 
@@ -3163,15 +3186,17 @@ async function markNotifResult(r, failed){
 }
 
 // إشعار تليجرام لحركة صيرفة ذمم عملاء (تحويل عملة داخل حساب العميل)
-async function sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate){
+// snapCurD/snapCurDin: رصيد العميل الملتقط وقت هذي الحركة بالضبط — نفس سبب
+// الحماية بدالة sendTelegramNotif (تجنب قراءة حية ممكن تتلوث بحركة ثانية)
+async function sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate, snapCurD=0, snapCurDin=0){
   try {
     const token = STATE.settings.tgBotToken;
     if(!token) return;
     const chatId = await getFreshChatId(c);
     if(!chatId) return;
 
-    const curD  = c.dL - c.dA;
-    const curDin= c.dinL - c.dinA;
+    const curD  = snapCurD;
+    const curDin= snapCurDin;
     const lines = [`🔄 تحويل عملة (صيرفة) على حسابك — ${type} دولار بسعر ${rate.toLocaleString()}`];
     if(mabD)   lines.push(`💵 ${mabD.toLocaleString()}$`);
     if(mabDin) lines.push(`💴 ${mabDin.toLocaleString()} د.ع`);
@@ -3844,6 +3869,12 @@ async function sfSaveAmil(type, mabD, mabDin, rate, notes){
   applyToCustomer(c, noaD,   mabD, 0);
   applyToCustomer(c, noaDin, 0,    mabDin);
 
+  // نلتقط رصيد العميل هنا مباشرة (متزامن، فور تطبيق أثر الحركة) — نفس حماية
+  // sendTelegramNotif، حتى ما تختلط الأرصدة لو صارت حركة ثانية بسرعة أثناء
+  // انتظار الحفظ اللاحق (dbSaveCustomer/dbSaveMove)
+  const sfCurD   = c.dL   - c.dA;
+  const sfCurDin = c.dinL - c.dinA;
+
   const now = new Date();
   const tarikh = now.toISOString().split('T')[0];
   const noteBase = `تحويل عملة (صيرفة) — سعر ${rate.toLocaleString()}` + (notes ? ` — ${notes}` : '');
@@ -3870,7 +3901,7 @@ async function sfSaveAmil(type, mabD, mabDin, rate, notes){
   await dbSaveMove(legDin);
 
   // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
-  sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate);
+  sendTelegramSayarfaNotif(c, type, mabD, mabDin, rate, sfCurD, sfCurDin);
 
   arRender();
   if(typeof kaAmilId !== 'undefined' && kaAmilId === c.id) kaRender();

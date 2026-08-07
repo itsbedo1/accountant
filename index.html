@@ -2471,7 +2471,17 @@ function sDel(){
     // أولاً: احذف من Supabase وانتظر
     if(rowId){
       try {
-        await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+        const deleted = await sbFetch(`moves?id=eq.${rowId}`, 'DELETE');
+        // Supabase ما يرمي خطأ لو طلب الحذف ما طابق أي صف فعلياً (مثلاً id غلط
+        // أو تعارض صلاحيات) — يرجع نجاح فاضي بصمت! لازم نتأكد فعلاً إنه انحذف
+        // صف حقيقي، وإلا الحركة تضل بقاعدة البيانات بينما التطبيق يتصرف وكأنها
+        // انمسحت (يرجع الأرصدة محلياً، يرسل إشعار إلغاء) — فيصير عندنا صف
+        // "شبح" يضل يُحسب بأي تقرير يجمع من صفوف الحركات مباشرة متل كشف الصندوق
+        if(!deleted || !deleted.length){
+          toast('❌ فشل الحذف — الحركة ما انمسحت فعلياً بقاعدة البيانات (تحقق من الاتصال وحاول ثانية)');
+          console.error('sDel: DELETE matched 0 rows for id', rowId);
+          return;
+        }
         dbLogAudit('moves', rowId, 'delete', r, null);
       } catch(e){
         toast('❌ فشل الحذف من قاعدة البيانات: ' + e.message);

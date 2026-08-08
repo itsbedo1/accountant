@@ -369,6 +369,38 @@ hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
 .ledger-row p{color:var(--ink-soft);font-size:15px;max-width:56ch;}
 
 /* ============================================================
+   لمحة بسيطة عن النظام — معاينة شاشات حقيقية داخل إطار موبايل
+============================================================ */
+.glimpse-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+@media (max-width:900px){.glimpse-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:520px){.glimpse-grid{grid-template-columns:1fr;max-width:280px;margin-inline:auto;}}
+.gl-item{text-align:center;}
+.gl-frame{
+  background:#050b14;border:5px solid #16222f;border-radius:22px;
+  box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px;position:relative;
+}
+.gl-frame::before{
+  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:46px;height:10px;background:#16222f;border-radius:0 0 8px 8px;z-index:2;
+}
+.gl-screen{background:#0a1420;min-height:200px;padding:20px 12px 14px;}
+.gl-item h5{font-family:'Tajawal';font-weight:800;font-size:14.5px;margin:0 0 4px;color:var(--ink);}
+.gl-item span{font-size:12.5px;color:var(--ink-soft);}
+.gs-field{background:#0d1c2c;border:1px solid #1c3247;border-radius:7px;padding:8px 9px;font-size:10.5px;color:#e8f0fb;margin-bottom:8px;text-align:center;}
+.gs-toggle{display:flex;gap:6px;margin-bottom:8px;}
+.gs-toggle div{flex:1;text-align:center;padding:7px;border-radius:7px;font-size:10.5px;font-weight:800;}
+.gs-qabd{background:rgba(52,211,153,.16);color:#5eead4;}
+.gs-sarf{background:rgba(248,113,113,.14);color:#fca5a5;}
+.gs-card{background:#0d1c2c;border:1px solid #1c3247;border-radius:8px;padding:9px;margin-bottom:6px;text-align:right;}
+.gs-card b{font-size:11px;color:#eef4fb;display:block;margin-bottom:4px;}
+.gs-mini{display:flex;justify-content:space-between;font-size:9.5px;color:#9db3d1;gap:8px;}
+.gs-mini b{color:#f0b93a;font-size:10.5px;font-weight:800;}
+.gs-bubble{background:#16324a;border-radius:9px 9px 9px 2px;padding:9px 10px;font-size:9.5px;color:#dbe8f5;line-height:1.6;text-align:right;}
+.gs-total{background:linear-gradient(135deg,#0d3f5f,#155a72);border-radius:8px;padding:9px;text-align:center;}
+.gs-total b{display:block;font-size:14px;color:#fff;font-variant-numeric:tabular-nums;}
+.gs-total span{font-size:9px;color:#a9e3da;}
+
+/* ============================================================
    كيف تشتغل
 ============================================================ */
 .steps{
@@ -567,6 +599,47 @@ footer{padding:36px 0;}
       <div class="ledger-row">
         <h4>بياناتك بمكان معزول وآمن</h4>
         <p>كل محل بحساب مستقل تماماً — بياناتك ما يشوفها ولا يوصلها أي طرف ثاني إلا أنت وموظفينك.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="glimpse">
+  <div class="wrap">
+    <div class="section-head" style="margin-inline:auto;text-align:center;">
+      <div class="eyebrow" style="justify-content:center;">شوف قبل ما تجرب</div>
+      <h2>لمحة بسيطة عن النظام</h2>
+      <p style="margin-inline:auto;">هيچ شكل الشاشات اللي رح تشتغل بيها يومياً — بسيطة وواضحة بالعربي.</p>
+    </div>
+    <div class="glimpse-grid">
+      <div class="gl-item">
+        <div class="gl-frame"><div class="gl-screen">
+          <div class="gs-toggle"><div class="gs-qabd">⬇️ قبض</div><div class="gs-sarf">⬆️ صرف</div></div>
+          <div class="gs-field">العميل: عبدالله خميس</div>
+          <div class="gs-field" style="color:#f0b93a;font-weight:800;font-size:13px;">1,806,000 د.ع</div>
+        </div></div>
+        <h5>تسجيل حركة</h5><span>قبض أو صرف بثواني</span>
+      </div>
+      <div class="gl-item">
+        <div class="gl-frame"><div class="gl-screen">
+          <div class="gs-card"><b>كي كارد رافدين</b><div class="gs-mini"><span>دينار له</span><b>50,673,000</b></div></div>
+          <div class="gs-card"><b>زياد الكبيسي</b><div class="gs-mini"><span>دينار عليه</span><b>300,000</b></div></div>
+        </div></div>
+        <h5>أرصدة العملاء</h5><span>رصيد كل عميل بلمحة</span>
+      </div>
+      <div class="gl-item">
+        <div class="gl-frame"><div class="gl-screen">
+          <div class="gs-bubble">🔔 تم صرف 1,806,000 د.ع الى حسابك.<br>رصيدك الحالي: 1,753,413 (لك)</div>
+        </div></div>
+        <h5>إشعار تليجرام تلقائي</h5><span>عميلك يعرف فوراً</span>
+      </div>
+      <div class="gl-item">
+        <div class="gl-frame"><div class="gl-screen">
+          <div class="gs-mini" style="margin-bottom:8px;"><span>قبض — شحن ماستر</span><b>6,268,000</b></div>
+          <div class="gs-mini" style="margin-bottom:10px;"><span>صرف — عمولات</span><b>485,000</b></div>
+          <div class="gs-total"><span>الرصيد الحالي</span><b>731,869,162</b></div>
+        </div></div>
+        <h5>كشف الصندوق</h5><span>رصيدك لحظة بلحظة</span>
       </div>
     </div>
   </div>

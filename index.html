@@ -3058,6 +3058,7 @@ function arRender(){
       <div class="ar-card-top">
         <span class="ar-card-name">${escapeHtml(c.name)}</span>
         <span class="ar-card-star" onclick="event.stopPropagation();copyTelegramLink(${c.id})" title="${c.tgChatId?'مربوط بتليجرام':'انسخ رابط ربط تليجرام'}">${tgIcon}</span>
+        <span class="ar-card-star" onclick="event.stopPropagation();sendBalanceReminder(${c.id})" title="إرسال تذكير برصيده الحالي">🔔</span>
         <span class="ar-card-star">${star}</span>
       </div>
       <div class="ar-card-grid">
@@ -3112,6 +3113,27 @@ async function unlinkTelegram(c){
   } catch(e){
     console.error('unlinkTelegram:', e);
     toast('❌ فشل فك الربط: ' + e.message);
+  }
+}
+
+// يرسل تذكير برصيد العميل الحالي بتليجرام — إرسال يدوي مباشر، مو مرتبط
+// بحركة معينة، يستخدم للتذكير بالدفع مثلاً
+async function sendBalanceReminder(customerId){
+  const c = STATE.customers.find(x=>x.id===customerId);
+  if(!c){ toast('⚠️ ما لقيت العميل'); return; }
+  if(!STATE.settings.tgBotToken){ toast('⚠️ ماكو بوت تليجرام مربوط بالإعدادات'); return; }
+  const chatId = await getFreshChatId(c);
+  if(!chatId){ toast('⚠️ العميل ماكو رابط حسابه بتليجرام بعد — انسخله رابط الربط أولاً'); return; }
+  const curD  = c.dL - c.dA;
+  const curDin= c.dinL - c.dinA;
+  const text = `🔔 تذكير برصيدك الحالي لدى ${STATE.settings.compName || 'المنير'}:\n${fmtBalanceLine(curD, curDin)}`;
+  toast('⏳ جاري إرسال التذكير...');
+  try {
+    await sendTgMessage(STATE.settings.tgBotToken, chatId, text);
+    toast(`✅ تم إرسال تذكير الرصيد لـ ${c.name}`);
+  } catch(e){
+    console.error('sendBalanceReminder:', e);
+    toast('❌ فشل إرسال التذكير: ' + e.message);
   }
 }
 

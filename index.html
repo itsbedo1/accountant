@@ -672,6 +672,9 @@ body:not(.role-employee) .employee-only{display:none!important;}
 .search-item .si-info{flex:1;text-align:right;}
 .search-item .si-name{font-size:13px;font-weight:700;color:var(--text);}
 .search-item .si-meta{font-size:11px;color:var(--text-dim);}
+.si-noa{font-weight:700;padding:1px 6px;border-radius:10px;}
+.si-noa.si-qabd{background:rgba(74,222,128,.14);color:var(--accent);}
+.si-noa.si-sarf{background:rgba(248,113,113,.14);color:var(--red);}
 .search-input{
   width:100%;background:#1a3020;
   border:1.5px solid var(--border2);border-radius:var(--radius-sm);
@@ -3268,26 +3271,43 @@ function openSearchModal(){
 function filterSearch(){
   const q = document.getElementById('searchRecInput').value.trim();
   const list = document.getElementById('searchList');
-  const results = q
-    ? STATE.moves.filter((r,i)=>
+
+  // نبحث بالرقم، اسم العميل، الحساب، جهة الصرف، والملاحظات — مو بس الاسم
+  const matched = q
+    ? STATE.moves.filter(r=>
         (r.raqm && r.raqm.includes(q)) ||
         (r.amilName && r.amilName.includes(q)) ||
-        (r.hesab && r.hesab.includes(q))
-      ).map((r,_)=>({ r, i: STATE.moves.indexOf(r) }))
-    : STATE.moves.map((r,i)=>({ r, i }));
+        (r.hesab && r.hesab.includes(q)) ||
+        (r.jiha && r.jiha.includes(q)) ||
+        (r.notes && r.notes.includes(q))
+      )
+    : STATE.moves;
 
-  if(!results.length){
+  // الحركات محمّلة من قاعدة البيانات بترتيب الإنشاء تصاعدياً — نعكسها حتى
+  // تطلع الأحدث أولاً، وهذا أسهل بكثير للمحاسب لما يدور على حركة قريبة
+  const withIdx = matched.map(r=>({ r, i: STATE.moves.indexOf(r) })).reverse();
+
+  // بدون بحث: نعرض بس آخر 30 حركة تجنباً لقائمة طويلة بطيئة التصفح
+  const shown = q ? withIdx : withIdx.slice(0, 30);
+
+  if(!shown.length){
     list.innerHTML='<div style="text-align:center;color:#888;padding:16px;font-size:13px;">لا توجد نتائج</div>';
     return;
   }
 
-  list.innerHTML = results.map(({r,i})=>{
+  const hint = !q
+    ? `<div style="text-align:center;color:var(--text-dim);font-size:11px;padding:2px 0 10px;">آخر ${shown.length} حركة — اكتب للبحث بكل السجل</div>`
+    : '';
+
+  list.innerHTML = hint + shown.map(({r,i})=>{
     const dateStr = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '-';
+    const noaCls = r.noa==='قبض' ? 'si-qabd' : 'si-sarf';
+    const amountStr = fmtAmount(r.mabD, r.mabDin);
     return `<div class="search-item" onclick="loadFromSearch(${i})">
       <div class="si-raqm">${escapeHtml(r.raqm||'#'+( i+1))}</div>
       <div class="si-info">
-        <div class="si-name">${escapeHtml(r.amilName || r.hesab || 'بدون اسم')}</div>
-        <div class="si-meta">${escapeHtml(r.noa||'-')} · ${dateStr} · $${(r.mabD||0).toLocaleString()}</div>
+        <div class="si-name">${escapeHtml(r.amilName || r.jiha || r.hesab || 'بدون اسم')}</div>
+        <div class="si-meta"><span class="si-noa ${noaCls}">${escapeHtml(r.noa||'-')}</span> · ${dateStr} · ${amountStr}</div>
       </div>
     </div>`;
   }).join('');

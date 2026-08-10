@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
 import { sbFetchAll } from '../../../shared/sbFetch'
+import { toLocalISODate, todayISO } from '../../../shared/date'
 import { AL_ACTION_META, type AuditLogEntry } from './auditLogTypes'
 import AuditDetailModal from './AuditDetailModal'
 
 function isoDaysAgo(days: number) {
   const d = new Date()
   d.setDate(d.getDate() - days)
-  return d.toISOString().split('T')[0]
-}
-function todayISO() {
-  return new Date().toISOString().split('T')[0]
+  return toLocalISODate(d)
 }
 
 // منقولة من pageAuditLog (index.html:1709) — alOpen/alRender/alDetail (كانت بالسطر 2902-2979)

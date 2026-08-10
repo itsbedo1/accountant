@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useClock } from '../../../shared/useClock'
 import { formatAmountInput, parseAmount } from '../../../shared/format'
+import { todayISO } from '../../../shared/date'
 import { toast } from '../../../shared/useToast'
 import { useDataStore } from '../../state/useDataStore'
 import RoleGate from '../../components/RoleGate'
@@ -14,11 +15,6 @@ import ConfirmSaveModal from './ConfirmSaveModal'
 
 // الحسابات اللي ما تحتاج عميل — منقولة من NO_AMIL_HESAB (index.html:1974)
 const NO_AMIL_HESAB = ['إيرادات عامة', 'مصاريف عامة']
-
-function todayISO() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
 
 // رقم سند تلقائي — يُحسب من أعلى رقم موجود فعلياً بالسجلات (وليس عداد
 // بالذاكرة) حتى ما يتكرر — منقولة من getNextSandNumber (index.html:2203)

@@ -5,6 +5,7 @@ import { sbFetch, sbFetchAll, dbLogAudit, myId } from '../../shared/sbFetch'
 import { SB_URL } from '../../shared/supabaseClient'
 import { toast } from '../../shared/useToast'
 import { EMPTY_SETTINGS, type Customer, type Move, type Role, type SayarfaMove, type Settings } from '../../shared/types'
+import { toLocalISODate } from '../../shared/date'
 import { applyAllEffects, reverseAllEffects, type MoveEffect } from '../domain/balanceMath'
 import { dbSaveMove, dbDeleteMove, type MoveDraft } from '../api/moves'
 import { dbUpdateCustomerBal, dbCreateCustomer, dbDeleteCustomer } from '../api/customers'
@@ -289,7 +290,7 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       mabDin,
       rate,
       notes,
-      tarikh: now.toISOString().split('T')[0],
+      tarikh: toLocalISODate(now),
       time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
       balDAfter: get().initBalD,
       balDinAfter: get().initBalDin,
@@ -330,7 +331,7 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
     const sfCurDin = updated.dinL - updated.dinA
 
     const now = new Date()
-    const tarikh = now.toISOString().split('T')[0]
+    const tarikh = toLocalISODate(now)
     const noteBase = `تحويل عملة (صيرفة) — سعر ${rate.toLocaleString()}` + (notes ? ` — ${notes}` : '')
 
     const legD: MoveDraft = { noa: noaD, tarikh, raqm: 'صيرفة', hesab: 'ذمم العملاء', mabD, mabDin: 0, jiha: '', sak: '', notes: noteBase, amilId: c.id, amilName: c.name }
@@ -513,7 +514,7 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
     const c = get().customers.find((x) => x.id === id)
     if (!c) return
     const now = new Date()
-    const tarikh = now.toISOString().split('T')[0]
+    const tarikh = toLocalISODate(now)
     const notes = 'توثيق فرق رصيد سابق — حركة حقيقية صار أثرها بالرصيد لكن انفقد سجلها الأصلي (هذا السجل لا يؤثر على الرصيد الحالي)'
 
     const drafts: MoveDraft[] = []

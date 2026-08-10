@@ -55,7 +55,7 @@ function blankForm(moves: Move[]) {
 // المستخدم لصفحة الصندوق (goPage/popstate، index.html:1837,1861) — هنا
 // المكوّن نفسه يتفكك (unmount) وينبني من جديد بكل مرة يترك/يرجع المستخدم
 // للصفحة، فـ useState(-1) المحلي يعطي نفس النتيجة تلقائياً بدون حاجة لإعادة تصفير يدوية
-export default function SandooqPage({ goPage }: { goPage: (id: string) => void }) {
+export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: string) => void; confirmPin: (label: string) => Promise<boolean> }) {
   const { time, dateShort } = useClock()
   const moves = useDataStore((s) => s.moves)
   const customers = useDataStore((s) => s.customers)
@@ -236,8 +236,11 @@ export default function SandooqPage({ goPage }: { goPage: (id: string) => void }
       toast('⚠️ ماكو سجل محمّل للحذف — دوّر عليه أولاً من البحث')
       return
     }
-    if (!confirm('تأكيد حذف هذه الحركة؟')) return
     void (async () => {
+      // يعادل requirePin('🗑 حذف الحركة الحالية', ...) بالكود القديم (index.html:2476)
+      const pinOk = await confirmPin('🗑 حذف الحركة الحالية')
+      if (!pinOk) return
+      if (!confirm('تأكيد حذف هذه الحركة؟')) return
       const ok = await deleteMove(curIdx)
       if (ok) resetForm()
     })()

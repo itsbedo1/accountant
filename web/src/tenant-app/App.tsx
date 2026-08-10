@@ -10,20 +10,34 @@ import KashfPage from './pages/Kashf/KashfPage'
 import ArsadaPage from './pages/Arsada/ArsadaPage'
 import KashfAmilPage from './pages/KashfAmil/KashfAmilPage'
 import SayarfaPage from './pages/Sayarfa/SayarfaPage'
+import KhulasaPage from './pages/Khulasa/KhulasaPage'
+import SettingsPage from './pages/Settings/SettingsPage'
+import AuditLogPage from './pages/AuditLog/AuditLogPage'
+import NotifFailsPage from './pages/NotifFails/NotifFailsPage'
 import { usePinGate, PinModal } from './components/PinLock'
 import Toast from '../shared/Toast'
 import { toast } from '../shared/useToast'
 
-const BUILT_PAGES = new Set(['pageMain', 'pageSandooq', 'pageKashf', 'pageArsada', 'pageKashfAmil', 'pageSayarfa'])
+const BUILT_PAGES = new Set([
+  'pageMain',
+  'pageSandooq',
+  'pageKashf',
+  'pageArsada',
+  'pageKashfAmil',
+  'pageSayarfa',
+  'pageKhulasa',
+  'pageSettings',
+  'pageAuditLog',
+  'pageNotifFails',
+])
 
 export default function App() {
-  const { status, doLogin, doLogout } = useAuth()
+  const { status, session, doLogin, doLogout } = useAuth()
   const dataReady = useDataStore((s) => s.dataReady)
   const suspended = useDataStore((s) => s.suspended)
   const suspendReason = useDataStore((s) => s.suspendReason)
   const pinGate = usePinGate()
-  // يعادل pageHistory/goPage() بالكود القديم — التنقل بين باقي الصفحات
-  // (الصيرفة، الإعدادات...) يُضاف بالمراحل الجاية، هنا فقط الهيكل العام
+  // يعادل pageHistory/goPage() بالكود القديم — التنقل بين صفحات التطبيق
   const [page, setPage] = useState('pageMain')
   // يعادل kaAmilId العام بالكود القديم (index.html:3338) — أي عميل مفتوح حالياً بكشف الحساب
   const [kaAmilId, setKaAmilId] = useState<number | null>(null)
@@ -62,13 +76,19 @@ export default function App() {
       {status === 'ready' && dataReady && !suspended && page === 'pageMain' && (
         <MainMenuPage goPage={goPage} doLogout={logout} />
       )}
-      {status === 'ready' && dataReady && !suspended && page === 'pageSandooq' && <SandooqPage goPage={goPage} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageSandooq' && <SandooqPage goPage={goPage} confirmPin={pinGate.confirmPin} />}
       {status === 'ready' && dataReady && !suspended && page === 'pageKashf' && <KashfPage goPage={goPage} />}
       {status === 'ready' && dataReady && !suspended && page === 'pageArsada' && <ArsadaPage goPage={goPage} openKashfAmil={openKashfAmil} />}
       {status === 'ready' && dataReady && !suspended && page === 'pageKashfAmil' && kaAmilId != null && (
         <KashfAmilPage customerId={kaAmilId} goPage={goPage} />
       )}
       {status === 'ready' && dataReady && !suspended && page === 'pageSayarfa' && <SayarfaPage goPage={goPage} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageKhulasa' && <KhulasaPage goPage={goPage} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageSettings' && (
+        <SettingsPage goPage={goPage} accountEmail={session?.user.email || ''} doLogout={logout} confirmPin={pinGate.confirmPin} />
+      )}
+      {status === 'ready' && dataReady && !suspended && page === 'pageAuditLog' && <AuditLogPage goPage={goPage} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageNotifFails' && <NotifFailsPage goPage={goPage} />}
 
       <Toast />
       <PinModal {...pinGate} />

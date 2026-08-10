@@ -1,15 +1,16 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { Session } from '@supabase/supabase-js'
-import { sbFetch, sbFetchAll, dbLogAudit } from '../../shared/sbFetch'
+import { sbFetch, sbFetchAll, dbLogAudit, myId } from '../../shared/sbFetch'
+import { SB_URL } from '../../shared/supabaseClient'
 import { toast } from '../../shared/useToast'
 import { EMPTY_SETTINGS, type Customer, type Move, type Role, type SayarfaMove, type Settings } from '../../shared/types'
 import { applyAllEffects, reverseAllEffects, type MoveEffect } from '../domain/balanceMath'
 import { dbSaveMove, dbDeleteMove, type MoveDraft } from '../api/moves'
-import { dbUpdateCustomerBal } from '../api/customers'
+import { dbUpdateCustomerBal, dbCreateCustomer, dbDeleteCustomer } from '../api/customers'
 import { dbSaveSettings } from '../api/settings'
 import { dbSaveSayarfa, type SayarfaDraft } from '../api/sayarfa'
-import { sendTelegramNotif, sendTelegramSayarfaNotif, persistNotifFailed } from '../api/telegram'
+import { sendTelegramNotif, sendTelegramSayarfaNotif, persistNotifFailed, getFreshChatId } from '../api/telegram'
 import { applyToCustomer } from '../domain/balanceMath'
 
 function toEffect(r: MoveDraft): MoveEffect {
@@ -49,6 +50,24 @@ interface DataState {
   saveSayarfaCash: (type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => void
   /** يعادل sfSaveAmil() (كانت بالسطر 3929) — تحويل عملة داخل رصيد عميل، بدون أي تأثير على القاصة */
   saveSayarfaAmil: (customerId: number, type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => Promise<void>
+
+  /** يعادل nfResend() بالكود القديم (كانت بالسطر 3016) */
+  resendNotif: (dbId: number) => Promise<void>
+
+  /** يعادل stSave() بالكود القديم (كانت بالسطر 4394) — يرجع false لو فشل ربط بوت تليجرام (نفس التوقف المبكر بالأصل) */
+  saveSettings: (fields: { compName: string; startDate: string; rate: number; initD: number; initDin: number; tgToken: string }) => Promise<boolean>
+  /** يعادل stAddAmil() (كانت بالسطر 4327) */
+  addCustomer: (name: string, dL: number, dA: number, dinL: number, dinA: number) => Promise<boolean>
+  /** يعادل stDelAmil() (كانت بالسطر 4368، بدون جزء الـ PIN — ذاك بالواجهة) */
+  deleteCustomer: (id: number) => Promise<boolean>
+  /** يعادل stFixBalance() (كانت بالسطر 4271) */
+  fixCustomerBalance: (id: number) => Promise<void>
+  /** يعادل stDocumentDiff() (كانت بالسطر 4286) */
+  documentCustomerDiff: (id: number, diffD: number, diffDin: number) => Promise<void>
+  /** يعادل stResetMoves() (كانت بالسطر 4468) */
+  resetMoves: () => Promise<void>
+  /** يعادل stResetAll() (كانت بالسطر 4501) */
+  resetAll: () => Promise<void>
 }
 
 const initial = {
@@ -341,6 +360,245 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
 
     // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
     void sendTelegramSayarfaNotif(get().settings.tgBotToken, updated, type, mabD, mabDin, rate, sfCurD, sfCurDin)
+  },
+
+  async resendNotif(dbId) {
+    const r = get().moves.find((x) => x.dbId === dbId)
+    if (!r) return
+    const notifyCust = r.amilId != null ? get().customers.find((x) => x.id === r.amilId) : get().customers.find((x) => x.name === r.jiha)
+    if (!notifyCust) {
+      toast('⚠️ ما لقيت العميل المرتبط بهذه الحركة')
+      return
+    }
+    if (!get().settings.tgBotToken) {
+      toast('⚠️ ماكو بوت تليجرام مربوط بالإعدادات')
+      return
+    }
+    const chatId = await getFreshChatId(notifyCust)
+    if (!chatId) {
+      toast('⚠️ العميل ماكو رابط حسابه بتليجرام بعد')
+      return
+    }
+    toast('⏳ جاري إعادة الإرسال...')
+    const curD = notifyCust.dL - notifyCust.dA
+    const curDin = notifyCust.dinL - notifyCust.dinA
+    await sendTelegramNotif(
+      {
+        tgBotToken: get().settings.tgBotToken,
+        findCustomer: (id) => get().customers.find((x) => x.id === id),
+        markNotifResult: async (failed) => {
+          set((st) => {
+            const m = st.moves.find((x) => x.dbId === dbId)
+            if (m) m.notifFailed = failed
+          })
+          await persistNotifFailed(dbId, failed)
+        },
+      },
+      notifyCust.id,
+      r.noa,
+      r.mabD,
+      r.mabDin,
+      'new',
+      0,
+      0,
+      curD,
+      curDin,
+    )
+    const after = get().moves.find((x) => x.dbId === dbId)
+    if (after && !after.notifFailed) toast('✅ وصل الإشعار هذي المرة')
+  },
+
+  async saveSettings({ compName, startDate, rate, initD, initDin, tgToken }) {
+    const prevSettings = get().settings
+
+    // احسب الفرق بين الرصيد الافتتاحي القديم والجديد، وعدّل القاصة الحالية بالفرق
+    const diffD = initD - (prevSettings.initBalD || 0)
+    const diffDin = initDin - (prevSettings.initBalDin || 0)
+    set((st) => {
+      st.initBalD += diffD
+      st.initBalDin += diffDin
+    })
+
+    // إذا توكن بوت تليجرام جديد أو تغيّر — تحقق منه وسجّل الـ webhook تلقائياً
+    let tgBotUser = prevSettings.tgBotUser || ''
+    if (tgToken && tgToken !== prevSettings.tgBotToken) {
+      try {
+        const meRes = await fetch(`https://api.telegram.org/bot${tgToken}/getMe`)
+        const me = await meRes.json()
+        if (!me.ok) throw new Error('توكن غير صحيح')
+        tgBotUser = me.result.username
+        const uid = await myId()
+        const hookUrl = `${SB_URL}/functions/v1/telegram-webhook?company=${uid}`
+        await fetch(`https://api.telegram.org/bot${tgToken}/setWebhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: hookUrl }),
+        })
+        toast('✅ تم ربط بوت تليجرام: @' + tgBotUser)
+      } catch (e) {
+        toast('❌ فشل ربط بوت تليجرام: ' + (e as Error).message)
+        return false
+      }
+    }
+
+    set((st) => {
+      st.settings = { ...st.settings, compName, startDate, defaultRate: rate, initBalD: initD, initBalDin: initDin, tgBotToken: tgToken, tgBotUser }
+    })
+
+    toast('✅ تم حفظ الإعدادات بنجاح')
+    void dbSaveSettings(get().settings, get().initBalD, get().initBalDin)
+    return true
+  },
+
+  async addCustomer(name, dL, dA, dinL, dinA) {
+    if (get().customers.find((c) => c.name === name)) {
+      toast('⚠️ العميل موجود مسبقاً')
+      return false
+    }
+    try {
+      const newId = (await dbCreateCustomer(name, dL, dA, dinL, dinA)) ?? Math.max(0, ...get().customers.map((c) => c.id)) + 1
+      set((st) => {
+        st.customers.push({ id: newId, dbId: newId, name, dA, dL, dinA, dinL, initDL: dL, initDA: dA, initDinL: dinL, initDinA: dinA, tgChatId: null })
+      })
+      toast(`✅ تمت إضافة: ${name}${dL || dA || dinL || dinA ? ' مع الرصيد الافتتاحي' : ''}`)
+      return true
+    } catch (e) {
+      toast('❌ فشل الإضافة: ' + (e as Error).message)
+      console.error('stAddAmil error:', e)
+      return false
+    }
+  },
+
+  async deleteCustomer(id) {
+    const c = get().customers.find((x) => x.id === id)
+    if (!c) return false
+    try {
+      await dbDeleteCustomer(id)
+    } catch (e) {
+      toast('❌ فشل الحذف: ' + (e as Error).message)
+      console.error('stDelAmil DB error:', e)
+      return false
+    }
+    set((st) => {
+      st.customers = st.customers.filter((x) => x.id !== id)
+    })
+    toast(`🗑 تم حذف: ${c.name}`)
+    return true
+  },
+
+  // يرجّع رصيد العميل الحي لنفس رصيده الافتتاحي المحفوظ — منقولة من stFixBalance() (كانت بالسطر 4271)
+  async fixCustomerBalance(id) {
+    const c = get().customers.find((x) => x.id === id)
+    if (!c) return
+    const newDL = c.initDL || 0,
+      newDA = c.initDA || 0,
+      newDinL = c.initDinL || 0,
+      newDinA = c.initDinA || 0
+    set((st) => {
+      const cust = st.customers.find((x) => x.id === id)
+      if (cust) {
+        cust.dL = newDL
+        cust.dA = newDA
+        cust.dinL = newDinL
+        cust.dinA = newDinA
+      }
+    })
+    await dbUpdateCustomerBal(get().customers.find((x) => x.id === id)!)
+    toast(`✅ تم استرجاع رصيد ${c.name}`)
+  },
+
+  // يضيف حركة "توثيقية" بمبلغ الفرق المكتشف — بدون ما تغيّر رصيد العميل الحالي
+  // إطلاقاً — منقولة من stDocumentDiff() (كانت بالسطر 4286)
+  async documentCustomerDiff(id, diffD, diffDin) {
+    const c = get().customers.find((x) => x.id === id)
+    if (!c) return
+    const now = new Date()
+    const tarikh = now.toISOString().split('T')[0]
+    const notes = 'توثيق فرق رصيد سابق — حركة حقيقية صار أثرها بالرصيد لكن انفقد سجلها الأصلي (هذا السجل لا يؤثر على الرصيد الحالي)'
+
+    const drafts: MoveDraft[] = []
+    if (diffD) drafts.push({ noa: diffD > 0 ? 'قبض' : 'صرف', tarikh, raqm: 'تسوية', hesab: 'ذمم العملاء', mabD: Math.abs(diffD), mabDin: 0, jiha: '', sak: '', notes, amilId: c.id, amilName: c.name })
+    if (diffDin) drafts.push({ noa: diffDin > 0 ? 'قبض' : 'صرف', tarikh, raqm: 'تسوية', hesab: 'ذمم العملاء', mabD: 0, mabDin: Math.abs(diffDin), jiha: '', sak: '', notes, amilId: c.id, amilName: c.name })
+
+    for (const d of drafts) {
+      const idx = get().moves.length
+      set((st) => {
+        st.moves.push({ ...d, dbId: 0, id: 0, createdByEmail: null, notifFailed: false })
+      })
+      const savedId = await dbSaveMove(d)
+      if (savedId) {
+        set((st) => {
+          if (st.moves[idx]) {
+            st.moves[idx].dbId = savedId
+            st.moves[idx].id = savedId
+          }
+        })
+      }
+    }
+    toast(`✅ تم توثيق الفرق بحساب ${c.name}`)
+  },
+
+  // ⚠️ ملاحظة: نص التأكيد بالكود القديم يقول "ستبقى أرصدة العملاء كما هي"،
+  // بس الكود فعلياً يصفّرها كلها (customers d_a/d_l/din_a/din_l → 0) — تناقض
+  // موجود بالنسخة الأصلية نفسها، محفوظ هنا بالضبط بدون تعديل حتى يتفق عليه
+  // قرار منفصل. منقولة من stResetMoves() (كانت بالسطر 4468)
+  async resetMoves() {
+    toast('⏳ جاري المسح...')
+    try {
+      await sbFetch('moves?created_at=gte.2000-01-01', 'DELETE')
+      await sbFetch('sayarfa_moves?created_at=gte.2000-01-01', 'DELETE')
+      for (const c of get().customers) {
+        await sbFetch(`customers?id=eq.${c.id}`, 'PATCH', { d_a: 0, d_l: 0, din_a: 0, din_l: 0 })
+      }
+      await sbFetch(`settings?company_id=eq.${await myId()}`, 'PATCH', { init_bal_d_current: 0, init_bal_din_current: 0 })
+    } catch (e) {
+      toast('❌ خطأ: ' + (e as Error).message)
+      console.error(e)
+      return
+    }
+    set((st) => {
+      st.initBalD = 0
+      st.initBalDin = 0
+      st.customers.forEach((c) => {
+        c.dL = 0
+        c.dA = 0
+        c.dinL = 0
+        c.dinA = 0
+      })
+      st.moves = []
+      st.sayarfaMoves = []
+    })
+    toast('✅ تم مسح الحركات وصفّر الرصيد')
+  },
+
+  async resetAll() {
+    toast('⏳ جاري المسح الكامل...')
+    try {
+      await sbFetch('moves?created_at=gte.2000-01-01', 'DELETE')
+      await sbFetch('sayarfa_moves?created_at=gte.2000-01-01', 'DELETE')
+      await sbFetch('customers?created_at=gte.2000-01-01', 'DELETE')
+      await sbFetch(`settings?company_id=eq.${await myId()}`, 'PATCH', {
+        comp_name: '',
+        default_rate: 1480,
+        init_bal_d: 0,
+        init_bal_din: 0,
+        init_bal_d_current: 0,
+        init_bal_din_current: 0,
+      })
+    } catch (e) {
+      toast('❌ خطأ: ' + (e as Error).message)
+      console.error(e)
+      return
+    }
+    set((st) => {
+      st.moves = []
+      st.sayarfaMoves = []
+      st.initBalD = 0
+      st.initBalDin = 0
+      st.customers = []
+      st.settings = { ...EMPTY_SETTINGS, defaultRate: 1480 }
+    })
+    toast('✅ تم إعادة الضبط بنجاح')
   },
 })))
 

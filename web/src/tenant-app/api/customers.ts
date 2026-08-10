@@ -9,3 +9,23 @@ export async function dbUpdateCustomerBal(c: CustomerBalance): Promise<void> {
     console.error('dbUpdateCustomerBal:', e)
   }
 }
+
+// إنشاء عميل جديد مع رصيد افتتاحي اختياري — منقولة من stAddAmil() (كانت بالسطر 4327)
+export async function dbCreateCustomer(name: string, dL: number, dA: number, dinL: number, dinA: number): Promise<number | null> {
+  const res = await sbFetch<{ id: number }[]>('customers', 'POST', {
+    name,
+    d_a: dA,
+    d_l: dL,
+    din_a: dinA,
+    din_l: dinL,
+    init_d_l: dL,
+    init_d_a: dA,
+    init_din_l: dinL,
+    init_din_a: dinA,
+  })
+  return res?.[0]?.id ?? null
+}
+
+export async function dbDeleteCustomer(id: number): Promise<void> {
+  await sbFetch(`customers?id=eq.${id}`, 'DELETE')
+}

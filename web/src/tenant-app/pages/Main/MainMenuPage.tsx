@@ -10,6 +10,8 @@ export default function MainMenuPage({ goPage, doLogout }: { goPage: (id: string
   const loadStatus = useDataStore((s) => s.loadStatus)
   const settings = useDataStore((s) => s.settings)
   const refresh = useDataStore((s) => s.refresh)
+  // يعادل updateNotifFailBadge() بالكود القديم (كانت بالسطر 2984)
+  const notifFailCount = useDataStore((s) => s.moves.filter((m) => m.notifFailed).length)
 
   return (
     <div id="pageMain" className="page active">
@@ -85,6 +87,7 @@ export default function MainMenuPage({ goPage, doLogout }: { goPage: (id: string
           </button>
           <button className="menu-btn" onClick={() => goPage('pageNotifFails')}>
             <span className="icon">🔔</span>إشعارات فشلت
+            <span style={{ color: '#ff6060', fontWeight: 900 }}>{notifFailCount > 0 ? ` (${notifFailCount})` : ''}</span>
           </button>
           <button
             className="menu-btn highlight"

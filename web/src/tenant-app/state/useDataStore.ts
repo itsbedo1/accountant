@@ -1,9 +1,18 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { Session } from '@supabase/supabase-js'
-import { sbFetch, sbFetchAll } from '../../shared/sbFetch'
+import { sbFetch, sbFetchAll, dbLogAudit } from '../../shared/sbFetch'
 import { toast } from '../../shared/useToast'
 import { EMPTY_SETTINGS, type Customer, type Move, type Role, type SayarfaMove, type Settings } from '../../shared/types'
+import { applyAllEffects, reverseAllEffects, type MoveEffect } from '../domain/balanceMath'
+import { dbSaveMove, dbDeleteMove, type MoveDraft } from '../api/moves'
+import { dbUpdateCustomerBal } from '../api/customers'
+import { dbSaveSettings } from '../api/settings'
+import { sendTelegramNotif, persistNotifFailed } from '../api/telegram'
+
+function toEffect(r: MoveDraft): MoveEffect {
+  return { amilId: r.amilId, jiha: r.jiha, noa: r.noa, mabD: r.mabD, mabDin: r.mabDin }
+}
 
 interface DataState {
   dataReady: boolean
@@ -25,6 +34,14 @@ interface DataState {
   /** زر "🔄 تحديث" بالقائمة الرئيسية — يعادل onclick="dbLoad()" المباشر بالكود القديم */
   refresh: () => Promise<void>
   reset: () => void
+
+  /**
+   * يعادل confirmAndSave() بالكود القديم (كانت بالسطر 2282) — curIdx يعادل
+   * sCurIdx (-1 = سجل جديد). يرجع true لو نجح الحفظ فعلياً بقاعدة البيانات.
+   */
+  saveMove: (draft: MoveDraft, curIdx: number) => Promise<boolean>
+  /** يعادل sDel() بالكود القديم (كانت بالسطر 2471) */
+  deleteMove: (curIdx: number) => Promise<boolean>
 }
 
 const initial = {
@@ -74,7 +91,187 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
   reset() {
     set(() => ({ ...initial }))
   },
+
+  async saveMove(draft, curIdx) {
+    const movesLen = get().moves.length
+    const wasEdit = curIdx >= 0 && curIdx < movesLen
+    const old = wasEdit ? get().moves[curIdx] : null
+
+    // تطبيق تفاؤلي محلي — إذا تعديل، ارجع تأثير القديم أولاً ثم طبّق الجديد
+    set((st) => {
+      if (old) reverseAllEffects(st.customers, st, toEffect(old))
+      applyAllEffects(st.customers, st, toEffect(draft))
+      if (old) {
+        Object.assign(st.moves[curIdx], draft)
+      } else {
+        st.moves.push({
+          ...draft,
+          dbId: 0,
+          id: 0,
+          createdByEmail: null,
+          notifFailed: false,
+        })
+      }
+    })
+    const newIdx = wasEdit ? curIdx : get().moves.length - 1
+
+    // نلتقط العملاء المتأثرين فعلياً ورصيد كل وحد منهم هنا مباشرة — بشكل متزامن،
+    // قبل أي انتظار async (نفس حماية confirmAndSave الأصلية، كانت بالسطر 2307)
+    const notifyList = buildNotifyList(get().customers, draft)
+
+    const savedId = await dbSaveMove({ ...draft, dbId: old?.dbId })
+
+    if (savedId === false) {
+      // فشل الحفظ — تراجع عن كل التغييرات المحلية حتى لا تختلف الشاشة عن قاعدة البيانات
+      set((st) => {
+        reverseAllEffects(st.customers, st, toEffect(draft))
+        if (old) {
+          applyAllEffects(st.customers, st, toEffect(old))
+          st.moves[curIdx] = old
+        } else {
+          st.moves.pop()
+        }
+      })
+      toast('❌ لم يتم الحفظ — تحقق من الاتصال وحاول مرة ثانية')
+      return false
+    }
+
+    set((st) => {
+      st.moves[newIdx].dbId = savedId
+      st.moves[newIdx].id = savedId
+    })
+
+    void dbLogAudit('moves', savedId, wasEdit ? 'update' : 'create', wasEdit ? old : null, get().moves[newIdx])
+    void dbSaveSettings(get().settings, get().initBalD, get().initBalDin)
+
+    // حدّث أرصدة العملاء المتأثرين بقاعدة البيانات — الحساب الحالي (عميل/جهة
+    // صرف)، وأيضاً القديم إذا التعديل غيّر العميل أو جهة الصرف عن حركة موجودة
+    const balCustomers = new Map<number, Customer>()
+    const addBal = (c: Customer | undefined) => {
+      if (c) balCustomers.set(c.id, c)
+    }
+    if (draft.amilId != null) addBal(get().customers.find((x) => x.id === draft.amilId))
+    addBal(get().customers.find((x) => x.name === draft.jiha))
+    if (old) {
+      if (old.amilId != null) addBal(get().customers.find((x) => x.id === old.amilId))
+      addBal(get().customers.find((x) => x.name === old.jiha))
+    }
+    for (const c of balCustomers.values()) await dbUpdateCustomerBal(c)
+
+    // إشعار تليجرام لكل عميل تأثر فعلياً — بأفضل جهد، بدون انتظار (fire-and-forget)
+    for (const n of notifyList) {
+      void sendTelegramNotif(
+        {
+          tgBotToken: get().settings.tgBotToken,
+          findCustomer: (id) => get().customers.find((x) => x.id === id),
+          markNotifResult: n.primary
+            ? async (failed) => {
+                set((st) => {
+                  const m = st.moves.find((x) => x.dbId === savedId)
+                  if (m) m.notifFailed = failed
+                })
+                await persistNotifFailed(savedId, failed)
+              }
+            : undefined,
+        },
+        n.custId,
+        draft.noa,
+        draft.mabD,
+        draft.mabDin,
+        wasEdit ? 'edit' : 'new',
+        old?.mabD ?? 0,
+        old?.mabDin ?? 0,
+        n.curD,
+        n.curDin,
+      )
+    }
+
+    toast('✅ تم الحفظ وتحديث الأرصدة')
+    return true
+  },
+
+  async deleteMove(curIdx) {
+    const moves = get().moves
+    if (curIdx < 0 || curIdx >= moves.length) return false
+    const r = moves[curIdx]
+    const rowId = r.dbId || r.id
+
+    if (rowId) {
+      const deleted = await dbDeleteMove(rowId)
+      if (!deleted) {
+        toast('❌ فشل الحذف — الحركة ما انمسحت فعلياً بقاعدة البيانات (تحقق من الاتصال وحاول ثانية)')
+        return false
+      }
+      void dbLogAudit('moves', rowId, 'delete', r, null)
+    }
+
+    set((st) => {
+      reverseAllEffects(st.customers, st, toEffect(r))
+      st.moves.splice(curIdx, 1)
+    })
+
+    // نلتقط العملاء المتأثرين ورصيدهم بعد الإرجاع مباشرة — نفس منطق saveMove
+    const notifyList = buildNotifyList(get().customers, r)
+
+    void dbSaveSettings(get().settings, get().initBalD, get().initBalDin)
+
+    if (r.amilId != null) {
+      const c = get().customers.find((x) => x.id === r.amilId)
+      if (c) void dbUpdateCustomerBal(c)
+    }
+    const jihaC2 = get().customers.find((x) => x.name === r.jiha)
+    if (jihaC2) void dbUpdateCustomerBal(jihaC2)
+
+    for (const n of notifyList) {
+      void sendTelegramNotif(
+        {
+          tgBotToken: get().settings.tgBotToken,
+          findCustomer: (id) => get().customers.find((x) => x.id === id),
+        },
+        n.custId,
+        n.noa,
+        r.mabD,
+        r.mabDin,
+        'delete',
+        0,
+        0,
+        n.curD,
+        n.curDin,
+      )
+    }
+
+    toast('🗑 تم الحذف بنجاح')
+    return true
+  },
 })))
+
+interface NotifyEntry {
+  custId: number
+  noa: Move['noa']
+  primary: boolean
+  curD: number
+  curDin: number
+}
+
+// يعادل بناء notifyList بدالة confirmAndSave (كانت بالسطر 2313) ونفس منطق
+// delNotifyList بدالة sDel (كانت بالسطر 2509) — نفس الصيغة بالضبط، فرق فقط
+// بتوقيت الاستدعاء (قبل الإرجاع بالحفظ، بعد الإرجاع بالحذف)
+function buildNotifyList(
+  customers: Customer[],
+  r: { amilId: number | null; jiha: string; noa: Move['noa'] },
+): NotifyEntry[] {
+  const list: NotifyEntry[] = []
+  const amilCust = r.amilId != null ? customers.find((x) => x.id === r.amilId) : undefined
+  if (amilCust) {
+    list.push({ custId: amilCust.id, noa: r.noa, primary: true, curD: amilCust.dL - amilCust.dA, curDin: amilCust.dinL - amilCust.dinA })
+  }
+  const jihaCust = customers.find((x) => x.name === r.jiha)
+  if (jihaCust && (!amilCust || jihaCust.id !== amilCust.id)) {
+    const jihaNoa: Move['noa'] = r.noa === 'قبض' ? 'صرف' : 'قبض'
+    list.push({ custId: jihaCust.id, noa: jihaNoa, primary: false, curD: jihaCust.dL - jihaCust.dA, curDin: jihaCust.dinL - jihaCust.dinA })
+  }
+  return list
+}
 
 // منقولة من dbLoad() بالكود القديم — حرفياً نفس ترتيب الجلب وحساب الأرصدة
 async function loadData(set: (fn: (s: DataState) => void) => void) {

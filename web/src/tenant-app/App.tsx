@@ -5,9 +5,12 @@ import { useDataStore } from './state/useDataStore'
 import LoginPage from './pages/Login/LoginPage'
 import SuspendedPage from './pages/Login/SuspendedPage'
 import MainMenuPage from './pages/Main/MainMenuPage'
+import SandooqPage from './pages/Sandooq/SandooqPage'
 import { usePinGate, PinModal } from './components/PinLock'
 import Toast from '../shared/Toast'
 import { toast } from '../shared/useToast'
+
+const BUILT_PAGES = new Set(['pageMain', 'pageSandooq'])
 
 export default function App() {
   const { status, doLogin, doLogout } = useAuth()
@@ -20,7 +23,7 @@ export default function App() {
   const [page, setPage] = useState('pageMain')
 
   function goPage(id: string) {
-    if (id === 'pageMain') {
+    if (BUILT_PAGES.has(id)) {
       setPage(id)
       return
     }
@@ -47,6 +50,7 @@ export default function App() {
       {status === 'ready' && dataReady && !suspended && page === 'pageMain' && (
         <MainMenuPage goPage={goPage} doLogout={logout} />
       )}
+      {status === 'ready' && dataReady && !suspended && page === 'pageSandooq' && <SandooqPage goPage={goPage} />}
 
       <Toast />
       <PinModal {...pinGate} />

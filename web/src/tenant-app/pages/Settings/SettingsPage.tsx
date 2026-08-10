@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { todayISO } from '../../../shared/date'
 import { useDataStore } from '../../state/useDataStore'
 import RoleGate from '../../components/RoleGate'
 import CustomerManager from './CustomerManager'
@@ -25,7 +26,7 @@ export default function SettingsPage({
   const refresh = useDataStore((s) => s.refresh)
 
   const [compName, setCompName] = useState(settings.compName || '')
-  const [startDate, setStartDate] = useState(settings.startDate || new Date().toISOString().split('T')[0])
+  const [startDate, setStartDate] = useState(settings.startDate || todayISO())
   const [tgToken, setTgToken] = useState(settings.tgBotToken || '')
   const [rateStr, setRateStr] = useState(String(settings.defaultRate || 1480))
   const [initDStr, setInitDStr] = useState(String(settings.initBalD || 0))

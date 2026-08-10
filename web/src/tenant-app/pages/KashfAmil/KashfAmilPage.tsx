@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react'
 import { fmt } from '../../../shared/format'
+import { toLocalISODate, todayISO } from '../../../shared/date'
 import { toast } from '../../../shared/useToast'
 import { useDataStore } from '../../state/useDataStore'
 import { openPrintDocument } from '../../print/openPrintDocument'
 import { buildKashfAmilPrintHtml } from '../../print/kashfAmilPrint'
 
-function todayISO() {
-  return new Date().toISOString().split('T')[0]
-}
 function firstOfMonthISO() {
   const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]
+  return toLocalISODate(new Date(d.getFullYear(), d.getMonth(), 1))
 }
 
 type KaCur = 'dolar' | 'dinar' | 'all'

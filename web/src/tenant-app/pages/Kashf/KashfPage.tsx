@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react'
 import { fmt } from '../../../shared/format'
+import { todayISO } from '../../../shared/date'
 import { useDataStore } from '../../state/useDataStore'
 import { openPrintDocument } from '../../print/openPrintDocument'
 import { buildKashfPrintHtml } from '../../print/kashfPrint'
 import KashfDetailModal, { type KashfDetailData } from './KashfDetailModal'
 import type { Move, SayarfaMove } from '../../../shared/types'
-
-function todayISO() {
-  return new Date().toISOString().split('T')[0]
-}
 
 interface Row {
   tarikh: string

@@ -1,3 +1,55 @@
+import { useState } from 'react'
+import './app.css'
+import { useAuth } from './state/useAuth'
+import { useDataStore } from './state/useDataStore'
+import LoginPage from './pages/Login/LoginPage'
+import SuspendedPage from './pages/Login/SuspendedPage'
+import MainMenuPage from './pages/Main/MainMenuPage'
+import { usePinGate, PinModal } from './components/PinLock'
+import Toast from '../shared/Toast'
+import { toast } from '../shared/useToast'
+
 export default function App() {
-  return <div style={{ padding: 24 }}>المنير — البرنامج الرئيسي (قيد إعادة البناء)</div>
+  const { status, doLogin, doLogout } = useAuth()
+  const dataReady = useDataStore((s) => s.dataReady)
+  const suspended = useDataStore((s) => s.suspended)
+  const suspendReason = useDataStore((s) => s.suspendReason)
+  const pinGate = usePinGate()
+  // يعادل pageHistory/goPage() بالكود القديم — التنقل بين باقي الصفحات (الصندوق،
+  // كشف الرصيد...) يُضاف بالمراحل الجاية، هنا فقط الهيكل العام
+  const [page, setPage] = useState('pageMain')
+
+  function goPage(id: string) {
+    if (id === 'pageMain') {
+      setPage(id)
+      return
+    }
+    toast('هذا القسم قيد إعادة البناء — يرجع قريباً')
+  }
+
+  const logout = () => void doLogout()
+
+  return (
+    <>
+      {status === 'loggedOut' && <LoginPage doLogin={doLogin} />}
+
+      {status === 'ready' && !dataReady && (
+        <div className="loading-overlay">
+          <div className="loading-spinner" />
+          <div style={{ color: 'white', fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700 }}>
+            ⏳ جاري تحميل البيانات...
+          </div>
+        </div>
+      )}
+
+      {status === 'ready' && dataReady && suspended && <SuspendedPage reason={suspendReason} doLogout={logout} />}
+
+      {status === 'ready' && dataReady && !suspended && page === 'pageMain' && (
+        <MainMenuPage goPage={goPage} doLogout={logout} />
+      )}
+
+      <Toast />
+      <PinModal {...pinGate} />
+    </>
+  )
 }

@@ -1,0 +1,392 @@
+/* ============================================================
+   TENANT APP — shell / auth / shared modal+toast+pin styles.
+   Extracted verbatim (colors/spacing unchanged) from index.html's
+   scattered <style> blocks and consolidated into one findable file —
+   this consolidation IS the "easier to edit" win, not a redesign.
+============================================================ */
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 0;
+}
+
+/* ── Page shell ── */
+.page {
+  display: none;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.page.active {
+  display: block;
+}
+
+/* ============================================================
+   PAGE 0 — LOGIN
+============================================================ */
+#pageLogin {
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(8, 145, 178, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(34, 211, 238, 0.1) 0%, transparent 55%),
+    var(--bg);
+}
+#pageLogin.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 28px 22px;
+  margin: 0 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.login-logo {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+}
+.login-sub {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 22px;
+}
+.login-lbl {
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  text-align: right;
+}
+.login-input {
+  width: 100%;
+  background: #071e38;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  direction: ltr;
+  text-align: left;
+  margin-bottom: 14px;
+}
+.login-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--accent2);
+  color: #fff;
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.login-err {
+  color: var(--red);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 10px;
+  min-height: 16px;
+}
+
+/* ============================================================
+   PAGE 1 — MAIN MENU
+============================================================ */
+#pageMain {
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(8, 145, 178, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(34, 211, 238, 0.1) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+    var(--bg);
+}
+.main-header {
+  text-align: center;
+  padding: 22px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.main-logo {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+}
+.main-date {
+  position: absolute;
+  left: 12px;
+  top: 18px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.main-subtitle {
+  display: inline-block;
+  padding: 5px 24px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin: 10px auto 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 8px 14px 90px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.menu-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 6px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  line-height: 1.5;
+  position: relative;
+  overflow: hidden;
+}
+.menu-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.06), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.menu-btn:active {
+  background: var(--bg4);
+  transform: scale(0.97);
+}
+.menu-btn:active::before {
+  opacity: 1;
+}
+.menu-btn .icon {
+  font-size: 22px;
+  display: block;
+  margin-bottom: 5px;
+}
+.menu-btn.highlight {
+  background: var(--bg3);
+  border-color: var(--border2);
+  color: var(--text);
+}
+.menu-btn.highlight .icon {
+  filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.5));
+}
+
+@media (min-width: 860px) {
+  .menu-grid {
+    max-width: 720px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   SHARED — MODALS / TOAST / PIN
+============================================================ */
+.modal-ov {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 500;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-ov.show {
+  display: flex;
+}
+.modal-box {
+  width: 100%;
+  max-width: 480px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 20px 16px;
+}
+.modal-box.green,
+.modal-box.dark {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+}
+.modal-box.grey {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+.modal-h3 {
+  font-size: 15px;
+  font-weight: 900;
+  margin-bottom: 14px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.modal-h3.light,
+.modal-h3.dark {
+  color: var(--accent);
+}
+.modal-opt {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: right;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.modal-opt:active,
+.modal-opt.sel {
+  background: var(--accent2);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.modal-close-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.pin-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: 'Cairo', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pin-btn:active {
+  background: var(--bg4);
+  color: var(--accent);
+  transform: scale(0.95);
+}
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s;
+}
+.pin-dot.filled {
+  background: #f0c040;
+  border-color: #f0c040;
+}
+.pin-dot.error {
+  background: #ff4040;
+  border-color: #ff4040;
+}
+
+.toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #040d1a;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.loading-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(34, 211, 238, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: loadingSpin 0.8s linear infinite;
+}
+@keyframes loadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: #000 !important;
+  }
+  .page {
+    display: none !important;
+  }
+  .page.active {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+  }
+}

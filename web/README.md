@@ -45,3 +45,22 @@ leftover from a renamed project, not the real production path. **Confirm the
 actual production URL before Phase 9 (deployment pipeline) ships**, since it
 determines `base`, the PWA `scope`/`start_url`, and the service worker's
 precache list.
+
+Note: `public/manifest.webmanifest` is a hand-written static file (not
+generated from `vite.config.ts`'s `base`) because `vite-plugin-pwa` has no
+per-entry option for a multi-page build — it injects `<link rel="manifest">`
+into every HTML entry it finds, and only `index.html` (the tenant app) should
+get one, matching the legacy app's PWA scope. If the base path ever changes
+from `/`, update `public/manifest.webmanifest`'s `start_url`/`scope` and the
+icon paths by hand alongside `VITE_BASE_PATH`.
+
+## PWA
+
+`index.html` (tenant app only — same scope as the legacy `manifest.json`)
+registers a service worker built via `vite-plugin-pwa`'s `injectManifest`
+strategy (`src/sw.ts`), ported line-for-line from the legacy `sw.js`: same
+cache-then-network-with-fallback logic, same `supabase.co`/
+`fonts.googleapis.com` bypass, same silent `skipWaiting`+`clients.claim`
+auto-update (no "update available" prompt). The only difference is the
+precached file list is generated from the actual hashed build output instead
+of a hardcoded array, since asset filenames change on every build.

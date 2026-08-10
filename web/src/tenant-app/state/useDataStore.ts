@@ -8,7 +8,9 @@ import { applyAllEffects, reverseAllEffects, type MoveEffect } from '../domain/b
 import { dbSaveMove, dbDeleteMove, type MoveDraft } from '../api/moves'
 import { dbUpdateCustomerBal } from '../api/customers'
 import { dbSaveSettings } from '../api/settings'
-import { sendTelegramNotif, persistNotifFailed } from '../api/telegram'
+import { dbSaveSayarfa, type SayarfaDraft } from '../api/sayarfa'
+import { sendTelegramNotif, sendTelegramSayarfaNotif, persistNotifFailed } from '../api/telegram'
+import { applyToCustomer } from '../domain/balanceMath'
 
 function toEffect(r: MoveDraft): MoveEffect {
   return { amilId: r.amilId, jiha: r.jiha, noa: r.noa, mabD: r.mabD, mabDin: r.mabDin }
@@ -42,6 +44,11 @@ interface DataState {
   saveMove: (draft: MoveDraft, curIdx: number) => Promise<boolean>
   /** يعادل sDel() بالكود القديم (كانت بالسطر 2471) */
   deleteMove: (curIdx: number) => Promise<boolean>
+
+  /** يعادل الفرع "نقدي" بـ sfSave() (كانت بالسطر 3880-3923) — تأثير على رصيد القاصة فقط */
+  saveSayarfaCash: (type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => void
+  /** يعادل sfSaveAmil() (كانت بالسطر 3929) — تحويل عملة داخل رصيد عميل، بدون أي تأثير على القاصة */
+  saveSayarfaAmil: (customerId: number, type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => Promise<void>
 }
 
 const initial = {
@@ -242,6 +249,98 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
 
     toast('🗑 تم الحذف بنجاح')
     return true
+  },
+
+  saveSayarfaCash(type, mabD, mabDin, rate, notes) {
+    // تأثير على القاصة — منقول حرفياً من sfSave() (كانت بالسطر 3896)
+    set((st) => {
+      if (type === 'شراء') {
+        st.initBalD += mabD
+        st.initBalDin -= mabDin
+      } else {
+        st.initBalD -= mabD
+        st.initBalDin += mabDin
+      }
+    })
+
+    const now = new Date()
+    const draft: SayarfaDraft = {
+      type,
+      mabD,
+      mabDin,
+      rate,
+      notes,
+      tarikh: now.toISOString().split('T')[0],
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      balDAfter: get().initBalD,
+      balDinAfter: get().initBalDin,
+    }
+    set((st) => {
+      st.sayarfaMoves.push({ ...draft, dbId: 0, id: 0, createdByEmail: null })
+    })
+
+    toast(`✅ تم تنفيذ ${type} الدولار — تحديث القاصة`)
+    // نفس الأصل بالضبط: الحفظ بقاعدة البيانات fire-and-forget، بدون انتظار
+    // (sfReset يصير فوراً بالواجهة قبل ما يخلص الحفظ فعلياً)
+    void dbSaveSayarfa(draft, get().settings, get().initBalD, get().initBalDin)
+  },
+
+  async saveSayarfaAmil(customerId, type, mabD, mabDin, rate, notes) {
+    const c = get().customers.find((x) => x.id === customerId)
+    if (!c) {
+      toast('⚠️ اختر عميل أولاً')
+      return
+    }
+
+    // منقولة حرفياً من sfSaveAmil() (كانت بالسطر 3929) — تُسجَّل كحركتين
+    // (دولار/دينار) بربط amilId حتى تظهر بكشف حساب العميل. بدون rollback لو
+    // فشل الحفظ — نفس تحمّل المخاطرة الموجود بالأصل لهذا المسار تحديداً
+    const noaD = type === 'بيع' ? 'صرف' : 'قبض'
+    const noaDin = type === 'بيع' ? 'قبض' : 'صرف'
+
+    set((st) => {
+      const draft = st.customers.find((x) => x.id === customerId)
+      if (!draft) return
+      applyToCustomer(draft, noaD, mabD, 0)
+      applyToCustomer(draft, noaDin, 0, mabDin)
+    })
+
+    // نلتقط رصيد العميل هنا مباشرة (متزامن، فور تطبيق أثر الحركة) — نفس حماية sendTelegramNotif
+    const updated = get().customers.find((x) => x.id === customerId)!
+    const sfCurD = updated.dL - updated.dA
+    const sfCurDin = updated.dinL - updated.dinA
+
+    const now = new Date()
+    const tarikh = now.toISOString().split('T')[0]
+    const noteBase = `تحويل عملة (صيرفة) — سعر ${rate.toLocaleString()}` + (notes ? ` — ${notes}` : '')
+
+    const legD: MoveDraft = { noa: noaD, tarikh, raqm: 'صيرفة', hesab: 'ذمم العملاء', mabD, mabDin: 0, jiha: '', sak: '', notes: noteBase, amilId: c.id, amilName: c.name }
+    const legDin: MoveDraft = { noa: noaDin, tarikh, raqm: 'صيرفة', hesab: 'ذمم العملاء', mabD: 0, mabDin, jiha: '', sak: '', notes: noteBase, amilId: c.id, amilName: c.name }
+    const legDIdx = get().moves.length
+    const legDinIdx = legDIdx + 1
+    set((st) => {
+      st.moves.push({ ...legD, dbId: 0, id: 0, createdByEmail: null, notifFailed: false })
+      st.moves.push({ ...legDin, dbId: 0, id: 0, createdByEmail: null, notifFailed: false })
+    })
+
+    toast(`✅ تم تحويل عملة حساب ${c.name}`)
+
+    await dbUpdateCustomerBal(updated)
+    const savedD = await dbSaveMove(legD)
+    const savedDin = await dbSaveMove(legDin)
+    set((st) => {
+      if (savedD && st.moves[legDIdx]) {
+        st.moves[legDIdx].dbId = savedD
+        st.moves[legDIdx].id = savedD
+      }
+      if (savedDin && st.moves[legDinIdx]) {
+        st.moves[legDinIdx].dbId = savedDin
+        st.moves[legDinIdx].id = savedDin
+      }
+    })
+
+    // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
+    void sendTelegramSayarfaNotif(get().settings.tgBotToken, updated, type, mabD, mabDin, rate, sfCurD, sfCurDin)
   },
 })))
 

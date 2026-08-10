@@ -9,11 +9,12 @@ import SandooqPage from './pages/Sandooq/SandooqPage'
 import KashfPage from './pages/Kashf/KashfPage'
 import ArsadaPage from './pages/Arsada/ArsadaPage'
 import KashfAmilPage from './pages/KashfAmil/KashfAmilPage'
+import SayarfaPage from './pages/Sayarfa/SayarfaPage'
 import { usePinGate, PinModal } from './components/PinLock'
 import Toast from '../shared/Toast'
 import { toast } from '../shared/useToast'
 
-const BUILT_PAGES = new Set(['pageMain', 'pageSandooq', 'pageKashf', 'pageArsada', 'pageKashfAmil'])
+const BUILT_PAGES = new Set(['pageMain', 'pageSandooq', 'pageKashf', 'pageArsada', 'pageKashfAmil', 'pageSayarfa'])
 
 export default function App() {
   const { status, doLogin, doLogout } = useAuth()
@@ -67,6 +68,7 @@ export default function App() {
       {status === 'ready' && dataReady && !suspended && page === 'pageKashfAmil' && kaAmilId != null && (
         <KashfAmilPage customerId={kaAmilId} goPage={goPage} />
       )}
+      {status === 'ready' && dataReady && !suspended && page === 'pageSayarfa' && <SayarfaPage goPage={goPage} />}
 
       <Toast />
       <PinModal {...pinGate} />

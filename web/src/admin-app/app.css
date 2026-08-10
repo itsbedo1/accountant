@@ -1,0 +1,494 @@
+/* ============================================================
+   ADMIN APP — منقولة حرفياً من admin.html's <style> block
+   (بقية المتغيرات مشتركة مع tenant-app/../shared/tokens.css — نفس القيم بالضبط)
+============================================================ */
+:root {
+  --green: #4ade80;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Cairo', sans-serif;
+  direction: rtl;
+  min-height: 100vh;
+}
+input,
+select {
+  font-family: 'Cairo', sans-serif;
+}
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px;
+  padding-bottom: 60px;
+}
+
+/* ── تسجيل الدخول ── */
+#loginView {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 26px 22px;
+  text-align: center;
+}
+.login-logo {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.login-sub {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+.login-lbl {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+  margin-bottom: 5px;
+}
+.login-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: var(--text);
+  font-size: 14px;
+  direction: ltr;
+  text-align: left;
+  margin-bottom: 12px;
+}
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 9px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  background: var(--accent2);
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.login-btn:disabled {
+  opacity: 0.6;
+}
+.login-err {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 10px;
+  min-height: 14px;
+}
+
+/* ── الداشبورد ── */
+.dash-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: linear-gradient(135deg, #040d1a, #071e38);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.dash-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--accent);
+}
+.btn-sm {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.stat-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 4px;
+  text-align: center;
+}
+.stat-num {
+  font-size: 19px;
+  font-weight: 900;
+}
+.stat-lbl {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.section-lbl {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  margin: 16px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── نموذج إنشاء شركة (قابل للطي) ── */
+#createPanel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.f-lbl {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+  margin-bottom: 5px;
+}
+.f-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1.5px solid var(--border2);
+  border-radius: 7px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 13.5px;
+  margin-bottom: 12px;
+}
+.f-input.ltr {
+  direction: ltr;
+  text-align: left;
+}
+.pw-row {
+  position: relative;
+}
+.pw-row .f-input {
+  padding-left: 40px;
+}
+.pw-toggle {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+}
+.pw-hint {
+  font-size: 10.5px;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  text-align: right;
+}
+.pw-hint.ok {
+  color: var(--green);
+}
+.pw-hint.bad {
+  color: var(--text-dim);
+}
+.plan-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.plan-opt {
+  flex: 1;
+  padding: 10px 6px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text-dim);
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.plan-opt.sel {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(251, 191, 36, 0.1);
+}
+.f-btn {
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13.5px;
+  font-weight: 900;
+  background: var(--accent2);
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.f-btn:disabled {
+  opacity: 0.6;
+}
+.f-err {
+  color: var(--red);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  min-height: 14px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.search-input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1.5px solid var(--border2);
+  border-radius: 9px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 13px;
+}
+.sort-select {
+  background: var(--bg2);
+  border: 1.5px solid var(--border2);
+  border-radius: 9px;
+  padding: 10px 8px;
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.co-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.co-card.overdue {
+  border-color: rgba(251, 113, 133, 0.4);
+}
+.co-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.co-name {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text);
+}
+.co-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.co-badge.on {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--green);
+}
+.co-badge.off {
+  background: rgba(251, 113, 133, 0.15);
+  color: var(--red);
+}
+.co-badge.trial {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--gold);
+}
+.co-email {
+  font-size: 12px;
+  color: var(--text-dim);
+  direction: ltr;
+  text-align: right;
+  margin-bottom: 10px;
+}
+.co-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.co-date-box {
+  background: var(--bg3);
+  border-radius: 7px;
+  padding: 7px 9px;
+}
+.co-date-lbl {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.co-date-val {
+  font-size: 12.5px;
+  font-weight: 700;
+  direction: ltr;
+  text-align: right;
+}
+.co-date-val.due {
+  color: var(--red);
+}
+.co-reason {
+  font-size: 11.5px;
+  color: var(--red);
+  background: rgba(251, 113, 133, 0.08);
+  border-radius: 6px;
+  padding: 7px 9px;
+  margin-bottom: 10px;
+}
+.co-actions {
+  display: flex;
+  gap: 6px;
+}
+.co-btn {
+  flex: 1;
+  padding: 9px 4px;
+  border-radius: 7px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+}
+.co-btn.pay {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: #40c060;
+  color: var(--green);
+}
+.co-btn.danger {
+  background: rgba(251, 113, 133, 0.15);
+  border-color: #cc4444;
+  color: var(--red);
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 30px 10px;
+}
+
+/* ── نافذة منبثقة داخل الصفحة (بدل prompt/confirm/alert المتصفح) ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+}
+@media (min-width: 480px) {
+  .modal-overlay {
+    align-items: center;
+  }
+  .modal-box {
+    border-radius: 16px;
+  }
+}
+.modal-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.modal-msg {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.modal-btn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 9px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+}
+.modal-btn.primary {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: white;
+}
+
+/* ── توست خفيف بدل alert() ── */
+#toastBox {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.err {
+  border-color: rgba(251, 113, 133, 0.5);
+  color: var(--red);
+}
+.toast.ok {
+  border-color: rgba(74, 222, 128, 0.5);
+  color: var(--green);
+}

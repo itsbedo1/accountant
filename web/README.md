@@ -35,24 +35,32 @@ npm run dev
 - `npm run test` — vitest (unit tests for the money-math layer live under
   `src/tenant-app/domain/*.test.ts`).
 
-## Open item: base path
+## Base path
 
-`vite.config.ts`'s `base` defaults to `/` and is overridable via
+`vite.config.ts`'s `base` defaults to `/accountant/` and is overridable via
 `VITE_BASE_PATH`. The legacy `manifest.json`/`sw.js` reference a stale
 `/almonner2/` path that doesn't match the current repo name (`accountant`)
 and even lists icon sizes that don't exist in the repo — almost certainly
-leftover from a renamed project, not the real production path. **Confirm the
-actual production URL before Phase 9 (deployment pipeline) ships**, since it
-determines `base`, the PWA `scope`/`start_url`, and the service worker's
-precache list.
+leftover from a renamed project, not the real production path.
+
+`/accountant/` is inferred, not confirmed by the account owner: there is no
+`CNAME` file at the repo root, so (absent a custom domain configured only in
+GitHub's dashboard, which isn't visible from the repo contents) GitHub Pages
+serves this as a project site at its default URL,
+`https://<owner>.github.io/accountant/`. **Double check the real URL in
+Settings → Pages before cutover** — if it differs, `VITE_BASE_PATH` is a
+one-line override, no re-architecture needed.
 
 Note: `public/manifest.webmanifest` is a hand-written static file (not
 generated from `vite.config.ts`'s `base`) because `vite-plugin-pwa` has no
 per-entry option for a multi-page build — it injects `<link rel="manifest">`
 into every HTML entry it finds, and only `index.html` (the tenant app) should
-get one, matching the legacy app's PWA scope. If the base path ever changes
-from `/`, update `public/manifest.webmanifest`'s `start_url`/`scope` and the
-icon paths by hand alongside `VITE_BASE_PATH`.
+get one, matching the legacy app's PWA scope. Its `start_url`/`scope`/icon
+paths are already prefixed with `/accountant/` to match the current default
+above; if the base path changes, update this file by hand alongside
+`VITE_BASE_PATH`. The three HTML entry points reference their icons/manifest
+via Vite's `%BASE_URL%` placeholder so those stay in sync with `base`
+automatically — only this file needs a manual edit.
 
 ## PWA
 

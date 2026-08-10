@@ -14,6 +14,6 @@ createRoot(document.getElementById('root')!).render(
 // الرئيسي بس، مو admin/landing — نفس نطاق manifest.json الأصلي
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((e) => console.error('SW registration failed:', e))
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch((e) => console.error('SW registration failed:', e))
   })
 }

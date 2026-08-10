@@ -7,10 +7,12 @@ const dirname = import.meta.dirname
 
 // NOTE base path: repo's manifest.json/sw.js reference a stale "/almonner2/" path
 // left over from a renamed repo (icons referenced there don't even exist in the
-// repo). Actual production URL needs confirming before this ships — until then
-// we default to root ('/') and allow override via VITE_BASE_PATH so it's a
-// one-line change, not a re-architecture.
-const basePath = process.env.VITE_BASE_PATH || '/'
+// repo). No CNAME file exists in the repo root, so GitHub Pages serves this
+// project at its default project-site URL (https://<owner>.github.io/<repo>/) —
+// i.e. "/accountant/" for this repo. That's a well-grounded inference, not a
+// certainty confirmed by the account owner; VITE_BASE_PATH stays available as a
+// one-line override if the real path turns out to differ.
+const basePath = process.env.VITE_BASE_PATH || '/accountant/'
 
 export default defineConfig({
   base: basePath,

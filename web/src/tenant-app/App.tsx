@@ -6,11 +6,14 @@ import LoginPage from './pages/Login/LoginPage'
 import SuspendedPage from './pages/Login/SuspendedPage'
 import MainMenuPage from './pages/Main/MainMenuPage'
 import SandooqPage from './pages/Sandooq/SandooqPage'
+import KashfPage from './pages/Kashf/KashfPage'
+import ArsadaPage from './pages/Arsada/ArsadaPage'
+import KashfAmilPage from './pages/KashfAmil/KashfAmilPage'
 import { usePinGate, PinModal } from './components/PinLock'
 import Toast from '../shared/Toast'
 import { toast } from '../shared/useToast'
 
-const BUILT_PAGES = new Set(['pageMain', 'pageSandooq'])
+const BUILT_PAGES = new Set(['pageMain', 'pageSandooq', 'pageKashf', 'pageArsada', 'pageKashfAmil'])
 
 export default function App() {
   const { status, doLogin, doLogout } = useAuth()
@@ -18,9 +21,11 @@ export default function App() {
   const suspended = useDataStore((s) => s.suspended)
   const suspendReason = useDataStore((s) => s.suspendReason)
   const pinGate = usePinGate()
-  // يعادل pageHistory/goPage() بالكود القديم — التنقل بين باقي الصفحات (الصندوق،
-  // كشف الرصيد...) يُضاف بالمراحل الجاية، هنا فقط الهيكل العام
+  // يعادل pageHistory/goPage() بالكود القديم — التنقل بين باقي الصفحات
+  // (الصيرفة، الإعدادات...) يُضاف بالمراحل الجاية، هنا فقط الهيكل العام
   const [page, setPage] = useState('pageMain')
+  // يعادل kaAmilId العام بالكود القديم (index.html:3338) — أي عميل مفتوح حالياً بكشف الحساب
+  const [kaAmilId, setKaAmilId] = useState<number | null>(null)
 
   function goPage(id: string) {
     if (BUILT_PAGES.has(id)) {
@@ -28,6 +33,12 @@ export default function App() {
       return
     }
     toast('هذا القسم قيد إعادة البناء — يرجع قريباً')
+  }
+
+  // يعادل openKashfAmil(id) بالكود القديم (كانت بالسطر 3341) — arDetail() تستدعيها مباشرة
+  function openKashfAmil(customerId: number) {
+    setKaAmilId(customerId)
+    setPage('pageKashfAmil')
   }
 
   const logout = () => void doLogout()
@@ -51,6 +62,11 @@ export default function App() {
         <MainMenuPage goPage={goPage} doLogout={logout} />
       )}
       {status === 'ready' && dataReady && !suspended && page === 'pageSandooq' && <SandooqPage goPage={goPage} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageKashf' && <KashfPage goPage={goPage} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageArsada' && <ArsadaPage goPage={goPage} openKashfAmil={openKashfAmil} />}
+      {status === 'ready' && dataReady && !suspended && page === 'pageKashfAmil' && kaAmilId != null && (
+        <KashfAmilPage customerId={kaAmilId} goPage={goPage} />
+      )}
 
       <Toast />
       <PinModal {...pinGate} />

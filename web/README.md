@@ -64,3 +64,20 @@ cache-then-network-with-fallback logic, same `supabase.co`/
 auto-update (no "update available" prompt). The only difference is the
 precached file list is generated from the actual hashed build output instead
 of a hardcoded array, since asset filenames change on every build.
+
+## Deployment
+
+`.github/workflows/web-deploy.yml` builds, lints, typechecks, tests, and
+deploys `web/dist` to GitHub Pages via `actions/deploy-pages` — triggered on
+push to `master` (paths under `web/**`) or manually via `workflow_dispatch`.
+
+**Manual step required before this can actually publish anything**: in the
+repo's GitHub Settings → Pages → "Build and deployment" → Source, switch
+from "Deploy from a branch" (the current setting, serving the legacy root
+HTML files directly) to "GitHub Actions". Until that switch happens, this
+workflow's `deploy` job will fail even though `build` succeeds — that's
+expected, not a bug in the workflow.
+
+`.github/workflows/web-ci.yml` runs the same build/lint/typecheck/test
+checks (no deploy) on every PR and push to `master`, so the checks run
+whether or not the Pages source has been switched yet.

@@ -134,7 +134,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
         <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 10px', textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{todayShort()}</div>
       </div>
 
-      <div style={{ padding: '12px 14px', maxWidth: 480, margin: '0 auto', paddingBottom: 90 }}>
+      <div id="sfPage" style={{ padding: '12px 14px', maxWidth: 480, margin: '0 auto', paddingBottom: 90 }}>
         {/* رصيد القاصة/العميل الحالي */}
         <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: 12, marginBottom: 12 }}>
           <div style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
@@ -280,7 +280,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
         </div>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#040d1a', borderTop: '1px solid rgba(34,211,238,.2)', display: 'flex', gap: 8, padding: '8px 12px', zIndex: 200, maxWidth: 480, margin: '0 auto' }}>
+      <div id="sfToolbar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#040d1a', borderTop: '1px solid rgba(34,211,238,.2)', display: 'flex', gap: 8, padding: '8px 12px', zIndex: 200, maxWidth: 480, margin: '0 auto' }}>
         <button onClick={save} style={{ flex: 2, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 900, background: '#f0c040', border: 'none', color: '#0a1628', cursor: 'pointer' }}>
           💾 تنفيذ وحفظ
         </button>

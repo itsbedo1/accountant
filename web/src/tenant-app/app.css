@@ -805,10 +805,87 @@
   filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.5));
 }
 
+/* ── تابلت (480-860px) — الأشرطة السفلية الثابتة توسط بعرض 480 بدل ما
+   تنمد حافة-لحافة على شاشة أعرض من الموبايل ── */
+@media (min-width: 480px) {
+  .s-toolbar,
+  .kr-totals,
+  .kr-toolbar,
+  .ar-totals,
+  .ar-toolbar {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+}
+
+/* ── شاشات كبيرة (لابتوب/ديسكتوب) — استغلال أفضل للعرض بدل عمود موبايل
+   ضيق — منقولة من index.html (كانت بالسطر 714-727). الاستثناء الوحيد:
+   الأصل استخدم [style*="max-width:480px"] لتوسيع أي صفحة عندها هذا الـ
+   inline style (كان يمسك #sFormWrap و#sfPage/#stPage تلقائياً بنفس
+   الوقت). React يعيد تسلسل inline styles بصيغة تحتوي مسافة
+   (`max-width: 480px`) فما ينطبق نفس الـselector، فاستهدفنا كل صفحة
+   بمعرّفها مباشرة (#sFormWrap/#sfPage/#stPage) بدلها — نفس النتيجة،
+   أوثق باعتماد React ── */
 @media (min-width: 860px) {
   .menu-grid {
     max-width: 720px;
     grid-template-columns: repeat(4, 1fr);
+  }
+  .kh-page {
+    max-width: 760px;
+  }
+  #sfPage,
+  #stPage,
+  #sfToolbar {
+    max-width: 760px !important;
+  }
+  .s-toolbar,
+  .kr-totals,
+  .kr-toolbar,
+  .ar-totals,
+  .ar-toolbar,
+  .ka-bot,
+  .kh-toolbar {
+    max-width: 760px;
+    left: 0;
+    right: 0;
+    transform: none;
+  }
+
+  /* قوائم البطاقات (أرصدة العملاء وكشف الصندوق) — عمودين بدل عمود واحد يقلل السكرول */
+  .ar-tbody {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    align-content: start;
+  }
+  .kr-tbody {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    align-content: start;
+  }
+  .ar-tbody .ar-card,
+  .kr-tbody .kr-card {
+    margin-bottom: 0;
+  }
+
+  /* صفحة الصندوق — عمودين لتقليل السكرول العمودي، مع أقسام تمتد بعرض كامل حتى تبقى منظمة عند اختيار عميل */
+  #sFormWrap {
+    max-width: 760px !important;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  #sFormWrap > div {
+    min-width: 0;
+  }
+  #sFormWrap > #sBalCard,
+  #sFormWrap > #sQuickLinks {
+    grid-column: 1 / -1;
   }
 }
 

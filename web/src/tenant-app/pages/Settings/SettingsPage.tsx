@@ -56,7 +56,7 @@ export default function SettingsPage({
         </button>
       </div>
 
-      <div style={{ padding: 14, maxWidth: 480, margin: '0 auto', paddingBottom: 30 }}>
+      <div id="stPage" style={{ padding: 14, maxWidth: 480, margin: '0 auto', paddingBottom: 30 }}>
         {/* قسم 0: الحساب */}
         <div style={{ background: 'rgba(96,160,255,0.08)', border: '1.5px solid rgba(96,160,255,0.3)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
           <div style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 900, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>👤 الحساب</div>

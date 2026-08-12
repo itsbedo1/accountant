@@ -379,7 +379,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
 
         {/* قسم 3: الأرصدة السابقة */}
         {showAmil && selectedCustomer && (
-          <div style={{ marginBottom: 10 }}>
+          <div id="sBalCard" style={{ marginBottom: 10 }}>
             <div style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 700, marginBottom: 6, textAlign: 'right', paddingRight: 4 }}>أرصدة العميل</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               <BalBox label="الرصيد الحالي $" value={prevD} />
@@ -458,7 +458,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+        <div id="sQuickLinks" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
           <button
             onClick={() => goPage('pageArsada')}
             style={{ background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 700, color: 'var(--text2)', cursor: 'pointer' }}

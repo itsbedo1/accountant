@@ -2,8 +2,8 @@
   "name": "المنير - نظام الصيرفة",
   "short_name": "المنير",
   "description": "نظام إدارة شركة الصيرفة",
-  "start_url": "/accountant/index.html",
-  "scope": "/accountant/",
+  "start_url": "__BASE__index.html",
+  "scope": "__BASE__",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#040d1a",
@@ -11,7 +11,7 @@
   "lang": "ar",
   "dir": "rtl",
   "icons": [
-    { "src": "/accountant/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/accountant/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "__BASE__icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "__BASE__icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

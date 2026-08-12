@@ -51,16 +51,17 @@ serves this as a project site at its default URL,
 Settings → Pages before cutover** — if it differs, `VITE_BASE_PATH` is a
 one-line override, no re-architecture needed.
 
-Note: `public/manifest.webmanifest` is a hand-written static file (not
-generated from `vite.config.ts`'s `base`) because `vite-plugin-pwa` has no
-per-entry option for a multi-page build — it injects `<link rel="manifest">`
-into every HTML entry it finds, and only `index.html` (the tenant app) should
-get one, matching the legacy app's PWA scope. Its `start_url`/`scope`/icon
-paths are already prefixed with `/accountant/` to match the current default
-above; if the base path changes, update this file by hand alongside
-`VITE_BASE_PATH`. The three HTML entry points reference their icons/manifest
-via Vite's `%BASE_URL%` placeholder so those stay in sync with `base`
-automatically — only this file needs a manual edit.
+Note: `manifest.webmanifest` is generated at build/dev time by the
+`manifestPlugin` in `vite.config.ts` from the `manifest.template.webmanifest`
+template (`__BASE__` placeholder substituted with the actual `base`), not a
+static file in `public/` — because `vite-plugin-pwa` has no per-entry option
+for a multi-page build (it injects `<link rel="manifest">` into every HTML
+entry it finds, and only `index.html`, the tenant app, should get one,
+matching the legacy app's PWA scope), and because its `start_url`/`scope`/icon
+paths need to track `base` automatically across deploy targets that use
+different base paths (e.g. `/accountant/` on GitHub Pages vs `/` on Vercel).
+The three HTML entry points reference their icons/manifest via Vite's
+`%BASE_URL%` placeholder, which already tracks `base` on its own.
 
 ## PWA
 
@@ -89,3 +90,21 @@ expected, not a bug in the workflow.
 `.github/workflows/web-ci.yml` runs the same build/lint/typecheck/test
 checks (no deploy) on every PR and push to `master`, so the checks run
 whether or not the Pages source has been switched yet.
+
+### Vercel
+
+`web/vercel.json` is set up for a Vercel project whose **Root Directory** is
+`web` (set this in the Vercel dashboard when importing the repo — vercel.com
+→ Add New Project → Import `itsbedo1/accountant` → Root Directory: `web`).
+It sets `VITE_BASE_PATH=/` for the build so assets resolve from the domain
+root instead of GitHub Pages' `/accountant/` subpath (the two deploy targets
+build with different `base` values; nothing else needs to change per-target).
+No other environment variables are required — the Supabase anon key/URL are
+already committed in `.env.production` (see `## Running locally` above for
+why that's safe to commit).
+
+Vercel auto-detects the Vite framework and multi-page entries (`index.html`,
+`admin.html`, `landing.html`) from `vite.config.ts`'s `rollupOptions.input`
+the same way the local build does, so `/`, `/admin.html`, and `/landing.html`
+serve the same three apps as GitHub Pages does today, just at the domain
+root instead of `/accountant/…`.

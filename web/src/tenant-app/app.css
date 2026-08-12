@@ -324,6 +324,153 @@
 .ka-bot-btn.back { background: var(--accent2); color: var(--bg); }
 
 /* ============================================================
+   KHULASA (الخلاصة) — كانت ناقصة بالكامل من هذا الملف رغم إن
+   KhulasaPage.tsx يستخدم هذي الأصناف؛ منقولة الآن حرفياً من index.html
+   (كانت بالسطر 595-664) — نفس القيم بدون أي تغيير
+============================================================ */
+#pageKhulasa { background: var(--bg); }
+.kh-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.kh-date {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+}
+.kh-title { font-size: 19px; font-weight: 900; color: var(--gold); }
+.kh-rate-wrap { display: flex; align-items: center; gap: 6px; }
+.kh-rate-lbl { color: var(--text-dim); font-size: 11px; font-weight: 700; }
+.kh-rate-input {
+  width: 80px;
+  background: #071e38;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 5px 6px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--gold);
+  text-align: center;
+  direction: ltr;
+}
+.kh-rate-input:focus { outline: none; border-color: var(--gold); }
+.kh-page { padding: 12px 14px; max-width: 480px; margin: 0 auto; padding-bottom: 85px; }
+.kh-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; padding: 6px 4px; }
+.kh-col-lbl { color: var(--gold); font-size: 12px; font-weight: 900; text-align: center; }
+.kh-hr { border: none; border-top: 2px solid var(--border2); margin: 2px 0 8px; }
+.kh-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+  padding: 9px 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+}
+.kh-val {
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--accent);
+  direction: ltr;
+}
+.kh-val.dolar { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); color: var(--gold); }
+.kh-val.neg { background: rgba(251, 113, 133, 0.12); border-color: rgba(251, 113, 133, 0.4); color: var(--red); }
+.kh-lbl {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--text2);
+}
+.kh-row.total { background: var(--bg3); border-color: var(--border2); }
+.kh-row.total .kh-val { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.35); color: var(--gold); }
+.kh-row.total .kh-val.neg { background: rgba(251, 113, 133, 0.12); border-color: rgba(251, 113, 133, 0.4); color: var(--red); }
+.kh-row.total .kh-lbl { background: var(--accent2); border-color: var(--accent); color: #fff; }
+.kh-net-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.kh-net-card {
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 900;
+  direction: ltr;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+}
+.kh-net-card.dolar { background: rgba(251, 191, 36, 0.1); border-color: var(--gold); color: var(--gold); }
+.kh-net-card.neg { background: rgba(251, 113, 133, 0.12); border-color: var(--red); color: var(--red); }
+.kh-net-lbl {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text2);
+}
+.kh-note {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  text-align: right;
+}
+.kh-note b { color: var(--text2); }
+.kh-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  z-index: 200;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.kh-tbtn {
+  padding: 11px;
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  border: none;
+  cursor: pointer;
+}
+.kh-tbtn.primary { flex: 2; background: var(--gold); color: var(--bg); }
+.kh-tbtn.ghost { flex: 1; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+
+/* ============================================================
    SANDOOQ — toolbar / jiha box / search modal
 ============================================================ */
 .s-toolbar {

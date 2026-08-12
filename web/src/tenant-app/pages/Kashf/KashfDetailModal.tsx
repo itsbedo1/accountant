@@ -1,3 +1,5 @@
+import { useModalA11y } from '../../../shared/useModalA11y'
+
 // منقولة من modalKashfDetail (index.html:873) — krDetail() (كانت بالسطر 2668)
 export interface KashfDetailData {
   sand: string
@@ -12,9 +14,10 @@ export interface KashfDetailData {
 }
 
 export default function KashfDetailModal({ open, data, onClose }: { open: boolean; data: KashfDetailData | null; onClose: () => void }) {
+  const panelRef = useModalA11y(open, onClose)
   return (
     <div className={`modal-ov${open ? ' show' : ''}`}>
-      <div className="modal-box dark">
+      <div className="modal-box dark" ref={panelRef} role="dialog" aria-modal="true" tabIndex={-1}>
         <h3 className="modal-h3 dark">تفاصيل الحركة</h3>
         <div className="mrow">
           <span className="ml">رقم السند</span>

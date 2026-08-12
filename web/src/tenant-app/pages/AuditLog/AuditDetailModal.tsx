@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { AL_ACTION_META, AL_FIELD_LABELS, type AuditLogEntry } from './auditLogTypes'
+import { useModalA11y } from '../../../shared/useModalA11y'
 
 // منقولة من modalAuditDetail (index.html:1755) — alDetail() (كانت بالسطر 2949)
 export default function AuditDetailModal({ open, entry, onClose }: { open: boolean; entry: AuditLogEntry | null; onClose: () => void }) {
+  const panelRef = useModalA11y(open && entry != null, onClose)
   if (!entry) return null
   const meta = AL_ACTION_META[entry.action] || AL_ACTION_META.update
   const tableLabel = entry.table_name === 'sayarfa_moves' ? 'حركة صيرفة' : 'حركة صندوق'
@@ -37,7 +39,7 @@ export default function AuditDetailModal({ open, entry, onClose }: { open: boole
 
   return (
     <div className={`modal-ov${open ? ' show' : ''}`}>
-      <div className="modal-box dark">
+      <div className="modal-box dark" ref={panelRef} role="dialog" aria-modal="true" tabIndex={-1}>
         <h3 className="modal-h3 dark">
           {meta.icon} {meta.label} — {tableLabel}
         </h3>

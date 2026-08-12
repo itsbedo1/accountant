@@ -319,6 +319,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               <div style={{ color: 'var(--text2)', fontSize: 11, fontWeight: 700, marginBottom: 4, textAlign: 'right' }}>تاريخ السند</div>
               <input
                 type="date"
+                aria-label="تاريخ السند"
                 value={form.tarikh}
                 onChange={(e) => setForm((f) => ({ ...f, tarikh: e.target.value }))}
                 style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 12, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
@@ -328,6 +329,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               <div style={{ color: 'var(--text2)', fontSize: 11, fontWeight: 700, marginBottom: 4, textAlign: 'right' }}>رقم السند</div>
               <input
                 type="text"
+                aria-label="رقم السند"
                 value={form.raqm}
                 onChange={(e) => setForm((f) => ({ ...f, raqm: e.target.value }))}
                 style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
@@ -343,6 +345,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
             type="text"
             readOnly
             placeholder="اضغط لاختيار الحساب ▾"
+            aria-label="الحساب الرئيسي"
             value={form.hesab}
             onClick={() => setHesabOpen(true)}
             style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', direction: 'rtl', marginBottom: 10 }}
@@ -356,6 +359,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                   type="text"
                   readOnly
                   placeholder="رقم"
+                  aria-label="رقم العميل"
                   value={form.amilId ?? ''}
                   style={{ background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 6px', fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 700, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
                 />
@@ -363,6 +367,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                   type="text"
                   readOnly
                   placeholder="اضغط لاختيار العميل ▾"
+                  aria-label="العميل"
                   value={form.amilName}
                   onClick={() => setAmilOpen(true)}
                   style={{ background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', direction: 'rtl' }}
@@ -394,6 +399,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               <input
                 type="text"
                 inputMode="decimal"
+                aria-label="دولار $"
                 value={form.mabDStr}
                 onChange={(e) => setForm((f) => ({ ...f, mabDStr: formatAmountInput(e.target.value) }))}
                 style={{ width: '100%', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 6, padding: 8, fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, color: 'var(--gold)', textAlign: 'center', direction: 'ltr' }}
@@ -404,6 +410,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               <input
                 type="text"
                 inputMode="numeric"
+                aria-label="دينار IQD"
                 value={form.mabDinStr}
                 onChange={(e) => setForm((f) => ({ ...f, mabDinStr: formatAmountInput(e.target.value) }))}
                 style={{ width: '100%', background: 'var(--bg2)', border: '1.5px solid var(--border2)', borderRadius: 6, padding: 8, fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, color: 'var(--accent)', textAlign: 'center', direction: 'ltr' }}
@@ -420,6 +427,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               <input
                 type="text"
                 readOnly
+                aria-label="جهة الصرف"
                 value={form.jiha}
                 onClick={() => setJihaOpen(true)}
                 className={`jiha-box${form.jiha !== 'الصندوق' ? ' customer' : ''}`}
@@ -431,6 +439,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               <input
                 type="text"
                 placeholder="اختياري"
+                aria-label="رقم الصك/الفيشة"
                 value={form.sak}
                 onChange={(e) => setForm((f) => ({ ...f, sak: e.target.value }))}
                 style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl' }}
@@ -441,6 +450,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
             <div style={{ color: 'var(--text2)', fontSize: 11, fontWeight: 700, marginBottom: 4, textAlign: 'right' }}>الملاحظات</div>
             <textarea
               placeholder="أدخل أي ملاحظات..."
+              aria-label="الملاحظات"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl', resize: 'none', height: 60 }}

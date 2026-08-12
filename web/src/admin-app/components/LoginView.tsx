@@ -22,13 +22,24 @@ export default function LoginView({ doLogin, notOwnerError }: { doLogin: ReturnT
         <div className="login-logo">لوحة إدارة الشركات</div>
         <div className="login-sub">دخول مالك النظام فقط</div>
         <div className="login-lbl">البريد الإلكتروني</div>
-        <input type="email" className="login-input" autoComplete="username" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input
+          type="email"
+          className="login-input"
+          autoComplete="username"
+          placeholder="you@example.com"
+          aria-label="البريد الإلكتروني"
+          aria-describedby="login-err"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <div className="login-lbl">كلمة المرور</div>
         <input
           type="password"
           className="login-input"
           autoComplete="current-password"
           placeholder="••••••••"
+          aria-label="كلمة المرور"
+          aria-describedby="login-err"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => {
@@ -38,7 +49,9 @@ export default function LoginView({ doLogin, notOwnerError }: { doLogin: ReturnT
         <button className="login-btn" disabled={busy} onClick={() => void submit()}>
           {busy ? '⏳ جاري الدخول...' : 'دخول'}
         </button>
-        <div className="login-err">{err || (notOwnerError ? '❌ هذا الحساب ما عنده صلاحية دخول لوحة الإدارة' : '')}</div>
+        <div id="login-err" className="login-err" role="alert">
+          {err || (notOwnerError ? '❌ هذا الحساب ما عنده صلاحية دخول لوحة الإدارة' : '')}
+        </div>
       </div>
     </div>
   )

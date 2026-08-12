@@ -48,6 +48,7 @@ export default function CustomerManager({ confirmPin }: { confirmPin: (label: st
           <input
             type="text"
             readOnly
+            aria-label="رقم العميل التالي"
             value={nextId}
             style={{ width: '100%', background: 'var(--bg3)', border: '1.5px solid var(--border)', borderRadius: 7, padding: '8px 4px', fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', textAlign: 'center', direction: 'ltr' }}
           />
@@ -57,6 +58,7 @@ export default function CustomerManager({ confirmPin }: { confirmPin: (label: st
           <input
             type="text"
             placeholder="أدخل اسم العميل"
+            aria-label="اسم العميل"
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl' }}
@@ -120,6 +122,7 @@ function AmountField({ label, color, borderColor, value, onChange, small }: { la
       <input
         type="text"
         inputMode="decimal"
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(formatAmountInput(e.target.value))}
         style={{ width: '100%', background: 'var(--bg2)', border: `1.5px solid ${borderColor}`, borderRadius: 6, padding: 8, fontFamily: "'Cairo',sans-serif", fontSize: small ? 13 : 14, fontWeight: 900, color, textAlign: 'center', direction: 'ltr' }}

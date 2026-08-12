@@ -63,7 +63,7 @@ export default defineConfig({
       manifest: false,
       injectManifest: {
         // الملفات المخزّنة مسبقاً — التطبيق الرئيسي بس (نفس نطاق manifest.json الأصلي)
-        globPatterns: ['**/index.html', 'assets/app-*.{js,css}', 'assets/react-*.js', 'assets/jsx-runtime-*.js', 'icon-*.png'],
+        globPatterns: ['**/index.html', 'assets/app-*.{js,css}', 'assets/react-*.js', 'assets/jsx-runtime-*.js', 'assets/vendor-*.js', 'icon-*.png'],
       },
       devOptions: { enabled: false },
     }),
@@ -74,6 +74,21 @@ export default defineConfig({
         app: resolve(dirname, 'index.html'),
         admin: resolve(dirname, 'admin.html'),
         landing: resolve(dirname, 'landing.html'),
+      },
+      output: {
+        // أسماء ثابتة بدل الاعتماد على تخمين Rollup التلقائي لاسم الـchunk
+        // المشترك — كان يسمّيه حسب أي موديول "يمثّله" حسب ترتيب داخلي، فأي
+        // ملف مشترك جديد (زي useModalA11y) يقدر يغيّر الاسم ويكسر globPatterns
+        // بالأسفل اللي تتوقع "react-*.js"/"jsx-runtime-*.js" بالضبط
+        manualChunks(id) {
+          if (!id.includes('/node_modules/')) return
+          if (id.includes('/node_modules/react/jsx-runtime')) return 'jsx-runtime'
+          if (id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react/') || id.includes('/node_modules/scheduler/')) return 'react'
+          // باقي مكتبات node_modules المشتركة (zustand/immer/@supabase) —
+          // بدون هذا كانت كلها تنكب بچنك واحد كبير Rollup يسمّيه عشوائياً
+          // حسب أي ملف مشترك بالتطبيق يصادف يستورد منه أول شي
+          return 'vendor'
+        },
       },
     },
   },

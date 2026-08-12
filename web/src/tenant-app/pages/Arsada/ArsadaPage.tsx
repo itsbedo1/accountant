@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { fmt } from '../../../shared/format'
+import { onActivateKey } from '../../../shared/a11y'
 import { toast } from '../../../shared/useToast'
 import { useDataStore } from '../../state/useDataStore'
 import { useSmartPrint, SmartPrintOverlay } from '../../components/SmartPrint'
@@ -99,7 +100,7 @@ export default function ArsadaPage({ goPage, openKashfAmil }: { goPage: (id: str
     <div id="pageArsada" className="page active">
       <div className="ar-header">
         <div className="ar-title">أرصدة العملاء</div>
-        <input className="ar-search" type="text" placeholder="🔍 بحث..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="ar-search" type="text" placeholder="🔍 بحث..." aria-label="بحث" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       <div className="ar-legend">
@@ -112,26 +113,51 @@ export default function ArsadaPage({ goPage, openKashfAmil }: { goPage: (id: str
           const star = c.dL > 50000 || c.dinL > 10000000 ? '⭐' : ''
           const tgIcon = c.tgChatId ? '✅' : '📨'
           return (
-            <div key={c.id} className="ar-card" onClick={() => openKashfAmil(c.id)}>
+            <div
+              key={c.id}
+              className="ar-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => openKashfAmil(c.id)}
+              onKeyDown={onActivateKey(() => openKashfAmil(c.id))}
+            >
               <div className="ar-card-top">
                 <span className="ar-card-name">{c.name}</span>
                 <span
                   className="ar-card-star"
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => {
                     e.stopPropagation()
                     copyTelegramLink(c)
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    e.stopPropagation()
+                    copyTelegramLink(c)
+                  }}
                   title={c.tgChatId ? 'مربوط بتليجرام' : 'انسخ رابط ربط تليجرام'}
+                  aria-label={c.tgChatId ? 'مربوط بتليجرام' : 'انسخ رابط ربط تليجرام'}
                 >
                   {tgIcon}
                 </span>
                 <span
                   className="ar-card-star"
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => {
                     e.stopPropagation()
                     void sendBalanceReminder(c)
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    e.stopPropagation()
+                    void sendBalanceReminder(c)
+                  }}
                   title="إرسال تذكير برصيده الحالي"
+                  aria-label="إرسال تذكير برصيده الحالي"
                 >
                   🔔
                 </span>

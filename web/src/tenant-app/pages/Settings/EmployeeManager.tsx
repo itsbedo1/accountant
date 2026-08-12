@@ -100,6 +100,7 @@ export default function EmployeeManager() {
         <input
           type="email"
           placeholder="إيميل الموظف الجديد"
+          aria-label="إيميل الموظف الجديد"
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           style={{ flex: 1, background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr', textAlign: 'right' }}

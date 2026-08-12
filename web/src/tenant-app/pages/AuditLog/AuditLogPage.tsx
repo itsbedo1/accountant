@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { sbFetchAll } from '../../../shared/sbFetch'
 import { toLocalISODate, todayISO } from '../../../shared/date'
+import { onActivateKey } from '../../../shared/a11y'
 import { AL_ACTION_META, type AuditLogEntry } from './auditLogTypes'
 import AuditDetailModal from './AuditDetailModal'
 
@@ -55,9 +56,9 @@ export default function AuditLogPage({ goPage }: { goPage: (id: string) => void 
         </div>
         <div className="kr-date-row">
           <span className="kr-date-lbl">من</span>
-          <input className="kr-date-in" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <input className="kr-date-in" type="date" aria-label="من تاريخ" value={from} onChange={(e) => setFrom(e.target.value)} />
           <span className="kr-date-lbl">الى</span>
-          <input className="kr-date-in" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <input className="kr-date-in" type="date" aria-label="الى تاريخ" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
       </div>
 
@@ -72,7 +73,14 @@ export default function AuditLogPage({ goPage }: { goPage: (id: string) => void 
           const raqm = (data.raqm as string) || (e.table_name === 'sayarfa_moves' ? 'صيرفة' : '—')
           const when = new Date(e.created_at).toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' })
           return (
-            <div key={i} className="kr-card" onClick={() => setDetailIdx(i)}>
+            <div
+              key={i}
+              className="kr-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => setDetailIdx(i)}
+              onKeyDown={onActivateKey(() => setDetailIdx(i))}
+            >
               <div className="kr-card-top">
                 <span className={`kr-card-noa ${meta.cls}`}>
                   {meta.icon} {meta.label}

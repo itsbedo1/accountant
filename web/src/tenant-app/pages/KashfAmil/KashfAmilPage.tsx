@@ -156,10 +156,10 @@ export default function KashfAmilPage({ customerId, goPage }: { customerId: numb
         </div>
         <div className="ka-date-row">
           <span className="ka-date-lbl">من</span>
-          <input className="ka-date-in" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <input className="ka-date-in" type="date" aria-label="من تاريخ" value={from} onChange={(e) => setFrom(e.target.value)} />
           <span className="ka-date-lbl">الى</span>
-          <input className="ka-date-in" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          <button className="ka-filter-btn" onClick={() => {}}>
+          <input className="ka-date-in" type="date" aria-label="الى تاريخ" value={to} onChange={(e) => setTo(e.target.value)} />
+          <button className="ka-filter-btn" onClick={() => toast('✅ تم تحديث الفترة')}>
             عرض
           </button>
         </div>

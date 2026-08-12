@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Customer } from './types'
+import { useModalA11y } from './useModalA11y'
 
 // نسخة موحّدة من modalAmil (index.html:853) و modalSfAmil (index.html:863) —
 // كانا نفس المنطق حرفياً (اختيار عميل من قائمة قابلة للبحث)، فقط IDs مختلفة
@@ -20,15 +21,17 @@ export default function AmilPickerModal({
 }) {
   const [q, setQ] = useState('')
   const filtered = q.trim() ? customers.filter((c) => c.name.includes(q.trim())) : customers
+  const panelRef = useModalA11y(open, onClose)
 
   return (
     <div className={`modal-ov${open ? ' show' : ''}`}>
-      <div className="modal-box green">
+      <div className="modal-box green" ref={panelRef} role="dialog" aria-modal="true" tabIndex={-1}>
         <h3 className="modal-h3 light">{title}</h3>
         <input
           className="search-input"
           type="text"
           placeholder="🔍 بحث عن عميل..."
+          aria-label="بحث عن عميل"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />

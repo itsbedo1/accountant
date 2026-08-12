@@ -93,6 +93,7 @@ export default function SettingsPage({
                 <input
                   type="text"
                   placeholder="المنير للصيرفة"
+                  aria-label="اسم الشركة / الصيرفة"
                   value={compName}
                   onChange={(e) => setCompName(e.target.value)}
                   style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text)', direction: 'rtl' }}
@@ -102,6 +103,7 @@ export default function SettingsPage({
                 <div style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 700, marginBottom: 5, textAlign: 'right' }}>تاريخ بداية العمل بالبرنامج</div>
                 <input
                   type="date"
+                  aria-label="تاريخ بداية العمل بالبرنامج"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
@@ -117,6 +119,7 @@ export default function SettingsPage({
               <input
                 type="text"
                 placeholder="123456:ABC-DEF..."
+                aria-label="توكن البوت (من BotFather)"
                 value={tgToken}
                 onChange={(e) => setTgToken(e.target.value)}
                 style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr' }}
@@ -134,6 +137,7 @@ export default function SettingsPage({
                     type="number"
                     min={0}
                     step={0.01}
+                    aria-label="الرصيد الافتتاحي دولار"
                     value={initDStr}
                     onChange={(e) => setInitDStr(e.target.value)}
                     style={{ width: '100%', background: '#071e38', border: '2px solid rgba(251,191,36,.5)', borderRadius: 7, padding: '10px 8px', fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
@@ -145,6 +149,7 @@ export default function SettingsPage({
                     type="number"
                     min={0}
                     step={1}
+                    aria-label="الرصيد الافتتاحي دينار"
                     value={initDinStr}
                     onChange={(e) => setInitDinStr(e.target.value)}
                     style={{ width: '100%', background: '#071e38', border: '2px solid rgba(34,211,238,.5)', borderRadius: 7, padding: '10px 8px', fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
@@ -174,6 +179,7 @@ export default function SettingsPage({
                 type="number"
                 min={1}
                 step={1}
+                aria-label="سعر الصرف (دينار لكل دولار)"
                 value={rateStr}
                 onChange={(e) => setRateStr(e.target.value)}
                 style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '10px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}

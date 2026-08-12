@@ -170,6 +170,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
                 type="text"
                 readOnly
                 placeholder="اضغط لاختيار العميل ▾"
+                aria-label="العميل"
                 value={selectedAmil?.name || ''}
                 onClick={() => setAmilModalOpen(true)}
                 style={{ width: '100%', background: '#071e38', border: '2px solid rgba(34,211,238,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text)', textAlign: 'center', cursor: 'pointer' }}
@@ -205,6 +206,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
               <input
                 type="text"
                 inputMode="numeric"
+                aria-label="سعر الصرف (دينار لكل دولار)"
                 value={rateStr}
                 onChange={(e) => onRateChange(e.target.value)}
                 style={{ flex: 1, background: 'var(--bg3)', border: '2px solid var(--border2)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 18, fontWeight: 900, color: 'var(--gold)', textAlign: 'center', direction: 'ltr' }}
@@ -222,6 +224,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
             <input
               type="text"
               inputMode="decimal"
+              aria-label="مبلغ الدولار $"
               value={mabDStr}
               onChange={(e) => onMabDChange(e.target.value)}
               style={{ width: '100%', background: 'var(--bg3)', border: '2px solid rgba(251,191,36,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 18, fontWeight: 900, color: 'var(--gold)', textAlign: 'center', direction: 'ltr' }}
@@ -237,6 +240,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
             <input
               type="text"
               inputMode="numeric"
+              aria-label="مبلغ الدينار IQD"
               value={mabDinStr}
               onChange={(e) => onMabDinChange(e.target.value)}
               style={{ width: '100%', background: 'var(--bg3)', border: '2px solid rgba(34,211,238,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 18, fontWeight: 900, color: 'var(--accent)', textAlign: 'center', direction: 'ltr' }}
@@ -268,6 +272,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
           <div style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 700, marginBottom: 5, textAlign: 'right' }}>ملاحظات</div>
           <textarea
             placeholder="اختياري..."
+            aria-label="ملاحظات"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl', resize: 'none', height: 55 }}
@@ -282,7 +287,11 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
         <button onClick={reset} style={{ flex: 1, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer' }}>
           🔄 مسح
         </button>
-        <button onClick={() => goPage('pageMain')} style={{ flex: 1, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer' }}>
+        <button
+          onClick={() => goPage('pageMain')}
+          aria-label="الرئيسية"
+          style={{ flex: 1, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer' }}
+        >
           🏠
         </button>
       </div>

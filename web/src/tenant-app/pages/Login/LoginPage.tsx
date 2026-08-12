@@ -27,6 +27,8 @@ export default function LoginPage({ doLogin }: { doLogin: ReturnType<typeof useA
           className="login-input"
           autoComplete="username"
           placeholder="you@example.com"
+          aria-label="البريد الإلكتروني"
+          aria-describedby="login-err"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -36,6 +38,8 @@ export default function LoginPage({ doLogin }: { doLogin: ReturnType<typeof useA
           className="login-input"
           autoComplete="current-password"
           placeholder="••••••••"
+          aria-label="كلمة المرور"
+          aria-describedby="login-err"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => {
@@ -45,7 +49,9 @@ export default function LoginPage({ doLogin }: { doLogin: ReturnType<typeof useA
         <button id="btnLogin" className="login-btn" disabled={busy} onClick={() => void submit()}>
           {busy ? 'جاري الدخول...' : 'دخول'}
         </button>
-        <div className="login-err">{err}</div>
+        <div id="login-err" className="login-err" role="alert">
+          {err}
+        </div>
       </div>
     </div>
   )

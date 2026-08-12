@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Customer } from '../../../shared/types'
+import { useModalA11y } from '../../../shared/useModalA11y'
 
 // منقولة من modalJiha (index.html:840) — openJihaModal/filterJihaList/selJiha
 // (كانت بالسطر 2143-2168)
@@ -16,6 +17,7 @@ export default function JihaPickerModal({
 }) {
   const [q, setQ] = useState('')
   const filtered = q.trim() ? customers.filter((c) => c.name.includes(q.trim())) : customers
+  const panelRef = useModalA11y(open, onClose)
 
   function select(v: string) {
     onSelect(v)
@@ -24,7 +26,7 @@ export default function JihaPickerModal({
 
   return (
     <div className={`modal-ov${open ? ' show' : ''}`}>
-      <div className="modal-box green">
+      <div className="modal-box green" ref={panelRef} role="dialog" aria-modal="true" tabIndex={-1}>
         <h3 className="modal-h3 light">جهة الصرف</h3>
         <button
           className="modal-opt"
@@ -50,6 +52,7 @@ export default function JihaPickerModal({
           className="search-input"
           type="text"
           placeholder="🔍 بحث عن زبون..."
+          aria-label="بحث عن زبون"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />

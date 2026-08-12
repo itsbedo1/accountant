@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { fmt } from '../../../shared/format'
 import { todayISO } from '../../../shared/date'
+import { onActivateKey } from '../../../shared/a11y'
 import { useDataStore } from '../../state/useDataStore'
 import { openPrintDocument } from '../../print/openPrintDocument'
 import { buildKashfPrintHtml } from '../../print/kashfPrint'
@@ -131,6 +132,10 @@ export default function KashfPage({ goPage }: { goPage: (id: string) => void }) 
     setDetailOpen(true)
   }
 
+  function openSabiqDetail() {
+    openDetail({ sand: '', date: '', name: 'رصيد سابق', noa: '', wared: 0, sader: 0, raseed: prevBal, notes: '' })
+  }
+
   function print() {
     const html = buildKashfPrintHtml({ isDolar, settings, moves, sayarfaMoves, from, to })
     openPrintDocument(html)
@@ -144,9 +149,9 @@ export default function KashfPage({ goPage }: { goPage: (id: string) => void }) 
         </div>
         <div className="kr-date-row">
           <span className="kr-date-lbl">من</span>
-          <input className="kr-date-in" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <input className="kr-date-in" type="date" aria-label="من تاريخ" value={from} onChange={(e) => setFrom(e.target.value)} />
           <span className="kr-date-lbl">الى</span>
-          <input className="kr-date-in" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <input className="kr-date-in" type="date" aria-label="الى تاريخ" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         <div className="kr-btn-row">
           <button className={`kr-fbtn dolar${isDolar ? ' act' : ''}`} onClick={() => setKrCurrency('dolar')}>
@@ -159,7 +164,13 @@ export default function KashfPage({ goPage }: { goPage: (id: string) => void }) 
       </div>
 
       <div className="kr-tbody">
-        <div className="kr-card sabiq" onClick={() => openDetail({ sand: '', date: '', name: 'رصيد سابق', noa: '', wared: 0, sader: 0, raseed: prevBal, notes: '' })}>
+        <div
+          className="kr-card sabiq"
+          role="button"
+          tabIndex={0}
+          onClick={openSabiqDetail}
+          onKeyDown={onActivateKey(openSabiqDetail)}
+        >
           <div className="kr-card-top">
             <span className="kr-card-icon">📌</span>
             <span className="kr-card-name">رصيد سابق</span>
@@ -181,7 +192,14 @@ export default function KashfPage({ goPage }: { goPage: (id: string) => void }) 
         </div>
 
         {cards.map((c) => (
-          <div key={c.key} className={`kr-card${c.sayarfa ? ' sayarfa' : ''}`} onClick={() => openDetail(c.detail)}>
+          <div
+            key={c.key}
+            className={`kr-card${c.sayarfa ? ' sayarfa' : ''}`}
+            role="button"
+            tabIndex={0}
+            onClick={() => openDetail(c.detail)}
+            onKeyDown={onActivateKey(() => openDetail(c.detail))}
+          >
             <div className="kr-card-top">
               {c.sayarfa ? (
                 <span className="kr-card-icon">💱</span>

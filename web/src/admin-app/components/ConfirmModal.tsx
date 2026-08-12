@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { useModalA11y } from '../../shared/useModalA11y'
 
 interface ModalOptions {
   title?: string
@@ -47,9 +48,10 @@ export function useConfirmModal() {
 }
 
 export function ConfirmModal({ modalState, setInputValue, confirm, cancel }: ReturnType<typeof useConfirmModal>) {
+  const panelRef = useModalA11y(modalState.open, cancel)
   return (
     <div className="modal-overlay" style={{ display: modalState.open ? 'flex' : 'none' }}>
-      <div className="modal-box">
+      <div className="modal-box" ref={panelRef} role="dialog" aria-modal="true" tabIndex={-1}>
         <div className="modal-title">{modalState.title}</div>
         <div className="modal-msg">{modalState.msg}</div>
         {modalState.withInput && (

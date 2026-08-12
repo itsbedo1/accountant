@@ -1,5 +1,6 @@
 import type { MoveDraft } from '../../api/moves'
 import type { Move } from '../../../shared/types'
+import { useModalA11y } from '../../../shared/useModalA11y'
 
 // منقولة من modalConfirmSave (index.html:766) — sSave() تبني محتواه
 // (كانت بالسطر 2219-2278)، confirmAndSave() ينفذ الحفظ (كانت بالسطر 2282)
@@ -18,6 +19,7 @@ export default function ConfirmSaveModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const panelRef = useModalA11y(open && draft != null, onCancel)
   if (!draft) return null
   const wasEdit = old != null
   const isQabdh = draft.noa === 'قبض'
@@ -26,7 +28,14 @@ export default function ConfirmSaveModal({
 
   return (
     <div className={`modal-ov${open ? ' show' : ''}`}>
-      <div className="modal-box dark" style={{ background: 'var(--bg2)', border: '1.5px solid var(--border2)' }}>
+      <div
+        className="modal-box dark"
+        style={{ background: 'var(--bg2)', border: '1.5px solid var(--border2)' }}
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+      >
         <h3 className="modal-h3 dark" style={{ color: 'var(--accent)' }}>
           📋 تأكيد الحركة
         </h3>

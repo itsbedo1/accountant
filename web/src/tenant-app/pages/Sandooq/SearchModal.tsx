@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { fmtAmount } from '../../../shared/format'
 import type { Move } from '../../../shared/types'
+import { useModalA11y } from '../../../shared/useModalA11y'
+import { onActivateKey } from '../../../shared/a11y'
 
 // منقولة من modalSearch + openSearchModal/filterSearch/loadFromSearch
 // (index.html:909, 3265-3333)
@@ -48,14 +50,17 @@ export default function SearchModal({
     setQ('')
   }
 
+  const panelRef = useModalA11y(open, onClose)
+
   return (
     <div className={`modal-ov${open ? ' show' : ''}`}>
-      <div className="modal-box green">
+      <div className="modal-box green" ref={panelRef} role="dialog" aria-modal="true" tabIndex={-1}>
         <h3 className="modal-h3 light">🔍 بحث عن تسجيل</h3>
         <input
           className="search-input"
           type="text"
           placeholder="رقم السند أو اسم العميل..."
+          aria-label="رقم السند أو اسم العميل"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -72,7 +77,14 @@ export default function SearchModal({
             const dateStr = r.tarikh ? r.tarikh.split('-').reverse().join('/') : '-'
             const noaCls = r.noa === 'قبض' ? 'si-qabd' : 'si-sarf'
             return (
-              <div key={i} className="search-item" onClick={() => handleLoad(i, r)}>
+              <div
+                key={i}
+                className="search-item"
+                role="button"
+                tabIndex={0}
+                onClick={() => handleLoad(i, r)}
+                onKeyDown={onActivateKey(() => handleLoad(i, r))}
+              >
                 <div className="si-raqm">{r.raqm || '#' + (i + 1)}</div>
                 <div className="si-info">
                   <div className="si-name">{r.amilName || r.jiha || r.hesab || 'بدون اسم'}</div>

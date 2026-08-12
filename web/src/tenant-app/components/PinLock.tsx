@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { toast } from '../../shared/useToast'
+import { useModalA11y } from '../../shared/useModalA11y'
 
 // رمز الحماية 8888 — منقول حرفياً من index.html (PIN_CODE، requirePin/pinPress...)
 // ثابت للتطبيق كامل، مو خاص بكل شركة — نفس السلوك القديم بالضبط، لا نغيّره هنا
@@ -63,9 +64,17 @@ export function usePinGate() {
 }
 
 export function PinModal({ pinState, press, del, clear, cancel }: ReturnType<typeof usePinGate>) {
+  const panelRef = useModalA11y(pinState.open, cancel)
   return (
     <div className={`modal-ov${pinState.open ? ' show' : ''}`}>
-      <div className="modal-box dark" style={{ background: '#1a1a2a', border: '2px solid #f0c040' }}>
+      <div
+        className="modal-box dark"
+        style={{ background: '#1a1a2a', border: '2px solid #f0c040' }}
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+      >
         <h3 className="modal-h3 dark" style={{ color: '#f0c040' }}>
           🔐 رمز الحماية
         </h3>

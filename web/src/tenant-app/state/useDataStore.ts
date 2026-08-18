@@ -6,9 +6,9 @@ import { SB_URL } from '../../shared/supabaseClient'
 import { toast } from '../../shared/useToast'
 import { EMPTY_SETTINGS, type Customer, type Move, type Role, type SayarfaMove, type Settings } from '../../shared/types'
 import { toLocalISODate } from '../../shared/date'
-import { applyAllEffects, reverseAllEffects, type MoveEffect } from '../domain/balanceMath'
+import { applyAllEffects, reverseAllEffects, movementsForApply, movementsForReverse, type MoveEffect, type CustomerMovement } from '../domain/balanceMath'
 import { dbSaveMove, dbDeleteMove, type MoveDraft } from '../api/moves'
-import { dbUpdateCustomerBal, dbCreateCustomer, dbDeleteCustomer } from '../api/customers'
+import { dbSetCustomerBal, dbApplyCustomerMovement, dbCreateCustomer, dbDeleteCustomer } from '../api/customers'
 import { dbSaveSettings } from '../api/settings'
 import { dbSaveSayarfa, type SayarfaDraft } from '../api/sayarfa'
 import { sendTelegramNotif, sendTelegramSayarfaNotif, persistNotifFailed, getFreshChatId } from '../api/telegram'
@@ -16,6 +16,48 @@ import { applyToCustomer } from '../domain/balanceMath'
 
 function toEffect(r: MoveDraft): MoveEffect {
   return { amilId: r.amilId, jiha: r.jiha, noa: r.noa, mabD: r.mabD, mabDin: r.mabDin }
+}
+
+type StoreSet = (fn: (s: DataState) => void) => void
+type StoreGet = () => DataState
+
+/**
+ * ينفّذ حركات العملاء بقاعدة البيانات — كل حركة تنطبّق ذرياً على الرصيد
+ * الحقيقي هناك، مو على نسخة المتصفح، فما تنمسح كتابة مستخدم شغّال بنفس
+ * الوقت. بعدين يزامن النسخة المحلية مع القيم الراجعة (فتتصحح الشاشة
+ * تلقائياً لو كان غيرك عدّل بالوسط).
+ */
+async function runCustomerMovements(movements: CustomerMovement[], set: StoreSet, get: StoreGet): Promise<void> {
+  let failed = 0
+  for (const mv of movements) {
+    const res = await dbApplyCustomerMovement(mv)
+
+    // الـmigration ما انطبّق بعد — رجوع مؤقت للكتابة المطلقة (السلوك القديم)
+    // حتى ما تتوقف الأرصدة نهائياً. يصير فرعاً ميتاً بعد تطبيقه.
+    if (res === 'unavailable') {
+      const local = get().customers.find((x) => x.id === mv.customerId)
+      if (local) await dbSetCustomerBal(local)
+      continue
+    }
+
+    if (!res) {
+      failed++
+      continue
+    }
+
+    set((st) => {
+      const c = st.customers.find((x) => x.id === mv.customerId)
+      if (c) {
+        c.dA = res.dA
+        c.dL = res.dL
+        c.dinA = res.dinA
+        c.dinL = res.dinL
+      }
+    })
+  }
+  if (failed) {
+    toast('⚠️ ماكو تأكيد لتحديث رصيد بعض العملاء — راجع "فحص تطابق الأرصدة" بالإعدادات')
+  }
 }
 
 interface DataState {
@@ -124,6 +166,12 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
     const wasEdit = curIdx >= 0 && curIdx < movesLen
     const old = wasEdit ? get().moves[curIdx] : null
 
+    // قائمة الحركات اللي راح تطبّقها قاعدة البيانات على أرصدة العملاء —
+    // تُبنى قبل أي تعديل محلي، وتقابل حرفياً ما يطبّقه التطبيق التفاؤلي تحت
+    const movements: CustomerMovement[] = []
+    if (old) movements.push(...movementsForReverse(get().customers, toEffect(old)))
+    movements.push(...movementsForApply(get().customers, toEffect(draft)))
+
     // تطبيق تفاؤلي محلي — إذا تعديل، ارجع تأثير القديم أولاً ثم طبّق الجديد
     set((st) => {
       if (old) reverseAllEffects(st.customers, st, toEffect(old))
@@ -141,10 +189,6 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       }
     })
     const newIdx = wasEdit ? curIdx : get().moves.length - 1
-
-    // نلتقط العملاء المتأثرين فعلياً ورصيد كل وحد منهم هنا مباشرة — بشكل متزامن،
-    // قبل أي انتظار async (نفس حماية confirmAndSave الأصلية، كانت بالسطر 2307)
-    const notifyList = buildNotifyList(get().customers, draft)
 
     const savedId = await dbSaveMove({ ...draft, dbId: old?.dbId })
 
@@ -171,19 +215,13 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
     void dbLogAudit('moves', savedId, wasEdit ? 'update' : 'create', wasEdit ? old : null, get().moves[newIdx])
     void dbSaveSettings(get().settings, get().initBalD, get().initBalDin)
 
-    // حدّث أرصدة العملاء المتأثرين بقاعدة البيانات — الحساب الحالي (عميل/جهة
-    // صرف)، وأيضاً القديم إذا التعديل غيّر العميل أو جهة الصرف عن حركة موجودة
-    const balCustomers = new Map<number, Customer>()
-    const addBal = (c: Customer | undefined) => {
-      if (c) balCustomers.set(c.id, c)
-    }
-    if (draft.amilId != null) addBal(get().customers.find((x) => x.id === draft.amilId))
-    addBal(get().customers.find((x) => x.name === draft.jiha))
-    if (old) {
-      if (old.amilId != null) addBal(get().customers.find((x) => x.id === old.amilId))
-      addBal(get().customers.find((x) => x.name === old.jiha))
-    }
-    for (const c of balCustomers.values()) await dbUpdateCustomerBal(c)
+    // حدّث أرصدة العملاء المتأثرين — عكس الحركة القديمة (لو تعديل) ثم تطبيق
+    // الجديدة، كل وحدة ذرياً بقاعدة البيانات
+    await runCustomerMovements(movements, set, get)
+
+    // نلتقط الأرصدة اللي نخبر فيها العملاء *بعد* تزامنها مع قاعدة البيانات،
+    // حتى ما نرسل للعميل رصيداً من نسخة محلية قديمة لو كان غيرنا عدّل بالوسط
+    const notifyList = buildNotifyList(get().customers, draft)
 
     // إشعار تليجرام لكل عميل تأثر فعلياً — بأفضل جهد، بدون انتظار (fire-and-forget)
     for (const n of notifyList) {
@@ -232,22 +270,20 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       void dbLogAudit('moves', rowId, 'delete', r, null)
     }
 
+    const movements = movementsForReverse(get().customers, toEffect(r))
+
     set((st) => {
       reverseAllEffects(st.customers, st, toEffect(r))
       st.moves.splice(curIdx, 1)
     })
 
-    // نلتقط العملاء المتأثرين ورصيدهم بعد الإرجاع مباشرة — نفس منطق saveMove
-    const notifyList = buildNotifyList(get().customers, r)
-
     void dbSaveSettings(get().settings, get().initBalD, get().initBalDin)
 
-    if (r.amilId != null) {
-      const c = get().customers.find((x) => x.id === r.amilId)
-      if (c) void dbUpdateCustomerBal(c)
-    }
-    const jihaC2 = get().customers.find((x) => x.name === r.jiha)
-    if (jihaC2) void dbUpdateCustomerBal(jihaC2)
+    // عكس أثر الحركة على أرصدة العملاء — ذرياً بقاعدة البيانات، نفس منطق saveMove
+    await runCustomerMovements(movements, set, get)
+
+    // بعد التزامن، حتى يوصل العميل رصيده الحقيقي مو نسخة محلية قديمة
+    const notifyList = buildNotifyList(get().customers, r)
 
     for (const n of notifyList) {
       void sendTelegramNotif(
@@ -325,11 +361,6 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       applyToCustomer(draft, noaDin, 0, mabDin)
     })
 
-    // نلتقط رصيد العميل هنا مباشرة (متزامن، فور تطبيق أثر الحركة) — نفس حماية sendTelegramNotif
-    const updated = get().customers.find((x) => x.id === customerId)!
-    const sfCurD = updated.dL - updated.dA
-    const sfCurDin = updated.dinL - updated.dinA
-
     const now = new Date()
     const tarikh = toLocalISODate(now)
     const noteBase = `تحويل عملة (صيرفة) — سعر ${rate.toLocaleString()}` + (notes ? ` — ${notes}` : '')
@@ -345,7 +376,21 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
 
     toast(`✅ تم تحويل عملة حساب ${c.name}`)
 
-    await dbUpdateCustomerBal(updated)
+    // نفس الحركتين المطبّقتين محلياً فوق، بس ذرياً بقاعدة البيانات
+    await runCustomerMovements(
+      [
+        { customerId, noa: noaD, mabD, mabDin: 0 },
+        { customerId, noa: noaDin, mabD: 0, mabDin },
+      ],
+      set,
+      get,
+    )
+
+    // رصيد العميل بعد التزامن — هو اللي نخبره فيه بإشعار تليجرام
+    const updated = get().customers.find((x) => x.id === customerId)!
+    const sfCurD = updated.dL - updated.dA
+    const sfCurDin = updated.dinL - updated.dinA
+
     const savedD = await dbSaveMove(legD)
     const savedDin = await dbSaveMove(legDin)
     set((st) => {
@@ -504,7 +549,8 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
         cust.dinA = newDinA
       }
     })
-    await dbUpdateCustomerBal(get().customers.find((x) => x.id === id)!)
+    // كتابة مطلقة مقصودة هنا: الهدف *فرض* الرصيد الافتتاحي، مو تسجيل حركة
+    await dbSetCustomerBal(get().customers.find((x) => x.id === id)!)
     toast(`✅ تم استرجاع رصيد ${c.name}`)
   },
 

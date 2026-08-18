@@ -29,6 +29,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
   const [mabDStr, setMabDStr] = useState('0')
   const [mabDinStr, setMabDinStr] = useState('0')
   const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const selectedAmil = selectedAmilId != null ? customers.find((c) => c.id === selectedAmilId) : null
 
@@ -100,7 +101,11 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
     setSelectedAmilId(null)
   }
 
-  function save() {
+  async function save() {
+    if (saving) {
+      toast('⏳ فيه حفظ سابق لا يزال قيد التنفيذ — انتظر لحظة')
+      return
+    }
     if (!type) {
       toast('⚠️ اختر نوع العملية')
       return
@@ -114,16 +119,21 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
       return
     }
 
-    if (mode === 'ذمم عملاء') {
-      if (!selectedAmilId) {
-        toast('⚠️ اختر عميل أولاً')
-        return
-      }
-      void saveSayarfaAmil(selectedAmilId, type, mabD, mabDin, rate, notes)
-    } else {
-      saveSayarfaCash(type, mabD, mabDin, rate, notes)
+    if (mode === 'ذمم عملاء' && !selectedAmilId) {
+      toast('⚠️ اختر عميل أولاً')
+      return
     }
-    reset()
+
+    setSaving(true)
+    const ok =
+      mode === 'ذمم عملاء'
+        ? await saveSayarfaAmil(selectedAmilId!, type, mabD, mabDin, rate, notes)
+        : await saveSayarfaCash(type, mabD, mabDin, rate, notes)
+    setSaving(false)
+
+    // ما نفرّغ النموذج إلا لو انحفظت فعلاً — قبل هذا كان يتفرّغ دائماً، فلو
+    // فشل الحفظ يخسر المستخدم ما أدخله بدون ما يدري إنه فشل أصلاً
+    if (ok) reset()
   }
 
   return (
@@ -141,13 +151,13 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
             {mode === 'ذمم عملاء' ? 'رصيد العميل الحالي' : 'رصيد القاصة الحالي'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div style={{ background: 'rgba(240,192,64,0.15)', border: '1.5px solid rgba(240,192,64,0.4)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
-              <div style={{ color: '#f0c040', fontSize: 10, fontWeight: 700, marginBottom: 3 }}>دولار $</div>
-              <div style={{ color: '#f0e060', fontSize: 16, fontWeight: 900, direction: 'ltr' }}>{curBalD == null ? '—' : curBalD.toLocaleString()}</div>
+            <div style={{ background: 'rgba(251,191,36,0.15)', border: '1.5px solid rgba(251,191,36,0.4)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+              <div style={{ color: 'var(--gold)', fontSize: 10, fontWeight: 700, marginBottom: 3 }}>دولار $</div>
+              <div style={{ color: 'var(--gold)', fontSize: 16, fontWeight: 900, direction: 'ltr' }}>{curBalD == null ? '—' : curBalD.toLocaleString()}</div>
             </div>
-            <div style={{ background: 'rgba(96,216,160,0.15)', border: '1.5px solid rgba(96,216,160,0.4)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
-              <div style={{ color: '#60d8a0', fontSize: 10, fontWeight: 700, marginBottom: 3 }}>دينار IQD</div>
-              <div style={{ color: '#80ffb8', fontSize: 14, fontWeight: 900, direction: 'ltr' }}>{curBalDin == null ? '—' : curBalDin.toLocaleString()}</div>
+            <div style={{ background: 'rgba(57,255,136,0.15)', border: '1.5px solid rgba(57,255,136,0.4)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+              <div style={{ color: 'var(--accent)', fontSize: 10, fontWeight: 700, marginBottom: 3 }}>دينار IQD</div>
+              <div style={{ color: 'var(--accent)', fontSize: 14, fontWeight: 900, direction: 'ltr' }}>{curBalDin == null ? '—' : curBalDin.toLocaleString()}</div>
             </div>
           </div>
         </div>
@@ -173,7 +183,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
                 aria-label="العميل"
                 value={selectedAmil?.name || ''}
                 onClick={() => setAmilModalOpen(true)}
-                style={{ width: '100%', background: '#071e38', border: '2px solid rgba(34,211,238,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text)', textAlign: 'center', cursor: 'pointer' }}
+                style={{ width: '100%', background: 'var(--input-bg)', border: '2px solid rgba(57,255,136,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text)', textAlign: 'center', cursor: 'pointer' }}
               />
             </div>
           )}
@@ -243,7 +253,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
               aria-label="مبلغ الدينار IQD"
               value={mabDinStr}
               onChange={(e) => onMabDinChange(e.target.value)}
-              style={{ width: '100%', background: 'var(--bg3)', border: '2px solid rgba(34,211,238,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 18, fontWeight: 900, color: 'var(--accent)', textAlign: 'center', direction: 'ltr' }}
+              style={{ width: '100%', background: 'var(--bg3)', border: '2px solid rgba(57,255,136,.4)', borderRadius: 8, padding: 10, fontFamily: "'Cairo',sans-serif", fontSize: 18, fontWeight: 900, color: 'var(--accent)', textAlign: 'center', direction: 'ltr' }}
             />
           </div>
         </div>
@@ -255,13 +265,13 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
               بعد العملية — {mode === 'ذمم عملاء' ? 'رصيد العميل' : 'رصيد القاصة'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div style={{ background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.3)', borderRadius: 8, padding: 8, textAlign: 'center' }}>
-                <div style={{ color: '#f0c040', fontSize: 10, fontWeight: 600 }}>دولار $</div>
-                <div style={{ color: (afterD ?? 0) < 0 ? '#ff6060' : '#f0e060', fontSize: 15, fontWeight: 900, direction: 'ltr' }}>{(afterD ?? 0).toLocaleString()}</div>
+              <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, padding: 8, textAlign: 'center' }}>
+                <div style={{ color: 'var(--gold)', fontSize: 10, fontWeight: 600 }}>دولار $</div>
+                <div style={{ color: (afterD ?? 0) < 0 ? 'var(--red)' : 'var(--gold)', fontSize: 15, fontWeight: 900, direction: 'ltr' }}>{(afterD ?? 0).toLocaleString()}</div>
               </div>
-              <div style={{ background: 'rgba(96,216,160,0.1)', border: '1px solid rgba(96,216,160,0.3)', borderRadius: 8, padding: 8, textAlign: 'center' }}>
-                <div style={{ color: '#60d8a0', fontSize: 10, fontWeight: 600 }}>دينار IQD</div>
-                <div style={{ color: (afterDin ?? 0) < 0 ? '#ff6060' : '#80ffb8', fontSize: 13, fontWeight: 900, direction: 'ltr' }}>{(afterDin ?? 0).toLocaleString()}</div>
+              <div style={{ background: 'rgba(57,255,136,0.1)', border: '1px solid rgba(57,255,136,0.3)', borderRadius: 8, padding: 8, textAlign: 'center' }}>
+                <div style={{ color: 'var(--accent)', fontSize: 10, fontWeight: 600 }}>دينار IQD</div>
+                <div style={{ color: (afterDin ?? 0) < 0 ? 'var(--red)' : 'var(--accent)', fontSize: 13, fontWeight: 900, direction: 'ltr' }}>{(afterDin ?? 0).toLocaleString()}</div>
               </div>
             </div>
           </div>
@@ -275,14 +285,18 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
             aria-label="ملاحظات"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl', resize: 'none', height: 55 }}
+            style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl', resize: 'none', height: 55 }}
           />
         </div>
       </div>
 
-      <div id="sfToolbar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#040d1a', borderTop: '1px solid rgba(34,211,238,.2)', display: 'flex', gap: 8, padding: '8px 12px', zIndex: 200, maxWidth: 480, margin: '0 auto' }}>
-        <button onClick={save} style={{ flex: 2, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 900, background: '#f0c040', border: 'none', color: '#0a1628', cursor: 'pointer' }}>
-          💾 تنفيذ وحفظ
+      <div id="sfToolbar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid rgba(57,255,136,.2)', display: 'flex', gap: 8, padding: '8px 12px', zIndex: 200, maxWidth: 480, margin: '0 auto' }}>
+        <button
+          onClick={() => void save()}
+          disabled={saving}
+          style={{ flex: 2, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 900, background: 'var(--gold)', border: 'none', color: '#0a1628', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}
+        >
+          {saving ? '⏳ جاري الحفظ...' : '💾 تنفيذ وحفظ'}
         </button>
         <button onClick={reset} style={{ flex: 1, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer' }}>
           🔄 مسح

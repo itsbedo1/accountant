@@ -69,13 +69,13 @@ export function PinModal({ pinState, press, del, clear, cancel }: ReturnType<typ
     <div className={`modal-ov${pinState.open ? ' show' : ''}`}>
       <div
         className="modal-box dark"
-        style={{ background: '#1a1a2a', border: '2px solid #f0c040' }}
+        style={{ background: 'var(--bg2)', border: '2px solid var(--gold)' }}
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
       >
-        <h3 className="modal-h3 dark" style={{ color: '#f0c040' }}>
+        <h3 className="modal-h3 dark" style={{ color: 'var(--gold)' }}>
           🔐 رمز الحماية
         </h3>
         <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', marginBottom: 14 }}>
@@ -97,7 +97,7 @@ export function PinModal({ pinState, press, del, clear, cancel }: ReturnType<typ
               {d}
             </button>
           ))}
-          <button className="pin-btn" style={{ background: 'rgba(200,50,50,0.3)', color: '#ff8080' }} onClick={clear}>
+          <button className="pin-btn" style={{ background: 'rgba(251,113,133,0.3)', color: 'var(--red)' }} onClick={clear}>
             مسح
           </button>
           <button className="pin-btn" onClick={() => press('0')}>
@@ -108,7 +108,7 @@ export function PinModal({ pinState, press, del, clear, cancel }: ReturnType<typ
           </button>
         </div>
 
-        <button className="modal-close-btn" style={{ background: '#1a1a2a', color: '#666' }} onClick={cancel}>
+        <button className="modal-close-btn" style={{ background: 'var(--bg2)', color: '#666' }} onClick={cancel}>
           إلغاء
         </button>
       </div>

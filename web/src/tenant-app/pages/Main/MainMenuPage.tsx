@@ -87,7 +87,7 @@ export default function MainMenuPage({ goPage, doLogout }: { goPage: (id: string
           </button>
           <button className="menu-btn" onClick={() => goPage('pageNotifFails')}>
             <span className="icon">🔔</span>إشعارات فشلت
-            <span style={{ color: '#ff6060', fontWeight: 900 }}>{notifFailCount > 0 ? ` (${notifFailCount})` : ''}</span>
+            <span style={{ color: 'var(--red)', fontWeight: 900 }}>{notifFailCount > 0 ? ` (${notifFailCount})` : ''}</span>
           </button>
           <button
             className="menu-btn highlight"
@@ -101,7 +101,7 @@ export default function MainMenuPage({ goPage, doLogout }: { goPage: (id: string
           <button
             className="menu-btn"
             onClick={doLogout}
-            style={{ gridColumn: '1/-1', background: 'rgba(251,113,133,.12)', borderColor: 'rgba(251,113,133,.3)', color: '#fb7185' }}
+            style={{ gridColumn: '1/-1', background: 'rgba(251,113,133,.12)', borderColor: 'rgba(251,113,133,.3)', color: 'var(--red)' }}
           >
             <span className="icon">🚪</span>تسجيل الخروج
           </button>

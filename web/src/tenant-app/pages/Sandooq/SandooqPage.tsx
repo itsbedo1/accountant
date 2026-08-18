@@ -246,7 +246,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
     <div id="pageSandooq" className="page active">
       <div
         style={{
-          background: 'linear-gradient(135deg,#1e5a28,#2d8a3e)',
+          background: 'linear-gradient(135deg,#07301c,var(--accent2))',
           padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -287,8 +287,8 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                   fontFamily: "'Cairo',sans-serif",
                   fontSize: 14,
                   fontWeight: 900,
-                  border: form.noa === 'قبض' ? '2px solid #60c870' : '2px solid rgba(255,255,255,0.3)',
-                  background: form.noa === 'قبض' ? '#2d8a3e' : 'rgba(255,255,255,0.1)',
+                  border: form.noa === 'قبض' ? '2px solid var(--accent)' : '2px solid rgba(255,255,255,0.3)',
+                  background: form.noa === 'قبض' ? 'var(--accent2)' : 'rgba(255,255,255,0.1)',
                   color: 'white',
                   cursor: 'pointer',
                 }}
@@ -303,8 +303,8 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                   fontFamily: "'Cairo',sans-serif",
                   fontSize: 14,
                   fontWeight: 900,
-                  border: form.noa === 'صرف' ? '2px solid #ff8050' : '2px solid rgba(255,255,255,0.3)',
-                  background: form.noa === 'صرف' ? '#c05020' : 'rgba(255,255,255,0.1)',
+                  border: form.noa === 'صرف' ? '2px solid var(--red)' : '2px solid rgba(255,255,255,0.3)',
+                  background: form.noa === 'صرف' ? 'rgba(251,113,133,.28)' : 'rgba(255,255,255,0.1)',
                   color: 'white',
                   cursor: 'pointer',
                 }}
@@ -322,7 +322,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                 aria-label="تاريخ السند"
                 value={form.tarikh}
                 onChange={(e) => setForm((f) => ({ ...f, tarikh: e.target.value }))}
-                style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 12, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
+                style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 12, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
               />
             </div>
             <div>
@@ -332,7 +332,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                 aria-label="رقم السند"
                 value={form.raqm}
                 onChange={(e) => setForm((f) => ({ ...f, raqm: e.target.value }))}
-                style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
+                style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
               />
             </div>
           </div>
@@ -348,7 +348,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
             aria-label="الحساب الرئيسي"
             value={form.hesab}
             onClick={() => setHesabOpen(true)}
-            style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', direction: 'rtl', marginBottom: 10 }}
+            style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', direction: 'rtl', marginBottom: 10 }}
           />
 
           {showAmil && (
@@ -361,7 +361,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                   placeholder="رقم"
                   aria-label="رقم العميل"
                   value={form.amilId ?? ''}
-                  style={{ background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 6px', fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 700, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
+                  style={{ background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 6px', fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 700, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
                 />
                 <input
                   type="text"
@@ -370,7 +370,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                   aria-label="العميل"
                   value={form.amilName}
                   onClick={() => setAmilOpen(true)}
-                  style={{ background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', direction: 'rtl' }}
+                  style={{ background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', direction: 'rtl' }}
                 />
               </div>
             </div>
@@ -395,7 +395,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
           <div style={{ color: 'var(--text2)', fontSize: 11, fontWeight: 700, marginBottom: 8, textAlign: 'right' }}>المبالغ</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius-sm)', padding: 10, textAlign: 'center' }}>
-              <div style={{ color: '#f0d060', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>دولار $</div>
+              <div style={{ color: 'var(--gold)', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>دولار $</div>
               <input
                 type="text"
                 inputMode="decimal"
@@ -442,7 +442,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
                 aria-label="رقم الصك/الفيشة"
                 value={form.sak}
                 onChange={(e) => setForm((f) => ({ ...f, sak: e.target.value }))}
-                style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl' }}
+                style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl' }}
               />
             </div>
           </div>
@@ -453,7 +453,7 @@ export default function SandooqPage({ goPage, confirmPin }: { goPage: (id: strin
               aria-label="الملاحظات"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl', resize: 'none', height: 60 }}
+              style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl', resize: 'none', height: 60 }}
             />
           </div>
         </div>
@@ -514,7 +514,7 @@ function BalBox({ label, value, highlight }: { label: string; value: number; hig
   return (
     <div style={{ background: 'rgba(200,160,232,0.15)', border: '1px solid #a070cc', borderRadius: 8, padding: 8, textAlign: 'center' }}>
       <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 600 }}>{label}</div>
-      <div style={{ color: highlight ? (value >= 0 ? '#60ff90' : '#ff6060') : '#e8c0ff', fontSize: 14, fontWeight: 900, direction: 'ltr' }}>
+      <div style={{ color: highlight ? (value >= 0 ? 'var(--accent)' : 'var(--red)') : '#e8c0ff', fontSize: 14, fontWeight: 900, direction: 'ltr' }}>
         {value.toLocaleString()}
       </div>
     </div>

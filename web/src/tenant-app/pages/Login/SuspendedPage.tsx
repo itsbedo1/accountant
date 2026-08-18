@@ -4,7 +4,7 @@ export default function SuspendedPage({ reason, doLogout }: { reason: string; do
     <div id="pageSuspended" className="page active">
       <div className="login-card">
         <div style={{ fontSize: 44, textAlign: 'center', marginBottom: 6 }}>⏸️</div>
-        <div className="login-logo" style={{ color: '#ff8080' }}>
+        <div className="login-logo" style={{ color: 'var(--red)' }}>
           الخدمة موقوفة مؤقتاً
         </div>
         <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center', lineHeight: 1.8, margin: '14px 0 10px' }}>
@@ -22,7 +22,7 @@ export default function SuspendedPage({ reason, doLogout }: { reason: string; do
             }}
           >
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginBottom: 4 }}>السبب</div>
-            <div style={{ color: '#ffaaaa', fontSize: 13, fontWeight: 700 }}>{reason}</div>
+            <div style={{ color: 'var(--red2)', fontSize: 13, fontWeight: 700 }}>{reason}</div>
           </div>
         )}
         <button className="login-btn" style={{ background: 'rgba(255,255,255,0.1)' }} onClick={doLogout}>

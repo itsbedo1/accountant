@@ -68,9 +68,9 @@ export default function ConfirmSaveModal({
             padding: 10,
             borderRadius: 10,
             marginBottom: 12,
-            background: isQabdh ? 'rgba(74,222,128,.15)' : 'rgba(248,113,113,.15)',
+            background: isQabdh ? 'rgba(57,255,136,.15)' : 'rgba(251,113,133,.15)',
             color: isQabdh ? 'var(--accent)' : 'var(--red)',
-            border: isQabdh ? '1.5px solid rgba(74,222,128,.4)' : '1.5px solid rgba(248,113,113,.4)',
+            border: isQabdh ? '1.5px solid rgba(57,255,136,.4)' : '1.5px solid rgba(251,113,133,.4)',
           }}
         >
           {isQabdh ? '⬇️ قبض' : '⬆️ صرف'}
@@ -89,7 +89,7 @@ export default function ConfirmSaveModal({
             <div style={{ color: 'var(--text-dim)', fontSize: 10, marginBottom: 4 }}>دولار $</div>
             <div style={{ color: 'var(--gold)', fontSize: 18, fontWeight: 900, direction: 'ltr' }}>{(draft.mabD || 0).toLocaleString()}</div>
           </div>
-          <div style={{ background: 'rgba(34,211,238,.08)', border: '1px solid rgba(34,211,238,.2)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+          <div style={{ background: 'rgba(57,255,136,.08)', border: '1px solid rgba(57,255,136,.2)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
             <div style={{ color: 'var(--text-dim)', fontSize: 10, marginBottom: 4 }}>دينار IQD</div>
             <div style={{ color: 'var(--accent)', fontSize: 16, fontWeight: 900, direction: 'ltr' }}>{(draft.mabDin || 0).toLocaleString()}</div>
           </div>

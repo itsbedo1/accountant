@@ -42,7 +42,7 @@ export default function AuditLogPage({ goPage }: { goPage: (id: string) => void 
 
   return (
     <div id="pageAuditLog" className="page active">
-      <div style={{ background: 'linear-gradient(135deg,#040d1a,#071e38)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+      <div style={{ background: 'linear-gradient(135deg,var(--bg),var(--input-bg))', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
         <button onClick={() => goPage('pageSettings')} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, color: 'white', padding: '6px 10px', fontFamily: "'Cairo',sans-serif", fontSize: 12, cursor: 'pointer' }}>
           ↩ رجوع
         </button>

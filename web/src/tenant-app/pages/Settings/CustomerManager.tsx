@@ -61,7 +61,7 @@ export default function CustomerManager({ confirmPin }: { confirmPin: (label: st
             aria-label="اسم العميل"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl' }}
+            style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '8px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'rtl' }}
           />
         </div>
       </div>
@@ -72,16 +72,16 @@ export default function CustomerManager({ confirmPin }: { confirmPin: (label: st
         <div style={{ marginBottom: 8 }}>
           <div style={{ color: 'var(--gold)', fontSize: 10, fontWeight: 900, marginBottom: 5, textAlign: 'center', letterSpacing: 1 }}>── دولار $ ──</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <AmountField label="له (يدين لنا) $" color="var(--accent)" borderColor="rgba(74,222,128,.3)" value={dLStr} onChange={setDLStr} />
-            <AmountField label="له علينا (ندين له) $" color="var(--red)" borderColor="rgba(248,113,113,.3)" value={dAStr} onChange={setDAStr} />
+            <AmountField label="له (يدين لنا) $" color="var(--accent)" borderColor="rgba(57,255,136,.3)" value={dLStr} onChange={setDLStr} />
+            <AmountField label="له علينا (ندين له) $" color="var(--red)" borderColor="rgba(251,113,133,.3)" value={dAStr} onChange={setDAStr} />
           </div>
         </div>
 
         <div>
           <div style={{ color: 'var(--accent)', fontSize: 10, fontWeight: 900, marginBottom: 5, textAlign: 'center', letterSpacing: 1 }}>── دينار IQD ──</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <AmountField label="له (يدين لنا) IQD" color="var(--accent)" borderColor="rgba(74,222,128,.3)" value={dinLStr} onChange={setDinLStr} small />
-            <AmountField label="له علينا (ندين له) IQD" color="var(--red)" borderColor="rgba(248,113,113,.3)" value={dinAStr} onChange={setDinAStr} small />
+            <AmountField label="له (يدين لنا) IQD" color="var(--accent)" borderColor="rgba(57,255,136,.3)" value={dinLStr} onChange={setDinLStr} small />
+            <AmountField label="له علينا (ندين له) IQD" color="var(--red)" borderColor="rgba(251,113,133,.3)" value={dinAStr} onChange={setDinAStr} small />
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function CustomerManager({ confirmPin }: { confirmPin: (label: st
           <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', marginBottom: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7 }}>
             <button
               onClick={() => void del(c.id, c.name)}
-              style={{ background: 'rgba(200,50,50,0.3)', border: '1px solid #cc4444', borderRadius: 5, color: '#ffaaaa', fontSize: 11, fontWeight: 700, padding: '3px 8px', cursor: 'pointer', fontFamily: "'Cairo',sans-serif" }}
+              style={{ background: 'rgba(251,113,133,0.3)', border: '1px solid var(--red)', borderRadius: 5, color: 'var(--red2)', fontSize: 11, fontWeight: 700, padding: '3px 8px', cursor: 'pointer', fontFamily: "'Cairo',sans-serif" }}
             >
               حذف
             </button>

@@ -89,10 +89,10 @@ interface DataState {
   /** يعادل sDel() بالكود القديم (كانت بالسطر 2471) */
   deleteMove: (curIdx: number) => Promise<boolean>
 
-  /** يعادل الفرع "نقدي" بـ sfSave() (كانت بالسطر 3880-3923) — تأثير على رصيد القاصة فقط */
-  saveSayarfaCash: (type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => void
-  /** يعادل sfSaveAmil() (كانت بالسطر 3929) — تحويل عملة داخل رصيد عميل، بدون أي تأثير على القاصة */
-  saveSayarfaAmil: (customerId: number, type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => Promise<void>
+  /** يعادل الفرع "نقدي" بـ sfSave() (كانت بالسطر 3880-3923) — تأثير على رصيد القاصة فقط. يرجع true لو انحفظت فعلاً */
+  saveSayarfaCash: (type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => Promise<boolean>
+  /** يعادل sfSaveAmil() (كانت بالسطر 3929) — تحويل عملة داخل رصيد عميل، بدون أي تأثير على القاصة. يرجع true لو انحفظت فعلاً */
+  saveSayarfaAmil: (customerId: number, type: SayarfaMove['type'], mabD: number, mabDin: number, rate: number, notes: string) => Promise<boolean>
 
   /** يعادل nfResend() بالكود القديم (كانت بالسطر 3016) */
   resendNotif: (dbId: number) => Promise<void>
@@ -307,8 +307,8 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
     return true
   },
 
-  saveSayarfaCash(type, mabD, mabDin, rate, notes) {
-    // تأثير على القاصة — منقول حرفياً من sfSave() (كانت بالسطر 3896)
+  async saveSayarfaCash(type, mabD, mabDin, rate, notes) {
+    // تأثير على القاصة — منقول من sfSave() (كانت بالسطر 3896)
     set((st) => {
       if (type === 'شراء') {
         st.initBalD += mabD
@@ -331,26 +331,45 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       balDAfter: get().initBalD,
       balDinAfter: get().initBalDin,
     }
+    const newIdx = get().sayarfaMoves.length
     set((st) => {
       st.sayarfaMoves.push({ ...draft, dbId: 0, id: 0, createdByEmail: null })
     })
 
+    // الأصل كان يعرض النجاح ويرسل الحفظ بدون انتظار نتيجته، والدالة تبتلع
+    // الخطأ — فلو انقطع الاتصال يشوف المستخدم "تم" وتتغيّر القاصة قدامه
+    // وماكو شي انحفظ، وترجع القاصة لقيمتها بأول إعادة تحميل بدون تفسير
+    // (لأنها تُحسب من الحركات وهذي الحركة ما وُجدت). الحين ننتظر النتيجة.
+    const ok = await dbSaveSayarfa(draft, get().settings, get().initBalD, get().initBalDin)
+
+    if (!ok) {
+      set((st) => {
+        if (type === 'شراء') {
+          st.initBalD -= mabD
+          st.initBalDin += mabDin
+        } else {
+          st.initBalD += mabD
+          st.initBalDin -= mabDin
+        }
+        st.sayarfaMoves.splice(newIdx, 1)
+      })
+      toast('❌ لم تُحفظ عملية الصيرفة — تحقق من الاتصال وحاول مرة ثانية')
+      return false
+    }
+
     toast(`✅ تم تنفيذ ${type} الدولار — تحديث القاصة`)
-    // نفس الأصل بالضبط: الحفظ بقاعدة البيانات fire-and-forget، بدون انتظار
-    // (sfReset يصير فوراً بالواجهة قبل ما يخلص الحفظ فعلياً)
-    void dbSaveSayarfa(draft, get().settings, get().initBalD, get().initBalDin)
+    return true
   },
 
   async saveSayarfaAmil(customerId, type, mabD, mabDin, rate, notes) {
     const c = get().customers.find((x) => x.id === customerId)
     if (!c) {
       toast('⚠️ اختر عميل أولاً')
-      return
+      return false
     }
 
-    // منقولة حرفياً من sfSaveAmil() (كانت بالسطر 3929) — تُسجَّل كحركتين
-    // (دولار/دينار) بربط amilId حتى تظهر بكشف حساب العميل. بدون rollback لو
-    // فشل الحفظ — نفس تحمّل المخاطرة الموجود بالأصل لهذا المسار تحديداً
+    // منقولة من sfSaveAmil() (كانت بالسطر 3929) — تُسجَّل كحركتين
+    // (دولار/دينار) بربط amilId حتى تظهر بكشف حساب العميل
     const noaD = type === 'بيع' ? 'صرف' : 'قبض'
     const noaDin = type === 'بيع' ? 'قبض' : 'صرف'
 
@@ -374,9 +393,44 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       st.moves.push({ ...legDin, dbId: 0, id: 0, createdByEmail: null, notifFailed: false })
     })
 
-    toast(`✅ تم تحويل عملة حساب ${c.name}`)
+    // ⚠️ الترتيب هنا مقصود: نحفظ الحركتين *قبل* ما نمس رصيد العميل.
+    // الأصل كان يعكسها (رصيد أولاً، وبدون تراجع لو فشلت الحركتان)، فلو فشل
+    // الحفظ بينهما يتغيّر رصيد العميل بقاعدة البيانات وماكو أي حركة تفسّر
+    // ليش — وهي بالضبط الحالة اللي تسميها لوحة فحص الأرصدة "فرق مشبوه".
+    // بهذا الترتيب أسوأ فشل ممكن هو حركتان بدون أثر بالرصيد، وهذا قابل
+    // للكشف والتصحيح لأن السجل موجود ويشرح نفسه.
+    const savedD = await dbSaveMove(legD)
+    const savedDin = await dbSaveMove(legDin)
 
-    // نفس الحركتين المطبّقتين محلياً فوق، بس ذرياً بقاعدة البيانات
+    if (savedD === false || savedDin === false) {
+      // تراجع محلي كامل — نشيل الحركتين ونرجّع رصيد العميل لما كان عليه
+      set((st) => {
+        st.moves = st.moves.filter((_, i) => i !== legDIdx && i !== legDinIdx)
+        const draft = st.customers.find((x) => x.id === customerId)
+        if (draft) {
+          applyToCustomer(draft, noaD === 'قبض' ? 'صرف' : 'قبض', mabD, 0)
+          applyToCustomer(draft, noaDin === 'قبض' ? 'صرف' : 'قبض', 0, mabDin)
+        }
+      })
+      // لو انحفظت وحدة بس، نشيلها من قاعدة البيانات حتى ما تبقى نصف عملية
+      if (savedD !== false) void dbDeleteMove(savedD)
+      if (savedDin !== false) void dbDeleteMove(savedDin)
+      toast('❌ لم يُحفظ تحويل العملة — ما تغيّر رصيد العميل. حاول مرة ثانية')
+      return false
+    }
+
+    set((st) => {
+      if (st.moves[legDIdx]) {
+        st.moves[legDIdx].dbId = savedD
+        st.moves[legDIdx].id = savedD
+      }
+      if (st.moves[legDinIdx]) {
+        st.moves[legDinIdx].dbId = savedDin
+        st.moves[legDinIdx].id = savedDin
+      }
+    })
+
+    // الحركتان محفوظتان — الحين نطبّق أثرهما على الرصيد، ذرياً بقاعدة البيانات
     await runCustomerMovements(
       [
         { customerId, noa: noaD, mabD, mabDin: 0 },
@@ -386,26 +440,16 @@ export const useDataStore = create<DataState>()(immer((set, get) => ({
       get,
     )
 
+    toast(`✅ تم تحويل عملة حساب ${c.name}`)
+
     // رصيد العميل بعد التزامن — هو اللي نخبره فيه بإشعار تليجرام
     const updated = get().customers.find((x) => x.id === customerId)!
     const sfCurD = updated.dL - updated.dA
     const sfCurDin = updated.dinL - updated.dinA
 
-    const savedD = await dbSaveMove(legD)
-    const savedDin = await dbSaveMove(legDin)
-    set((st) => {
-      if (savedD && st.moves[legDIdx]) {
-        st.moves[legDIdx].dbId = savedD
-        st.moves[legDIdx].id = savedD
-      }
-      if (savedDin && st.moves[legDinIdx]) {
-        st.moves[legDinIdx].dbId = savedDin
-        st.moves[legDinIdx].id = savedDin
-      }
-    })
-
     // إشعار تليجرام للعميل (إذا مربوط) — ما يوقف الحفظ لو فشل
     void sendTelegramSayarfaNotif(get().settings.tgBotToken, updated, type, mabD, mabDin, rate, sfCurD, sfCurDin)
+    return true
   },
 
   async resendNotif(dbId) {

@@ -74,7 +74,7 @@ export default function EmployeeManager() {
   }
 
   return (
-    <div style={{ background: 'rgba(96,160,255,0.06)', border: '1px solid rgba(96,160,255,0.25)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+    <div style={{ background: 'rgba(57,255,136,0.06)', border: '1px solid rgba(57,255,136,0.25)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
       <div style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 900, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>👥 الموظفين</div>
       <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 10, textAlign: 'right' }}>
         حساب الموظف يقدر يضيف حركات صندوق وصيرفة جديدة بس — ما يقدر يعدّل أو يحذف حركة موجودة، ولا يفتح الإعدادات أو الخلاصة.
@@ -87,7 +87,7 @@ export default function EmployeeManager() {
           <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', marginBottom: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7 }}>
             <button
               onClick={() => void emRemove(m.user_id)}
-              style={{ background: 'rgba(200,50,50,0.3)', border: '1px solid #cc4444', borderRadius: 5, color: '#ffaaaa', fontSize: 11, fontWeight: 700, padding: '3px 8px', cursor: 'pointer', fontFamily: "'Cairo',sans-serif" }}
+              style={{ background: 'rgba(251,113,133,0.3)', border: '1px solid var(--red)', borderRadius: 5, color: 'var(--red2)', fontSize: 11, fontWeight: 700, padding: '3px 8px', cursor: 'pointer', fontFamily: "'Cairo',sans-serif" }}
             >
               حذف
             </button>
@@ -103,18 +103,18 @@ export default function EmployeeManager() {
           aria-label="إيميل الموظف الجديد"
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
-          style={{ flex: 1, background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr', textAlign: 'right' }}
+          style={{ flex: 1, background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr', textAlign: 'right' }}
         />
         <button
           onClick={() => void emCreate()}
-          style={{ padding: '9px 16px', borderRadius: 7, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 900, background: 'rgba(96,160,255,.2)', border: '1.5px solid rgba(96,160,255,.5)', color: 'var(--accent)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          style={{ padding: '9px 16px', borderRadius: 7, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 900, background: 'rgba(57,255,136,.2)', border: '1.5px solid rgba(57,255,136,.5)', color: 'var(--accent)', cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
           ➕ إضافة
         </button>
       </div>
 
       {result && (
-        <div style={{ background: 'rgba(74,222,128,.1)', border: '1px solid rgba(74,222,128,.35)', borderRadius: 8, padding: 10, marginTop: 10, fontSize: 12 }}>
+        <div style={{ background: 'rgba(57,255,136,.1)', border: '1px solid rgba(57,255,136,.35)', borderRadius: 8, padding: 10, marginTop: 10, fontSize: 12 }}>
           <div style={{ color: 'var(--text-dim)', marginBottom: 4 }}>أعطِ الموظف بيانات الدخول هذي (تظهر مرة واحدة بس):</div>
           <div>
             الإيميل: <b style={{ direction: 'ltr' }}>{result.email}</b>

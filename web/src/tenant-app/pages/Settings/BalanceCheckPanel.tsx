@@ -60,19 +60,19 @@ export default function BalanceCheckPanel() {
   }
 
   return (
-    <div style={{ background: 'rgba(240,192,64,.06)', border: '1px solid rgba(240,192,64,.25)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+    <div style={{ background: 'rgba(251,191,36,.06)', border: '1px solid rgba(251,191,36,.25)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
       <div style={{ color: 'var(--gold)', fontSize: 13, fontWeight: 900, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>🔍 فحص تطابق أرصدة العملاء</div>
       <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 10, textAlign: 'right' }}>
         يقارن رصيد كل عميل الحالي بمجموع كل حركاته المسجلة — لو فيه فرق، معناه رصيده تأثر بدون حركة توضحه (مثل خطأ تعديل قديم).
       </div>
       <button
         onClick={check}
-        style={{ width: '100%', padding: 10, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 900, background: 'rgba(240,192,64,.2)', border: '1.5px solid rgba(240,192,64,.5)', color: 'var(--gold)', cursor: 'pointer', marginBottom: 8 }}
+        style={{ width: '100%', padding: 10, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 900, background: 'rgba(251,191,36,.2)', border: '1.5px solid rgba(251,191,36,.5)', color: 'var(--gold)', cursor: 'pointer', marginBottom: 8 }}
       >
         🔍 فحص الآن
       </button>
 
-      {checked && !mismatches.length && <div style={{ textAlign: 'center', color: '#60ff90', fontSize: 12, padding: 10 }}>✅ كل الأرصدة متطابقة — ما فيه أي فرق مشبوه</div>}
+      {checked && !mismatches.length && <div style={{ textAlign: 'center', color: 'var(--accent)', fontSize: 12, padding: 10 }}>✅ كل الأرصدة متطابقة — ما فيه أي فرق مشبوه</div>}
 
       {checked && mismatches.length > 0 && (
         <>
@@ -107,7 +107,7 @@ export default function BalanceCheckPanel() {
                       if (!confirm(`إضافة حركة توثيقية لحساب ${m.name} بمبلغ ${parts.join(' + ')}\n\nهذي الحركة فقط توضح سبب الرصيد الحالي بكشف حسابه — ما راح تغيّر رصيده أبداً (الفرق أصلاً محسوب بالرصيد الحالي).\n\nتأكد إنك ما وثقت هذا الفرق مرة سابقة قبل ما تضغط تأكيد.`)) return
                       void documentCustomerDiff(m.id, m.diffD, m.diffDin).then(check)
                     }}
-                    style={{ marginTop: 8, width: '100%', padding: 8, borderRadius: 7, fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 900, background: 'rgba(96,180,255,.15)', border: '1.5px solid rgba(96,180,255,.5)', color: '#60b4ff', cursor: 'pointer' }}
+                    style={{ marginTop: 8, width: '100%', padding: 8, borderRadius: 7, fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 900, background: 'rgba(57,255,136,.15)', border: '1.5px solid rgba(57,255,136,.5)', color: 'var(--accent)', cursor: 'pointer' }}
                   >
                     📝 توثيق الفرق كحركة (بدون تغيير الرصيد)
                   </button>
@@ -128,7 +128,7 @@ export default function BalanceCheckPanel() {
                       if (!confirm(`استرجاع رصيد ${c.name} الافتتاحي:\nدولار له: ${newDL} / عليه: ${newDA}\nدينار له: ${newDinL} / عليه: ${newDinA}\n\nمتأكد؟`)) return
                       void fixCustomerBalance(m.id).then(check)
                     }}
-                    style={{ marginTop: 8, width: '100%', padding: 8, borderRadius: 7, fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 900, background: 'rgba(96,255,144,.15)', border: '1.5px solid rgba(96,255,144,.5)', color: '#60ff90', cursor: 'pointer' }}
+                    style={{ marginTop: 8, width: '100%', padding: 8, borderRadius: 7, fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 900, background: 'rgba(57,255,136,.15)', border: '1.5px solid rgba(57,255,136,.5)', color: 'var(--accent)', cursor: 'pointer' }}
                   >
                     🔧 استرجاع الرصيد الافتتاحي
                   </button>

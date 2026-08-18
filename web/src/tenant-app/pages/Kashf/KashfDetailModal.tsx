@@ -57,7 +57,7 @@ export default function KashfDetailModal({ open, data, onClose }: { open: boolea
           <span className="ml">الملاحظات</span>
           <span className="mv">{data?.notes || '-'}</span>
         </div>
-        <button className="modal-close-btn" style={{ background: '#1a3060', color: '#80e8ff', marginTop: 8 }} onClick={onClose}>
+        <button className="modal-close-btn" style={{ background: 'var(--bg3)', color: 'var(--accent)', marginTop: 8 }} onClick={onClose}>
           إغلاق
         </button>
       </div>

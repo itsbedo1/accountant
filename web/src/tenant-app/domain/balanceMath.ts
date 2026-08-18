@@ -104,6 +104,46 @@ export function applyAllEffects(customers: CustomerBalance[], cashbox: CashboxBa
   }
 }
 
+// ── حركة واحدة على رصيد عميل واحد، تنفّذها قاعدة البيانات ذرياً ──────────
+// الدالتان تحت تبنيان نفس ما تطبّقه applyAllEffects/reverseAllEffects على
+// العملاء بالضبط (نفس الترتيب ونفس أنواع الحركات)، بس بدل ما تعدّلا الأرصدة
+// محلياً ترجّعان قائمة الحركات المطلوبة — حتى تطبّقها قاعدة البيانات بدل
+// المتصفح، فما تنمسح كتابة مستخدم بكتابة مستخدم ثاني شغّال بنفس الوقت.
+export interface CustomerMovement {
+  customerId: number
+  noa: MoveType
+  mabD: number
+  mabDin: number
+}
+
+const flip = (noa: MoveType): MoveType => (noa === 'قبض' ? 'صرف' : 'قبض')
+
+/** يقابل applyAllEffects — الجزء الخاص بالعملاء منها فقط (القاصة تُحسب محلياً) */
+export function movementsForApply(customers: CustomerBalance[], r: MoveEffect): CustomerMovement[] {
+  const out: CustomerMovement[] = []
+  if (r.amilId != null) {
+    const c = customers.find((x) => x.id === r.amilId)
+    if (c) out.push({ customerId: c.id, noa: r.noa, mabD: r.mabD, mabDin: r.mabDin })
+  }
+  const jihaC = customers.find((x) => x.name === r.jiha)
+  // جهة الصرف تأثيرها معكوس — نفس منطق applyAllEffects
+  if (jihaC) out.push({ customerId: jihaC.id, noa: flip(r.noa), mabD: r.mabD, mabDin: r.mabDin })
+  return out
+}
+
+/** يقابل reverseAllEffects — نفس الحركات بالاتجاه المعاكس */
+export function movementsForReverse(customers: CustomerBalance[], r: MoveEffect): CustomerMovement[] {
+  const out: CustomerMovement[] = []
+  if (r.amilId != null) {
+    const c = customers.find((x) => x.id === r.amilId)
+    if (c) out.push({ customerId: c.id, noa: flip(r.noa), mabD: r.mabD, mabDin: r.mabDin })
+  }
+  const jihaC = customers.find((x) => x.name === r.jiha)
+  // عكس العكس = نفس نوع الحركة الأصلي
+  if (jihaC) out.push({ customerId: jihaC.id, noa: r.noa, mabD: r.mabD, mabDin: r.mabDin })
+  return out
+}
+
 // عكس تأثير applyAllEffects بالضبط — منقولة حرفياً من index.html (reverseAllEffects، كانت بالسطر 2409)
 export function reverseAllEffects(customers: CustomerBalance[], cashbox: CashboxBalance, r: MoveEffect): void {
   if (r.amilId != null) {

@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { applyToCustomer, applyAllEffects, reverseAllEffects, type CustomerBalance, type CashboxBalance } from './balanceMath'
+import {
+  applyToCustomer,
+  applyAllEffects,
+  reverseAllEffects,
+  movementsForApply,
+  movementsForReverse,
+  type CustomerBalance,
+  type CashboxBalance,
+  type CustomerMovement,
+  type MoveEffect,
+} from './balanceMath'
 
 function customer(overrides: Partial<CustomerBalance> = {}): CustomerBalance {
   return { id: 1, name: 'زياد الكبيسي', dA: 0, dL: 0, dinA: 0, dinL: 0, ...overrides }
@@ -134,5 +144,134 @@ describe('applyAllEffects / reverseAllEffects', () => {
     applyAllEffects(customers, cashbox, { amilId: null, jiha: 'بنك خارجي', noa: 'قبض', mabD: 500, mabDin: 0 })
     expect(customers[0]).toEqual(customer({ id: 1, name: 'عميل1' }))
     expect(cashbox).toEqual({ initBalD: 1000, initBalDin: 0 })
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════
+// قائمة الحركات المرسلة لقاعدة البيانات (movementsForApply/movementsForReverse)
+// ══════════════════════════════════════════════════════════════════════════
+
+// يطبّق قائمة الحركات على نسخ العملاء — يحاكي ما تسويه قاعدة البيانات
+function runMovements(customers: CustomerBalance[], movements: CustomerMovement[]): void {
+  for (const mv of movements) {
+    const c = customers.find((x) => x.id === mv.customerId)
+    if (c) applyToCustomer(c, mv.noa, mv.mabD, mv.mabDin)
+  }
+}
+
+function clone(cs: CustomerBalance[]): CustomerBalance[] {
+  return cs.map((c) => ({ ...c }))
+}
+
+describe('movementsForApply / movementsForReverse', () => {
+  const scenarios: { name: string; move: MoveEffect }[] = [
+    { name: 'عميل فقط', move: { amilId: 1, jiha: 'الصندوق', noa: 'قبض', mabD: 500, mabDin: 0 } },
+    { name: 'عميل + جهة صرف عميل ثاني', move: { amilId: 1, jiha: 'ب', noa: 'صرف', mabD: 250, mabDin: 70000 } },
+    { name: 'جهة صرف بس (بدون عميل)', move: { amilId: null, jiha: 'ب', noa: 'قبض', mabD: 0, mabDin: 90000 } },
+    { name: 'نفس العميل هو الجهة (يتطبّق مرتين)', move: { amilId: 1, jiha: 'أ', noa: 'قبض', mabD: 300, mabDin: 0 } },
+    { name: 'ماكو عميل ولا جهة مطابقة', move: { amilId: null, jiha: 'بنك خارجي', noa: 'صرف', mabD: 400, mabDin: 0 } },
+  ]
+
+  function baseCustomers(): CustomerBalance[] {
+    return [
+      { id: 1, name: 'أ', dA: 100, dL: 400, dinA: 5000, dinL: 20000 },
+      { id: 2, name: 'ب', dA: 50, dL: 900, dinA: 80000, dinL: 0 },
+    ]
+  }
+
+  for (const s of scenarios) {
+    it(`movementsForApply يطابق أثر applyAllEffects على العملاء — ${s.name}`, () => {
+      const viaEffects = baseCustomers()
+      applyAllEffects(viaEffects, { initBalD: 0, initBalDin: 0 }, s.move)
+
+      const viaMovements = baseCustomers()
+      runMovements(viaMovements, movementsForApply(viaMovements, s.move))
+
+      expect(viaMovements).toEqual(viaEffects)
+    })
+
+    it(`movementsForReverse يطابق أثر reverseAllEffects على العملاء — ${s.name}`, () => {
+      const viaEffects = baseCustomers()
+      reverseAllEffects(viaEffects, { initBalD: 0, initBalDin: 0 }, s.move)
+
+      const viaMovements = baseCustomers()
+      runMovements(viaMovements, movementsForReverse(viaMovements, s.move))
+
+      expect(viaMovements).toEqual(viaEffects)
+    })
+  }
+
+  it('تطبيق ثم عكس عبر قائمة الحركات يحافظ على الصافي', () => {
+    const cs = baseCustomers()
+    const before = clone(cs).map((c) => ({ d: c.dL - c.dA, din: c.dinL - c.dinA }))
+    const move: MoveEffect = { amilId: 1, jiha: 'ب', noa: 'صرف', mabD: 250, mabDin: 70000 }
+
+    runMovements(cs, movementsForApply(cs, move))
+    runMovements(cs, movementsForReverse(cs, move))
+
+    cs.forEach((c, i) => {
+      expect(c.dL - c.dA).toBe(before[i].d)
+      expect(c.dinL - c.dinA).toBe(before[i].din)
+    })
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════
+// تثبيت صيغة SQL على منطق الواجهة
+// ══════════════════════════════════════════════════════════════════════════
+// دالة apply_customer_movement بقاعدة البيانات
+// (migrations/20260812000000_atomic_customer_balance.sql) تحسب الرصيد
+// بتعبير greatest() بدل خطوات if/else. ما نقدر ننفّذ SQL بالاختبارات، فنحاكي
+// نفس التعبير هنا حرفياً ونتأكد إنه يطابق applyToCustomer بكل الحالات —
+// حتى لو تغيّر منطق الواجهة يوماً، يفشل الاختبار ويذكّرنا نحدّث SQL معه.
+function sqlFormula(c: CustomerBalance, noa: 'قبض' | 'صرف', mabD: number, mabDin: number): CustomerBalance {
+  const g = (n: number) => Math.max(n, 0)
+  return {
+    ...c,
+    dA: mabD <= 0 ? c.dA : noa === 'قبض' ? g(c.dA - mabD) : c.dA + g(mabD - c.dL),
+    dL: mabD <= 0 ? c.dL : noa === 'قبض' ? c.dL + g(mabD - c.dA) : g(c.dL - mabD),
+    dinA: mabDin <= 0 ? c.dinA : noa === 'قبض' ? g(c.dinA - mabDin) : c.dinA + g(mabDin - c.dinL),
+    dinL: mabDin <= 0 ? c.dinL : noa === 'قبض' ? c.dinL + g(mabDin - c.dinA) : g(c.dinL - mabDin),
+  } as CustomerBalance
+}
+
+describe('صيغة SQL (apply_customer_movement) تطابق applyToCustomer', () => {
+  const values = [0, 1, 50, 100, 300]
+  const amounts = [0, 1, 50, 100, 300, 1000]
+
+  it('تطابق تام عبر مصفوفة أرصدة ومبالغ وأنواع حركات', () => {
+    let compared = 0
+    for (const dA of values) {
+      for (const dL of values) {
+        for (const amount of amounts) {
+          for (const noa of ['قبض', 'صرف'] as const) {
+            const base: CustomerBalance = { id: 1, name: 'ت', dA, dL, dinA: dL, dinL: dA }
+
+            const viaJs = { ...base }
+            applyToCustomer(viaJs, noa, amount, amount)
+
+            const viaSql = sqlFormula(base, noa, amount, amount)
+
+            expect({ dA: viaSql.dA, dL: viaSql.dL, dinA: viaSql.dinA, dinL: viaSql.dinL }).toEqual({
+              dA: viaJs.dA,
+              dL: viaJs.dL,
+              dinA: viaJs.dinA,
+              dinL: viaJs.dinL,
+            })
+            compared++
+          }
+        }
+      }
+    }
+    expect(compared).toBe(values.length * values.length * amounts.length * 2)
+  })
+
+  it('مبلغ صفر ما يغيّر شي إطلاقاً (ولا يطبّع قيمة سالبة موجودة)', () => {
+    const base: CustomerBalance = { id: 1, name: 'ت', dA: -5, dL: 10, dinA: 0, dinL: 0 }
+    const viaJs = { ...base }
+    applyToCustomer(viaJs, 'قبض', 0, 0)
+    const viaSql = sqlFormula(base, 'قبض', 0, 0)
+    expect(viaJs.dA).toBe(-5)
+    expect(viaSql.dA).toBe(-5)
   })
 })

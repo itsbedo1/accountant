@@ -199,7 +199,7 @@ export default function KashfAmilPage({ customerId, goPage }: { customerId: numb
             <div className="katd" style={{ color: '#888' }}>
               📄
             </div>
-            <div className="katd raseed" style={row.raseed < 0 ? { color: '#ff6060' } : undefined}>
+            <div className="katd raseed" style={row.raseed < 0 ? { color: 'var(--red)' } : undefined}>
               {fmt(row.raseed)}
             </div>
             <div className="katd wared">{fmt(row.wared)}</div>

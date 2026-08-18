@@ -1,47 +1,58 @@
 /* ============================================================
-   OCEAN THEME — نظام الصيرفة المنير
-   أزرق داكن عميق + فيروزي + ذهبي
-   Extracted verbatim from the legacy index.html <style> block —
-   do not change these values without checking all three surfaces.
+   PROMPT BLUE / AI GREEN — نظام الصيرفة المنير
+   الأساس: Prompt Blue #0B132B  ·  اللون المميز: AI Green #39FF88
+   كل درجات الخلفية مشتقة من Prompt Blue، وكل الحدود من AI Green
+   بشفافية منخفضة — فاللوحة كلها تنبني من اللونين.
+
+   الاستثناءان الوحيدان مقصودان لأنهما يحملان *معنى* لا يقدر لونان
+   يعبّران عنه بتطبيق محاسبي:
+     --gold : يميّز الدولار عن الدينار (مو زخرفة)
+     --red  : المبالغ السالبة وحركة الصرف
 ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
 :root {
-  /* ── الخلفيات — بحر عميق ── */
-  --bg:          #040d1a;
-  --bg2:         #071428;
-  --bg3:         #0d1f3c;
-  --bg4:         #122a50;
+  /* ── الخلفيات — مشتقة من Prompt Blue ── */
+  --bg:          #0b132b;
+  --bg2:         #111c3d;
+  --bg3:         #18264f;
+  --bg4:         #203163;
+  /* خلفية حقول الإدخال — أغمق شوي من البطاقة حتى تبين إنها قابلة للكتابة */
+  --input-bg:    #0e1836;
 
-  /* ── لون accent — فيروزي لامع ── */
-  --accent:      #22d3ee;
-  --accent2:     #0891b2;
+  /* ── لون accent — AI Green ── */
+  --accent:      #39ff88;
+  /* أغمق منه، للأزرار اللي عليها نص أبيض (النص الأبيض على الأخضر الفاتح ما يقرأ) */
+  --accent2:     #0e7a43;
+  --accent-soft: rgba(57, 255, 136, 0.14);
 
-  /* ── ذهبي للأرقام المهمة ── */
+  /* ── ذهبي: يميّز الدولار عن الدينار ── */
   --gold:        #fbbf24;
   --gold2:       #f59e0b;
 
-  /* ── النصوص ── */
-  --text:        #e0f2fe;
-  --text2:       #7dd3fc;
-  --text3:       #38bdf8;
-  --text-dim:    rgba(186,230,253,.4);
+  /* ── النصوص — رمادي مزرق يترك الأخضر هو اللون الوحيد اللي يلفت النظر ── */
+  --text:        #e4eefb;
+  --text2:       #8ca6c9;
+  --text3:       #6f8fb8;
+  --text-dim:    rgba(200, 218, 240, 0.45);
 
   /* ── الحدود ── */
-  --border:      rgba(34,211,238,.15);
-  --border2:     rgba(34,211,238,.32);
+  --border:      rgba(57, 255, 136, 0.14);
+  --border2:     rgba(57, 255, 136, 0.30);
 
   /* ── حالات خاصة ── */
   --red:         #fb7185;
-  --row-odd:     #071428;
-  --row-even:    #040d1a;
-  --row-hover:   #122a50;
+  --red2:        #ff9aa8;
+  --red-soft:    rgba(251, 113, 133, 0.14);
+  --row-odd:     #111c3d;
+  --row-even:    #0b132b;
+  --row-hover:   #203163;
 
   --radius-sm:   8px;
   --radius-md:   12px;
   --radius-lg:   16px;
-  --shadow:      0 4px 24px rgba(0,0,0,.6);
-  --shadow-sm:   0 2px 10px rgba(0,0,0,.4);
+  --shadow:      0 4px 24px rgba(0, 0, 0, .6);
+  --shadow-sm:   0 2px 10px rgba(0, 0, 0, .4);
 }
 
 *{box-sizing:border-box;margin:0;padding:0;}

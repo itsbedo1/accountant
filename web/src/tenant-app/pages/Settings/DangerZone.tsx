@@ -22,16 +22,16 @@ export default function DangerZone({ confirmPin }: { confirmPin: (label: string)
 
   return (
     <div style={{ background: 'rgba(251,113,133,.06)', border: '1px solid rgba(251,113,133,.2)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
-      <div style={{ color: '#ff8080', fontSize: 13, fontWeight: 900, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>⚠️ منطقة الخطر</div>
+      <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 900, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>⚠️ منطقة الخطر</div>
       <button
         onClick={() => void doResetMoves()}
-        style={{ width: '100%', padding: 10, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, background: 'rgba(200,50,50,0.3)', border: '1.5px solid #cc4444', color: '#ffaaaa', cursor: 'pointer', marginBottom: 8 }}
+        style={{ width: '100%', padding: 10, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, background: 'rgba(251,113,133,0.3)', border: '1.5px solid var(--red)', color: 'var(--red2)', cursor: 'pointer', marginBottom: 8 }}
       >
         🗑 مسح جميع حركات الصندوق
       </button>
       <button
         onClick={() => void doResetAll()}
-        style={{ width: '100%', padding: 10, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, background: 'rgba(200,50,50,0.5)', border: '1.5px solid #cc2222', color: 'white', cursor: 'pointer' }}
+        style={{ width: '100%', padding: 10, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 700, background: 'rgba(251,113,133,0.5)', border: '1.5px solid var(--red)', color: 'white', cursor: 'pointer' }}
       >
         ⚠️ إعادة ضبط المصنع (مسح كل شيء)
       </button>

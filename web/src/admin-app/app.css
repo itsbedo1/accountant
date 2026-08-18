@@ -3,7 +3,7 @@
    (بقية المتغيرات مشتركة مع tenant-app/../shared/tokens.css — نفس القيم بالضبط)
 ============================================================ */
 :root {
-  --green: #4ade80;
+  --green: var(--accent);
 }
 * {
   box-sizing: border-box;
@@ -101,7 +101,7 @@ select {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: linear-gradient(135deg, #040d1a, #071e38);
+  background: linear-gradient(135deg, var(--bg), var(--input-bg));
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -313,7 +313,7 @@ select {
   white-space: nowrap;
 }
 .co-badge.on {
-  background: rgba(74, 222, 128, 0.15);
+  background: rgba(57,255,136, 0.15);
   color: var(--green);
 }
 .co-badge.off {
@@ -381,13 +381,13 @@ select {
   color: var(--text2);
 }
 .co-btn.pay {
-  background: rgba(74, 222, 128, 0.18);
-  border-color: #40c060;
+  background: rgba(57,255,136, 0.18);
+  border-color: var(--accent);
   color: var(--green);
 }
 .co-btn.danger {
   background: rgba(251, 113, 133, 0.15);
-  border-color: #cc4444;
+  border-color: var(--red);
   color: var(--red);
 }
 
@@ -489,7 +489,7 @@ select {
   color: var(--red);
 }
 .toast.ok {
-  border-color: rgba(74, 222, 128, 0.5);
+  border-color: rgba(57,255,136, 0.5);
   color: var(--green);
 }
 

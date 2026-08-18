@@ -48,7 +48,7 @@ export default function SettingsPage({
 
   return (
     <div id="pageSettings" className="page active">
-      <div style={{ background: 'linear-gradient(135deg,#040d1a,#071e38)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+      <div style={{ background: 'linear-gradient(135deg,var(--bg),var(--input-bg))', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
         <div style={{ fontSize: 20 }}>⚙️</div>
         <div style={{ fontSize: 19, fontWeight: 900, color: 'white', textDecoration: 'underline', textUnderlineOffset: 3 }}>الإعدادات</div>
         <button onClick={() => goPage('pageMain')} style={{ background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 7, color: 'white', fontFamily: "'Cairo',sans-serif", fontSize: 12, fontWeight: 700, padding: '5px 12px', cursor: 'pointer' }}>
@@ -58,7 +58,7 @@ export default function SettingsPage({
 
       <div id="stPage" style={{ padding: 14, maxWidth: 480, margin: '0 auto', paddingBottom: 30 }}>
         {/* قسم 0: الحساب */}
-        <div style={{ background: 'rgba(96,160,255,0.08)', border: '1.5px solid rgba(96,160,255,0.3)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+        <div style={{ background: 'rgba(57,255,136,0.08)', border: '1.5px solid rgba(57,255,136,0.3)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
           <div style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 900, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>👤 الحساب</div>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 10, textAlign: 'right' }}>{accountEmail || '—'}</div>
           <button
@@ -77,7 +77,7 @@ export default function SettingsPage({
           </RoleGate>
           <button
             onClick={doLogout}
-            style={{ width: '100%', padding: 11, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 900, background: 'rgba(251,113,133,.15)', border: '1.5px solid rgba(251,113,133,.4)', color: '#fb7185', cursor: 'pointer' }}
+            style={{ width: '100%', padding: 11, borderRadius: 8, fontFamily: "'Cairo',sans-serif", fontSize: 13, fontWeight: 900, background: 'rgba(251,113,133,.15)', border: '1.5px solid rgba(251,113,133,.4)', color: 'var(--red)', cursor: 'pointer' }}
           >
             🚪 تسجيل الخروج
           </button>
@@ -96,7 +96,7 @@ export default function SettingsPage({
                   aria-label="اسم الشركة / الصيرفة"
                   value={compName}
                   onChange={(e) => setCompName(e.target.value)}
-                  style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text)', direction: 'rtl' }}
+                  style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text)', direction: 'rtl' }}
                 />
               </div>
               <div>
@@ -106,7 +106,7 @@ export default function SettingsPage({
                   aria-label="تاريخ بداية العمل بالبرنامج"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
+                  style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr', textAlign: 'center' }}
                 />
               </div>
             </div>
@@ -122,12 +122,12 @@ export default function SettingsPage({
                 aria-label="توكن البوت (من BotFather)"
                 value={tgToken}
                 onChange={(e) => setTgToken(e.target.value)}
-                style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr' }}
+                style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '9px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 13, color: 'var(--text)', direction: 'ltr' }}
               />
             </div>
 
             {/* الرصيد الافتتاحي */}
-            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(240,192,64,0.3)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(251,191,36,0.3)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
               <div style={{ color: 'var(--gold)', fontSize: 13, fontWeight: 900, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>🏦 الرصيد الافتتاحي للقاصة</div>
               <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 12, textAlign: 'right' }}>هذا هو رصيد القاصة في بداية استخدام البرنامج</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -140,7 +140,7 @@ export default function SettingsPage({
                     aria-label="الرصيد الافتتاحي دولار"
                     value={initDStr}
                     onChange={(e) => setInitDStr(e.target.value)}
-                    style={{ width: '100%', background: '#071e38', border: '2px solid rgba(251,191,36,.5)', borderRadius: 7, padding: '10px 8px', fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
+                    style={{ width: '100%', background: 'var(--input-bg)', border: '2px solid rgba(251,191,36,.5)', borderRadius: 7, padding: '10px 8px', fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
                   />
                 </div>
                 <div>
@@ -152,20 +152,20 @@ export default function SettingsPage({
                     aria-label="الرصيد الافتتاحي دينار"
                     value={initDinStr}
                     onChange={(e) => setInitDinStr(e.target.value)}
-                    style={{ width: '100%', background: '#071e38', border: '2px solid rgba(34,211,238,.5)', borderRadius: 7, padding: '10px 8px', fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
+                    style={{ width: '100%', background: 'var(--input-bg)', border: '2px solid rgba(57,255,136,.5)', borderRadius: 7, padding: '10px 8px', fontFamily: "'Cairo',sans-serif", fontSize: 15, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
                   />
                 </div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 10, marginTop: 10 }}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textAlign: 'center', marginBottom: 5 }}>الرصيد الحالي للقاصة (بعد جميع الحركات)</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  <div style={{ background: 'rgba(240,192,64,0.1)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
-                    <div style={{ color: '#f0c040', fontSize: 10, fontWeight: 600 }}>$</div>
-                    <div style={{ color: '#f0e060', fontSize: 13, fontWeight: 900, direction: 'ltr' }}>{initBalD.toLocaleString()}</div>
+                  <div style={{ background: 'rgba(251,191,36,0.1)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
+                    <div style={{ color: 'var(--gold)', fontSize: 10, fontWeight: 600 }}>$</div>
+                    <div style={{ color: 'var(--gold)', fontSize: 13, fontWeight: 900, direction: 'ltr' }}>{initBalD.toLocaleString()}</div>
                   </div>
-                  <div style={{ background: 'rgba(96,216,160,0.1)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
-                    <div style={{ color: '#60d8a0', fontSize: 10, fontWeight: 600 }}>IQD</div>
-                    <div style={{ color: '#80ffb8', fontSize: 12, fontWeight: 900, direction: 'ltr' }}>{initBalDin.toLocaleString()}</div>
+                  <div style={{ background: 'rgba(57,255,136,0.1)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
+                    <div style={{ color: 'var(--accent)', fontSize: 10, fontWeight: 600 }}>IQD</div>
+                    <div style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 900, direction: 'ltr' }}>{initBalDin.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export default function SettingsPage({
                 aria-label="سعر الصرف (دينار لكل دولار)"
                 value={rateStr}
                 onChange={(e) => setRateStr(e.target.value)}
-                style={{ width: '100%', background: '#071e38', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '10px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
+                style={{ width: '100%', background: 'var(--input-bg)', border: '1.5px solid var(--border2)', borderRadius: 7, padding: '10px 12px', fontFamily: "'Cairo',sans-serif", fontSize: 16, fontWeight: 900, color: 'var(--text)', textAlign: 'center', direction: 'ltr' }}
               />
             </div>
 

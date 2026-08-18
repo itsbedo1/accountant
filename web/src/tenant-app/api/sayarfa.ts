@@ -15,10 +15,10 @@ export interface SayarfaDraft {
   balDinAfter: number
 }
 
-// منقولة حرفياً من index.html (dbSaveSayarfa، كانت بالسطر 4764) — تحفظ
-// إعدادات القاصة (rasid) وتسجّل بسجل التدقيق ضمنها، وكلها ملفوفة بـ
-// try/catch واحد يبتلع الخطأ (fire-and-forget من ناحية المتصل، نفس الأصل)
-export async function dbSaveSayarfa(r: SayarfaDraft, settings: Settings, initBalD: number, initBalDin: number): Promise<void> {
+// تحفظ حركة الصيرفة، وتحدّث رصيد القاصة بالإعدادات، وتسجّل بسجل التدقيق.
+// كانت تبتلع أي خطأ بصمت (منقولة كذلك من index.html:4764) فيظهر للمستخدم
+// نجاح وهمي — صارت ترجّع true/false حتى يقدر المتصل يتراجع ويخبره بالحقيقة.
+export async function dbSaveSayarfa(r: SayarfaDraft, settings: Settings, initBalD: number, initBalDin: number): Promise<boolean> {
   try {
     const row = {
       type: r.type,
@@ -36,9 +36,16 @@ export async function dbSaveSayarfa(r: SayarfaDraft, settings: Settings, initBal
     } = await sbClient.auth.getSession()
     const res = await sbFetch<{ id: number }[]>('sayarfa_moves', 'POST', { ...row, created_by_email: session?.user?.email || null })
     const dbId = res?.[0]?.id
+    // ماكو صف رجع = الحركة ما انحفظت فعلاً، لا نكمل كأنها نجحت
+    if (!dbId) {
+      console.error('dbSaveSayarfa: ماكو صف رجع من الإدراج')
+      return false
+    }
     await dbSaveSettings(settings, initBalD, initBalDin)
-    if (dbId) await dbLogAudit('sayarfa_moves', dbId, 'create', null, r)
+    await dbLogAudit('sayarfa_moves', dbId, 'create', null, r)
+    return true
   } catch (e) {
     console.error('dbSaveSayarfa:', e)
+    return false
   }
 }

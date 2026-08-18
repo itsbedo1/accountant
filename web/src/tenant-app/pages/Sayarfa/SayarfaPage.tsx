@@ -29,6 +29,7 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
   const [mabDStr, setMabDStr] = useState('0')
   const [mabDinStr, setMabDinStr] = useState('0')
   const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const selectedAmil = selectedAmilId != null ? customers.find((c) => c.id === selectedAmilId) : null
 
@@ -100,7 +101,11 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
     setSelectedAmilId(null)
   }
 
-  function save() {
+  async function save() {
+    if (saving) {
+      toast('⏳ فيه حفظ سابق لا يزال قيد التنفيذ — انتظر لحظة')
+      return
+    }
     if (!type) {
       toast('⚠️ اختر نوع العملية')
       return
@@ -114,16 +119,21 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
       return
     }
 
-    if (mode === 'ذمم عملاء') {
-      if (!selectedAmilId) {
-        toast('⚠️ اختر عميل أولاً')
-        return
-      }
-      void saveSayarfaAmil(selectedAmilId, type, mabD, mabDin, rate, notes)
-    } else {
-      saveSayarfaCash(type, mabD, mabDin, rate, notes)
+    if (mode === 'ذمم عملاء' && !selectedAmilId) {
+      toast('⚠️ اختر عميل أولاً')
+      return
     }
-    reset()
+
+    setSaving(true)
+    const ok =
+      mode === 'ذمم عملاء'
+        ? await saveSayarfaAmil(selectedAmilId!, type, mabD, mabDin, rate, notes)
+        : await saveSayarfaCash(type, mabD, mabDin, rate, notes)
+    setSaving(false)
+
+    // ما نفرّغ النموذج إلا لو انحفظت فعلاً — قبل هذا كان يتفرّغ دائماً، فلو
+    // فشل الحفظ يخسر المستخدم ما أدخله بدون ما يدري إنه فشل أصلاً
+    if (ok) reset()
   }
 
   return (
@@ -281,8 +291,12 @@ export default function SayarfaPage({ goPage }: { goPage: (id: string) => void }
       </div>
 
       <div id="sfToolbar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#040d1a', borderTop: '1px solid rgba(34,211,238,.2)', display: 'flex', gap: 8, padding: '8px 12px', zIndex: 200, maxWidth: 480, margin: '0 auto' }}>
-        <button onClick={save} style={{ flex: 2, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 900, background: '#f0c040', border: 'none', color: '#0a1628', cursor: 'pointer' }}>
-          💾 تنفيذ وحفظ
+        <button
+          onClick={() => void save()}
+          disabled={saving}
+          style={{ flex: 2, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 900, background: '#f0c040', border: 'none', color: '#0a1628', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}
+        >
+          {saving ? '⏳ جاري الحفظ...' : '💾 تنفيذ وحفظ'}
         </button>
         <button onClick={reset} style={{ flex: 1, padding: 12, borderRadius: 9, fontFamily: "'Cairo',sans-serif", fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'white', cursor: 'pointer' }}>
           🔄 مسح
